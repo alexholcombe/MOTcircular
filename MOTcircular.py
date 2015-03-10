@@ -63,8 +63,6 @@ slitView = False  #visual barrier
 screenshot= False; screenshotDone = False;showRefreshMisses=False;allowGUI = False;waitBlank = False
 trackAllIdenticalColors = True#with tracking, can either use same colors as other task (e.g. 6 blobs but only 3 colors so have to track one of 2) or set all blobs identical color
 Reversal =True
-drawingAsGrating= False
-antialiasGrating=False
 
 timeAndDateStr = time.strftime("%d%b%Y_%H-%M", time.localtime()) 
 respTypes=['order']; respType=respTypes[0]
@@ -114,7 +112,6 @@ timeTillReversalMin = 0.25; timeTillReversalMax = 2.95  #reversal time
 offsetXYeachRing=[[0,0],[0,0],[0,0],[0,0]]
 jumpFrame=9;
 patchAngleBase = 20#20
-gratingTexPix=1024#1024 #numpy textures must be a power of 2. So, if numColorsRoundTheRing not divide without remainder into textPix, there will be some rounding so patches will not all be same size
 
 #start definition of colors 
 hues=arange(16)/16.
@@ -307,7 +304,6 @@ print('rampUpDur=',rampUpDur, ' rampDownDur=', rampDownDur, ' secs', file=logF);
 logging.info('task='+'track'+'   respType='+respType)
 logging.info( 'colors_all='+str(colors_all)+ '\ncolorNames='+str(colorNames)+ '  trackPostcueOrClick='+str(trackPostcueOrClick)+'  trackAllIdenticalColors='+str(trackAllIdenticalColors) )
 logging.info(   'radii=' + str(radii)   )
-logging.info(   'drawingAsGrating='+str(drawingAsGrating) +  ' gratingTexPix='+ str(gratingTexPix) + ' antialiasGrating=' + str(antialiasGrating)   )
 logging.flush()
 
 def  oneFrameOfStim(n,angleMovement,blobToCueEachRing,reversalValue,reversalNo,ShowTrackCueFrames): 
@@ -325,143 +321,32 @@ def  oneFrameOfStim(n,angleMovement,blobToCueEachRing,reversalValue,reversalNo,S
           if n%2>=1: fixation.draw()#flicker fixation on and off at framerate to see when skip frame
           else:fixationBlank.draw()         
     
-          if drawingAsGrating:
-                ringRadialLocal = ringRadial
-                centerInMiddleOfSegment =360./numObjects/2.0  #if don't add this factor, won't center segment on angle and so won't match up with blobs of response screen
-                for noRing in range(numRings):
-                        anglemove=moveDirection[noRing]*thisTrial['direction']*thisTrial['speed']*360*1.0*(n-(n-1))/hz
-                        if Reversal and reversalNo[noRing] <= len(RAI[noRing]) and n>RAI[noRing][int(reversalNo[noRing])]*hz:
-                                        reversalValue[noRing]=-1*reversalValue[noRing]
-                                        reversalNo[noRing] +=1
-                        angleMovement[noRing]=angleMovement[noRing]+anglemove*(reversalValue[noRing])
-                        ringRadialLocal[noRing].setOri(angleIni[noRing]+angleMovement[noRing]+centerInMiddleOfSegment) 
-                        ringRadialLocal[noRing].setContrast( contrast )
-                        ringRadialLocal[noRing].draw()
-                        if  (blobToCueEachRing[noRing] != -999) and n< ShowTrackCueFrames:  #-999 means there's a target in that ring
-                            #if blobToCue!=currentlyCuedBlob: #if blobToCue now is different from what was cued the first time the rings were constructed, have to make new rings
-                                #even though this will result in skipping frames
-                                cueRing[noRing].setOri(angleIni[noRing]+angleMovement[noRing]+centerInMiddleOfSegment)
-                                cueRing[noRing].setOpacity( 1- n*1.0/ShowTrackCueFrames ) #gradually make it transparent
-                                cueRing[noRing].draw()
-                        #draw tracking cue on top with separate object? Because might take longer than frame to draw the entire texture
-                        #so create a second grating which is all transparent except for one white sector. Then, rotate sector to be on top of target
-          else:
-                for noRing in range(numRings):
-                    for nobject in range(numObjects):
-                        anglePair=(2*pi/numObjects)*nobject
-                        nColor =nobject % nb_colors 
-                        anglemove=moveDirection[noRing]*thisTrial['direction']*thisTrial['speed']*2*pi*(n-(n-1))/hz
-                        if nobject==0:
-                            if Reversal and reversalNo[noRing] <= len(RAI[noRing]) and n>RAI[noRing][int(reversalNo[noRing])]*hz:
-                                    reversalValue[noRing]=-1*reversalValue[noRing]
-                                    reversalNo[noRing] +=1
-                            angleMovement[noRing]=angleMovement[noRing]+anglemove*(reversalValue[noRing])
-                        x=offsetXYeachRing[noRing][0]+radii[noRing]*cos(angleIni[noRing]+anglePair+angleMovement[noRing]); 
-                        y=offsetXYeachRing[noRing][1]+radii[noRing]*sin(angleIni[noRing]+anglePair+angleMovement[noRing])
-                        if   n< ShowTrackCueFrames and nobject==blobToCueEachRing[noRing]: #cue in white  
-                            weightToTrueColor = n*1.0/ShowTrackCueFrames #compute weighted average to ramp from white to correct color
-                            blobColor = (1-weightToTrueColor)*array([1,1,1])  +  weightToTrueColor*colorsInInnerRingOrder[nColor] 
-                            blobColor = blobColor*contrast #also might want to change contrast, if everybody's contrast changing in contrast ramp
-                        else: blobColor = colorsInInnerRingOrder[nColor]*contrast    
-                        gaussian.setColor( blobColor, log=autoLogging )
-                        gaussian.setPos([x,y])
-                        gaussian.draw()
+          for noRing in range(numRings):
+            for nobject in range(numObjects):
+                anglePair=(2*pi/numObjects)*nobject
+                nColor =nobject % nb_colors 
+                anglemove=moveDirection[noRing]*thisTrial['direction']*thisTrial['speed']*2*pi*(n-(n-1))/hz
+                if nobject==0:
+                    if Reversal and reversalNo[noRing] <= len(RAI[noRing]) and n>RAI[noRing][int(reversalNo[noRing])]*hz:
+                            reversalValue[noRing]=-1*reversalValue[noRing]
+                            reversalNo[noRing] +=1
+                    angleMovement[noRing]=angleMovement[noRing]+anglemove*(reversalValue[noRing])
+                x=offsetXYeachRing[noRing][0]+radii[noRing]*cos(angleIni[noRing]+anglePair+angleMovement[noRing]); 
+                y=offsetXYeachRing[noRing][1]+radii[noRing]*sin(angleIni[noRing]+anglePair+angleMovement[noRing])
+                if   n< ShowTrackCueFrames and nobject==blobToCueEachRing[noRing]: #cue in white  
+                    weightToTrueColor = n*1.0/ShowTrackCueFrames #compute weighted average to ramp from white to correct color
+                    blobColor = (1-weightToTrueColor)*array([1,1,1])  +  weightToTrueColor*colorsInInnerRingOrder[nColor] 
+                    blobColor = blobColor*contrast #also might want to change contrast, if everybody's contrast changing in contrast ramp
+                else: blobColor = colorsInInnerRingOrder[nColor]*contrast    
+                gaussian.setColor( blobColor, log=autoLogging )
+                gaussian.setPos([x,y])
+                gaussian.draw()
           if blindspotFill:
               blindspotStim.draw()
           if thisTrial['slitView']: maskOrbit.draw()
           lastlocation=array([angleIni,angleMovement,reversalValue,reversalNo]) #fix counterclockwise displacement problems [WingAdd]
           return lastlocation   
 # #######End of function definition that displays the stimuli!!!! #####################################
-
-def constructRingAsGrating(numObjects,patchAngle,colors,stimColorIdxsOrder,gratingTexPix,blobToCue):
-    myTex=list();cueTex=list();ringRadial=list();cueRing=list()
-    stimColorIdxsOrder= stimColorIdxsOrder[::-1]  #reverse order of indices, because grating texture is rendered in reverse order than is blobs version
-    ringRadialMask=[[0,0,0,1,1,] ,[0,0,0,0,0,0,1,1,],[0,0,0,0,0,0,0,0,0,0,1,1,]]
-    numUniquePatches= max( len(stimColorIdxsOrder[0]),len(stimColorIdxsOrder[1]),len(stimColorIdxsOrder[2]))
-    numCycles =double(numObjects) / numUniquePatches
-    angleSegment = 360./(numUniquePatches*numCycles)
-    if gratingTexPix % numUniquePatches >0: #gratingTexPix contains numUniquePatches. numCycles will control how many total objects there are around circle
-        print('Warning: could not exactly render a ',numUniquePatches,'-segment pattern radially, will be off by ', (gratingTexPix%numUniquePatches)*1.0 /gratingTexPix, file=logF)
-    if numObjects % numUniquePatches >0:
-        msg= 'Warning: numUniquePatches ('+str(numUniquePatches)+') not go evenly into numObjects'; print(msg, file=logF); logging.warn(msg)
-    #create texture for red-green-blue-red-green-blue etc. radial grating
-    for i in range(numRings):
-        #myTex.append(np.zeros([gratingTexPix,gratingTexPix,3])+[1,-1,1])
-        myTex.append(np.zeros([gratingTexPix,gratingTexPix,3])+bgColor[0])#start with all channels in all locs = bgColor
-        cueTex.append(np.ones([gratingTexPix,gratingTexPix,3])*bgColor[0])
-    if patchAngle > angleSegment:
-        msg='Error: patchAngle requested ('+str(patchAngle)+') bigger than maximum possible ('+str(angleSegment)+') numUniquePatches='+str(numUniquePatches)+' numCycles='+str(numCycles); 
-        print(msg); print(msg, file=logF); logging.error(msg)
-  
-    oneCycleAngle = 360./numCycles
-    segmentSizeTexture = angleSegment/oneCycleAngle *gratingTexPix #I call it segment because includes spaces in between, that I'll write over subsequently
-    patchSizeTexture = patchAngle/oneCycleAngle *gratingTexPix
-    patchSizeTexture = round(patchSizeTexture) #best is odd number, even space on either size
-    patchFlankSize = (segmentSizeTexture-patchSizeTexture)/2.
-    patchAngleActual = patchSizeTexture / gratingTexPix * oneCycleAngle
-    if abs(patchAngleActual - patchAngle) > .04:
-        msg = 'Desired patchAngle = '+str(patchAngle)+' but closest can get with '+str(gratingTexPix)+' gratingTexPix is '+str(patchAngleActual); 
-        print(msg, file=logF);   logging.warn(msg)
-    
-    for colrI in range(numUniquePatches): #for that portion of texture, set color
-        start = colrI*segmentSizeTexture
-        end = start + segmentSizeTexture
-        start = round(start) #don't round until after do addition, otherwise can fall short
-        end = round(end)
-        nColor = colrI #mimics code in drawoneframe
-        ringColr=list();
-        for i in range(numRings):ringColr.append(colors[ stimColorIdxsOrder[i][nColor] ])
-        for colorChannel in range(3):
-            for i in range(numRings):myTex[i][:, start:end, colorChannel] = ringColr[i][colorChannel]; 
-            for cycle in range(int(round(numCycles))):
-              base = cycle*gratingTexPix/numCycles
-              for i in range(numRings):cueTex[i][:, base+start/numCycles:base+end/numCycles, colorChannel] = ringColr[1][colorChannel]
-        #draw bgColor area (emptySizeEitherSideOfPatch) by overwriting first and last entries of segment 
-        for i in range(numRings):
-            myTex[i][:, start:start+patchFlankSize, :] = bgColor[0]; #one flank
-            myTex[i][:, end-1-patchFlankSize:end, :] = bgColor[0]; #other flank
-        
-        for cycle in range(int(round(numCycles))): 
-              base = cycle*gratingTexPix/numCycles
-              for i in range(numRings):
-                 cueTex[i][:,base+start/numCycles:base+(start+patchFlankSize)/numCycles,:] =bgColor[0]; 
-                 cueTex[i][:,base+(end-1-patchFlankSize)/numCycles:base+end/numCycles,:] =bgColor[0]
-        
-    #color the segment to be cued white
-    segmentLen = gratingTexPix/numCycles*1/numUniquePatches
-    WhiteCueSizeAdj=0 # adust the white cue marker wingAdd 20110923
-    if thisTrial['numObjectsInRing']==3:WhiteCueSizeAdj=110
-    elif thisTrial['numObjectsInRing']==6:WhiteCueSizeAdj=25
-    elif thisTrial['numObjectsInRing']==12:WhiteCueSizeAdj=-15
-    elif thisTrial['numObjectsInRing']==2:WhiteCueSizeAdj=200
-    
-    for i in range(numRings):
-            if blobToCue[i] >=0: #-999 means dont cue anything
-                blobToCueCorrectForRingReversal = numObjects-1 - blobToCue[i] #grating seems to be laid out in opposite direction than blobs, this fixes postCueNumBlobsAway so positive is in direction of motion
-                if blobToCueCorrectForRingReversal==0 and thisTrial['numObjectsInRing']==12:   WhiteCueSizeAdj=0
-                cueStartEntry = blobToCueCorrectForRingReversal*segmentLen+WhiteCueSizeAdj
-                cueEndEntry = cueStartEntry + segmentLen-2*WhiteCueSizeAdj
-                cueTex[i][:, cueStartEntry:cueEndEntry, :] = -1*bgColor[0]    
-                blackGrains = round( .25*(cueEndEntry-cueStartEntry) )#number of "pixels" of texture at either end of cue sector to make black. Need to update this to reflect patchAngle
-                cueTex[i][:, cueStartEntry:cueStartEntry+blackGrains, :] = bgColor[0];  #this one doesn't seem to do anything?
-                cueTex[i][:, cueEndEntry-1-blackGrains:cueEndEntry, :] = bgColor[0];
-    angRes = 100 #100 is default. I have not seen any effect. This is currently not printed to log file!
-    
-    for i in range(numRings):
-         ringRadial.append(visual.RadialStim(myWin, tex=myTex[i], color=[1,1,1],size=radii[i],#myTexInner is the actual colored pattern. radial grating used to make it an annulus 
-         mask=ringRadialMask[i], # this is a 1-D mask dictating the behaviour from the centre of the stimulus to the surround.
-         radialCycles=0, angularCycles=double(thisTrial['numObjectsInRing'])/numUniquePatches,
-         angularRes=angRes, interpolate=antialiasGrating, autoLog=autoLogging))
-         #the mask is radial and indicates that should show only .3-.4 as one moves radially, creating an annulus
-    #end preparation of colored rings
-    #draw cueing grating for tracking task. Have entire grating be empty except for one white sector
-         cueRing.append(visual.RadialStim(myWin, tex=cueTex[i], color=[1,1,1],size=radii[i], #cueTexInner is white. Only one sector of it shown by mask
-         mask=ringRadialMask[i], radialCycles=0, angularCycles=1, #only one cycle because no pattern actually repeats- trying to highlight only one sector
-         angularRes=angRes, interpolate=antialiasGrating, autoLog=autoLogging) )#depth doesn't seem to work, just always makes it invisible?
-    
-    currentlyCuedBlob = blobToCue #this will mean that don't have to redraw 
-    return ringRadial,cueRing,currentlyCuedBlob
-    ######### End constructRingAsGrating ###########################################################
 
 def  collectResponses(n,responses,responsesAutopilot,respRadius,expStop ): 
     respondedEachToken = zeros([numRings,numObjects])  #potentially two sets of responses, one for each of two concentric rings
@@ -492,24 +377,6 @@ def  collectResponses(n,responses,responsesAutopilot,respRadius,expStop ):
     while respcount < sum(numRespsNeeded): #collecting response
                for optionSet in range(optionSets):  #draw blobs available to click on
                   for ncheck in range( numOptionsEachSet[optionSet] ): 
-                      if drawingAsGrating:
-                        angle=baseAngle[0][optionSet]+baseAngle[1][optionSet]+centerInMiddleOfSegment 
-                        opts=optionIdexs;
-                        c = opts[optionSet][ncheck] #idx of color that this option num corresponds to. Need an extra [0] b/c list of arrays
-                        if respondedEachToken[optionSet][ncheck]:  #draw circle around this one to indicate this option has been chosen
-                               baseAngleAdj=baseAngle[0][optionSet]+baseAngle[1][optionSet]
-                               baseAngleAdj *= -1;baseAngleAdj += 90
-                               angle =  (baseAngleAdj)+ ncheck*1.0/numOptionsEachSet[optionSet] *360 #first ring [WingAdd]
-                               stretchOutwardRingsFactor = 1
-                               r=(radii[optionSet]/radii[0])*1.5+optionSet*(ballStdDev/3)
-                               x = HdistAwayCent[optionSet]+r*cos(angle/180*pi);  y = VdistAwayCent[optionSet]+r*sin(angle/180*pi)
-                               circle.setColor(array([1,-1,1]), log=autoLogging)
-                               circle.setPos([x,y])
-                               circle.draw()
-                        ringRadial[optionSet].setOri(angle) 
-                        ringRadial[optionSet].setContrast(1)
-                        ringRadial[optionSet].draw()
-                      else:
                         angle =  (baseAngle[0][optionSet]+baseAngle[1][optionSet]) + ncheck*1.0/numOptionsEachSet[optionSet] *2.*pi  #first ring [WingAdd]
                         stretchOutwardRingsFactor = 1
                         r = respRadius+ optionSet*(stretchOutwardRingsFactor*(radii[1]-radii[0]))
@@ -538,17 +405,9 @@ def  collectResponses(n,responses,responsesAutopilot,respRadius,expStop ):
                     dy = (mouseY) * degpercm #mouse x location relative to center, converted to degrees from pixels
                     for optionSet in range(optionSets):
                       for ncheck in range( numOptionsEachSet[optionSet] ): 
-                            if drawingAsGrating:
-                                baseAngleAdj=baseAngle[0][optionSet]+baseAngle[1][optionSet]
-                                baseAngleAdj *= -1;baseAngleAdj += 90
-                                angle =  (baseAngleAdj)+ ncheck*1.0/numOptionsEachSet[optionSet] *360 #first ring [WingAdd]
-                                stretchOutwardRingsFactor = 1
-                                r=(radii[optionSet]/radii[0])*1.5+optionSet*(ballStdDev/3)
-                                x = HdistAwayCent[optionSet]+r*cos(angle/180*pi);  y = VdistAwayCent[optionSet]+r*sin(angle/180*pi)
-                            else:   
-                                angle =  (baseAngle[0][optionSet]+baseAngle[1][optionSet]) + ncheck*1.0/numOptionsEachSet[optionSet] *2.*pi #first quadrant [WingAdd]
-                                r = respRadius+ optionSet*(radii[1]-radii[0]-0.2)-0.3
-                                x = offsetXYeachRing[optionSet][0]+r*cos(angle);  y = offsetXYeachRing[optionSet][1]+r*sin(angle)                              
+                            angle =  (baseAngle[0][optionSet]+baseAngle[1][optionSet]) + ncheck*1.0/numOptionsEachSet[optionSet] *2.*pi #first quadrant [WingAdd]
+                            r = respRadius+ optionSet*(radii[1]-radii[0]-0.2)-0.3
+                            x = offsetXYeachRing[optionSet][0]+r*cos(angle);  y = offsetXYeachRing[optionSet][1]+r*sin(angle)                              
                             #check whether mouse click was close to any of the colors
                             #Colors were drawn in order they're in in optionsIdxs
                             distance = sqrt(pow((x-dx),2)+pow((y-dy),2))
@@ -669,9 +528,6 @@ while nDone <= trials.nTotal and expStop==False:
     centerInMiddleOfSegment =360./numObjects/2.0
     blobsToPreCue=thisTrial['whichIsTarget']
     print('blobsToPreCue=',blobsToPreCue)  #debugON
-    if drawingAsGrating:
-        ringRadial,cueRing,currentlyCuedBlob = constructRingAsGrating(numObjects,patchAngleBase,colors_all,stimColorIdxsOrder,gratingTexPix,blobsToPreCue)
-        preDrawStimToGreasePipeline.extend([ringRadial[0],ringRadial[1],ringRadial[2]])
     core.wait(.1)
     myMouse.setVisible(False)      
     fixatnPeriodFrames = int(   (np.random.rand(1)/2.+0.8)   *hz)  #random interval between 800ms and 1.3s (changed when Fahed ran outer ring ident)
