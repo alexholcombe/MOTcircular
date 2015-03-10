@@ -111,7 +111,7 @@ units='deg' #'cm'
 if showRefreshMisses:fixSize = 2.6  #make fixation bigger so flicker more conspicuous
 else: fixSize = 0.3
 timeTillReversalMin = 0.25; timeTillReversalMax = 2.95  #reversal time 
-HdistAwayCent=[0,0,0,0];VdistAwayCent=[0,0,0,0] #Horizontal and Vertical arrangement
+offsetXYeachRing=[[0,0],[0,0],[0,0],[0,0]]
 jumpFrame=9;
 patchAngleBase = 20#20
 gratingTexPix=1024#1024 #numpy textures must be a power of 2. So, if numColorsRoundTheRing not divide without remainder into textPix, there will be some rounding so patches will not all be same size
@@ -356,7 +356,8 @@ def  oneFrameOfStim(n,angleMovement,blobToCueEachRing,reversalValue,reversalNo,S
                                     reversalValue[noRing]=-1*reversalValue[noRing]
                                     reversalNo[noRing] +=1
                             angleMovement[noRing]=angleMovement[noRing]+anglemove*(reversalValue[noRing])
-                        x=HdistAwayCent[noRing]+radii[noRing]*cos(angleIni[noRing]+anglePair+angleMovement[noRing]); y=VdistAwayCent[noRing]+radii[noRing]*sin(angleIni[noRing]+anglePair+angleMovement[noRing])
+                        x=offsetXYeachRing[noRing][0]+radii[noRing]*cos(angleIni[noRing]+anglePair+angleMovement[noRing]); 
+                        y=offsetXYeachRing[noRing][1]+radii[noRing]*sin(angleIni[noRing]+anglePair+angleMovement[noRing])
                         if   n< ShowTrackCueFrames and nobject==blobToCueEachRing[noRing]: #cue in white  
                             weightToTrueColor = n*1.0/ShowTrackCueFrames #compute weighted average to ramp from white to correct color
                             blobColor = (1-weightToTrueColor)*array([1,1,1])  +  weightToTrueColor*colorsInInnerRingOrder[nColor] 
@@ -512,7 +513,7 @@ def  collectResponses(n,responses,responsesAutopilot,respRadius,expStop ):
                         angle =  (baseAngle[0][optionSet]+baseAngle[1][optionSet]) + ncheck*1.0/numOptionsEachSet[optionSet] *2.*pi  #first ring [WingAdd]
                         stretchOutwardRingsFactor = 1
                         r = respRadius+ optionSet*(stretchOutwardRingsFactor*(radii[1]-radii[0]))
-                        x = HdistAwayCent[optionSet]+r*cos(angle);  y = VdistAwayCent[optionSet]+r*sin(angle)
+                        x = offsetXYeachRing[optionSet][0]+r*cos(angle);  y = offsetXYeachRing[optionSet][1]+r*sin(angle)
                         #draw colors, and circles around selected items. Colors are drawn in order they're in in optionsIdxs
                         opts=optionIdexs;
                         c = opts[optionSet][ncheck] #idx of color that this option num corresponds to. Need an extra [0] b/c list of arrays
@@ -547,7 +548,7 @@ def  collectResponses(n,responses,responsesAutopilot,respRadius,expStop ):
                             else:   
                                 angle =  (baseAngle[0][optionSet]+baseAngle[1][optionSet]) + ncheck*1.0/numOptionsEachSet[optionSet] *2.*pi #first quadrant [WingAdd]
                                 r = respRadius+ optionSet*(radii[1]-radii[0]-0.2)-0.3
-                                x = HdistAwayCent[optionSet]+r*cos(angle);  y = VdistAwayCent[optionSet]+r*sin(angle)                              
+                                x = offsetXYeachRing[optionSet][0]+r*cos(angle);  y = offsetXYeachRing[optionSet][1]+r*sin(angle)                              
                             #check whether mouse click was close to any of the colors
                             #Colors were drawn in order they're in in optionsIdxs
                             distance = sqrt(pow((x-dx),2)+pow((y-dy),2))
