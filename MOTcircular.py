@@ -88,7 +88,7 @@ if demo or exportImages:
 logging.console.setLevel(logging.WARNING) #DEBUG means set the console to receive nearly all messges, INFO is for everything else, INFO, EXP, DATA, WARNING and ERROR 
 
 #Trial parameter setting...............
-numRings=3  #how many display rings
+numRings=2
 RANum=8 #reversal times record. Recording reversal times of each ring
 radii=[4,8,12] # used in paper: [4,10,26]
 respRadius=radii[0] #deg
@@ -305,9 +305,23 @@ logging.info( 'colors_all='+str(colors_all)+ '\ncolorNames='+str(colorNames)+ ' 
 logging.info(   'radii=' + str(radii)   )
 logging.flush()
 
+RFcontourAmp= 0.0
+RFcontourFreq = 2.0
+RFcontourPhase = 0
+def RFcontourCalcModulation(angle,freq,phase): 
+    modulation = sin(angle*freq + phase) #radial frequency contour equation, e.g. http://www.journalofvision.org/content/14/11/12.full from Wilkinson et al. 1998
+    return modulation
+
+ampTemporalRadiusModulation = 0.0 # 1.0/3.0
+ampModulatnEachRingTemporalPhase = np.random.rand(numRings) * 2*pi
 def radiusThisFrame(numRing, angle, thisFrameN):
     r = radii[numRing]
-    return r
+    timeSeconds = thisFrameN / hz
+    period = 0.5 #seconds
+    phaseRadians = timeSeconds/period * 2*pi + ampModulatnEachRingTemporalPhase[numRing]
+    rThis =  r + sin(phaseRadians) * r * ampTemporalRadiusModulation
+    rThis += r * RFcontourAmp * RFcontourCalcModulation(angle,RFcontourFreq,RFcontourPhase)
+    return rThis
     
 def angleChangeThisFrame(thisTrial, moveDirection, numRing, thisFrameN, lastFrameN):
     anglemove = moveDirection[numRing]*thisTrial['direction']*thisTrial['speed']*2*pi*(thisFrameN-lastFrameN)/hz
@@ -337,12 +351,11 @@ def  oneFrameOfStim(n,currAngle,blobToCueEachRing,reversalValue,reversalNo,ShowT
                             reversalValue[noRing]=-1*reversalValue[noRing]
                             reversalNo[noRing] +=1
                     currAngle[noRing]=currAngle[noRing]+angleMove*(reversalValue[noRing])
-                r = radiusThisFrame(noRing,currAngle[noRing],n)
                 angleObject0 = angleIni[noRing] + currAngle[noRing]
                 angleThisObject = angleObject0 + (2*pi)/numObjects*nobject
+                r = radiusThisFrame(noRing,angleThisObject,n)
                 x = offsetXYeachRing[noRing][0] + r*cos(angleThisObject)
                 y = offsetXYeachRing[noRing][1] + r*sin(angleThisObject)
-                print('angleThisObject =',angleThisObject, 'x=',round(x,2),' y=',round(y,2))                
                 if   n< ShowTrackCueFrames and nobject==blobToCueEachRing[noRing]: #cue in white  
                     weightToTrueColor = n*1.0/ShowTrackCueFrames #compute weighted average to ramp from white to correct color
                     blobColor = (1-weightToTrueColor)*array([1,1,1])  +  weightToTrueColor*colorsInInnerRingOrder[nColor] 
@@ -357,29 +370,25 @@ def  oneFrameOfStim(n,currAngle,blobToCueEachRing,reversalValue,reversalNo,ShowT
           return angleIni,currAngle,reversalValue,reversalNo   
 # #######End of function definition that displays the stimuli!!!! #####################################
 
-def  collectResponses(n,responses,responsesAutopilot,respRadius,expStop ): 
+def  collectResponses(n,responses,responsesAutopilot,respRadius,currAngle,expStop ): 
     respondedEachToken = zeros([numRings,numObjects])  #potentially two sets of responses, one for each of two concentric rings
     optionIdexs=list();baseSeq=list();numOptionsEachSet=list();numRespsNeeded=list()
-    for i in range(numRings):
+    numRespsNeeded = np.zeros(numRings) 
+    for ring in xrange(numRings):
         optionIdexs.append([])
         noArray=list()
         for k in range(numObjects):noArray.append(colors_ind[0])
         baseSeq.append(array(noArray))
-    for j in range(numRings):
         for i in range(numObjects):
-            optionIdexs[j].append(baseSeq[j][i % len(baseSeq[j])] )
-    
-    numRespsNeeded = np.zeros(3) 
-    
-    for r in xrange(numRings):
-        if r == thisTrial['ringToQuery']:
-            numRespsNeeded[ r ] = 1
-        else: numRespsNeeded[ r ] = 0
-    for k in range(numRings):     numOptionsEachSet.append(len(optionIdexs[k]))
+            optionIdexs[ring].append(baseSeq[ring][i % len(baseSeq[ring])] )
+        if ring == thisTrial['ringToQuery']:
+            numRespsNeeded[ ring ] = 1
+        else: numRespsNeeded[ ring ] = 0
+        numOptionsEachSet.append(len(optionIdexs[ring]))
     optionSets=numRings;     respcount = 0;     tClicked = 0;       lastClickState=0;       mouse1=0
-    for r in range(optionSets): 
+    for ring in range(optionSets): 
             responses.append( list() )
-            responsesAutopilot.append( [0]*numRespsNeeded[r] )  #autopilot response is 0
+            responsesAutopilot.append( [0]*numRespsNeeded[ring] )  #autopilot response is 0
     passThisTrial = False; 
     numRespSound=0
     while respcount < sum(numRespsNeeded): #collecting response
@@ -387,6 +396,7 @@ def  collectResponses(n,responses,responsesAutopilot,respRadius,expStop ):
                   for ncheck in range( numOptionsEachSet[optionSet] ): 
                         angle =  (angleIni[optionSet]+currAngle[optionSet]) + ncheck*1.0/numOptionsEachSet[optionSet] *2.*pi  #first ring [WingAdd]
                         stretchOutwardRingsFactor = 1
+                        radiusThisFrame(optionSet,angle,n) #debugON
                         r = respRadius+ optionSet*(stretchOutwardRingsFactor*(radii[1]-radii[0]))
                         x = offsetXYeachRing[optionSet][0]+r*cos(angle);  y = offsetXYeachRing[optionSet][1]+r*sin(angle)
                         #draw colors, and circles around selected items. Colors are drawn in order they're in in optionsIdxs
@@ -600,7 +610,7 @@ while nDone <= trials.nTotal and expStop==False:
      # ####### response set up answer
     responses = list();  responsesAutopilot = list()
     print ("Entering collectResponses") #debugON
-    responses,responsesAutopilot,respondedEachToken,expStop = collectResponses(n,responses,responsesAutopilot,respRadius,expStop)  #collect responses!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#############################
+    responses,responsesAutopilot,respondedEachToken,expStop = collectResponses(n,responses,responsesAutopilot,respRadius,currAngle,expStop)  #collect responses!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#####
     #print("responses=",responses,";respondedEachToken=",respondedEachToken,"expStop=",expStop) #debugOFF
     core.wait(.1)
     if exportImages:  #maybe catch one frame of response
