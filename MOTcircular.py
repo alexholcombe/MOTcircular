@@ -170,7 +170,8 @@ myWin.setRecordFrameIntervals(False)
 myMouse = event.Mouse(visible = 'true',win=myWin)
 gaussian = visual.PatchStim(myWin, tex='none',mask='gauss',colorSpace='rgb',size=ballStdDev,autoLog=autoLogging)
 gaussian2 = visual.PatchStim(myWin, tex='none',mask='gauss',colorSpace='rgb',size=ballStdDev,autoLog=autoLogging)
-circle = visual.PatchStim(myWin, tex='none',mask='circle',size=mouseChoiceArea,colorSpace='rgb',color = (1,0,1),autoLog=autoLogging) #to outline chosen options
+circle = visual.Circle(myWin, radius=mouseChoiceArea, edges=32, fillColorSpace='rgb',fillColor = (1,0,1),autoLog=autoLogging) #to outline chosen options
+clickableRegion = visual.Circle(myWin, radius=0.5, edges=32, fillColorSpace='rgb',fillColor = (-1,1,-1),autoLog=autoLogging) #to show clickable zones
 circleCue = visual.PatchStim(myWin, tex='none',mask='circle',size=mouseChoiceAreaCue,colorSpace='rgb',color = (1,1,1),autoLog=autoLogging)
 blindspotFill = 0 #a way for people to know if they move their eyes
 if blindspotFill:
@@ -314,7 +315,7 @@ def RFcontourCalcModulation(angle,freq,phase):
 
 ampTemporalRadiusModulation = 0.0 # 1.0/3.0
 ampModulatnEachRingTemporalPhase = np.random.rand(numRings) * 2*pi
-def radiusThisFrame(numRing, angle, thisFrameN):
+def radiusThisFrameThisAngle(numRing, angle, thisFrameN):
     r = radii[numRing]
     timeSeconds = thisFrameN / hz
     period = 0.5 #seconds
@@ -353,7 +354,7 @@ def  oneFrameOfStim(n,currAngle,blobToCueEachRing,reversalValue,reversalNo,ShowT
                     currAngle[noRing]=currAngle[noRing]+angleMove*(reversalValue[noRing])
                 angleObject0 = angleIni[noRing] + currAngle[noRing]
                 angleThisObject = angleObject0 + (2*pi)/numObjects*nobject
-                r = radiusThisFrame(noRing,angleThisObject,n)
+                r = radiusThisFrameThisAngle(noRing,angleThisObject,n)
                 x = offsetXYeachRing[noRing][0] + r*cos(angleThisObject)
                 y = offsetXYeachRing[noRing][1] + r*sin(angleThisObject)
                 if   n< ShowTrackCueFrames and nobject==blobToCueEachRing[noRing]: #cue in white  
@@ -370,6 +371,7 @@ def  oneFrameOfStim(n,currAngle,blobToCueEachRing,reversalValue,reversalNo,ShowT
           return angleIni,currAngle,reversalValue,reversalNo   
 # #######End of function definition that displays the stimuli!!!! #####################################
 
+showClickableRegions = True
 def  collectResponses(n,responses,responsesAutopilot,respRadius,currAngle,expStop ): 
     respondedEachToken = zeros([numRings,numObjects])  #potentially two sets of responses, one for each of two concentric rings
     optionIdexs=list();baseSeq=list();numOptionsEachSet=list();numRespsNeeded=list()
@@ -392,13 +394,14 @@ def  collectResponses(n,responses,responsesAutopilot,respRadius,currAngle,expSto
     passThisTrial = False; 
     numRespSound=0
     while respcount < sum(numRespsNeeded): #collecting response
-               for optionSet in range(optionSets):  #draw blobs available to click on
-                  for ncheck in range( numOptionsEachSet[optionSet] ): 
-                        angle =  (angleIni[optionSet]+currAngle[optionSet]) + ncheck*1.0/numOptionsEachSet[optionSet] *2.*pi  #first ring [WingAdd]
+               for optionSet in range(optionSets):  #draw this group (ring) of options
+                  for ncheck in range( numOptionsEachSet[optionSet] ):  #draw each available to click on in this ring
+                        angle =  (angleIni[optionSet]+currAngle[optionSet]) + ncheck*1.0/numOptionsEachSet[optionSet] *2.*pi
                         stretchOutwardRingsFactor = 1
-                        radiusThisFrame(optionSet,angle,n) #debugON
-                        r = respRadius+ optionSet*(stretchOutwardRingsFactor*(radii[1]-radii[0]))
-                        x = offsetXYeachRing[optionSet][0]+r*cos(angle);  y = offsetXYeachRing[optionSet][1]+r*sin(angle)
+                        #r = respRadius+ optionSet*(stretchOutwardRingsFactor*(radii[1]-radii[0]))
+                        r = radiusThisFrameThisAngle(optionSet,angle,n)
+                        x = offsetXYeachRing[optionSet][0]+r*cos(angle);  
+                        y = offsetXYeachRing[optionSet][1]+r*sin(angle)
                         #draw colors, and circles around selected items. Colors are drawn in order they're in in optionsIdxs
                         opts=optionIdexs;
                         c = opts[optionSet][ncheck] #idx of color that this option num corresponds to. Need an extra [0] b/c list of arrays
@@ -418,28 +421,33 @@ def  collectResponses(n,responses,responsesAutopilot,respRadius,currAngle,expSto
                     #because mouse apparently giving coordinates in cm, I need to convert it to degrees of visual angle because that's what drawing is done in terms of
                     cmperpixel = monitorwidth*1.0/widthPix
                     degpercm = 1.0/cmperpixel/pixelperdegree;  
-                    dx = (mouseX) * degpercm #mouse x location relative to center, converted to degrees from pixels
-                    monitorheight = cmperpixel*heightPix
-                    dy = (mouseY) * degpercm #mouse x location relative to center, converted to degrees from pixels
+                    mouseX = mouseX # * degpercm #mouse x location relative to center, converted to degrees
+                    mouseY = mouseY #* degpercm #mouse x location relative to center, converted to degrees
                     for optionSet in range(optionSets):
                       for ncheck in range( numOptionsEachSet[optionSet] ): 
                             angle =  (angleIni[optionSet]+currAngle[optionSet]) + ncheck*1.0/numOptionsEachSet[optionSet] *2.*pi #radians
-                            r = respRadius+ optionSet*(radii[1]-radii[0]-0.2)-0.3
-                            x = offsetXYeachRing[optionSet][0]+r*cos(angle);  y = offsetXYeachRing[optionSet][1]+r*sin(angle)                              
+                            #r = respRadius+ optionSet*(radii[1]-radii[0]-0.2)-0.3
+                            r = radiusThisFrameThisAngle(optionSet,angle,n)
+                            x = offsetXYeachRing[optionSet][0]+r*cos(angle)
+                            y = offsetXYeachRing[optionSet][1]+r*sin(angle)
                             #check whether mouse click was close to any of the colors
                             #Colors were drawn in order they're in in optionsIdxs
-                            distance = sqrt(pow((x-dx),2)+pow((y-dy),2))
+                            distance = sqrt(pow((x-mouseX),2)+pow((y-mouseY),2))
                             #mouseToler = mouseChoiceArea/3.#deg visual angle?  origin=2
                             mouseToler = mouseChoiceArea/3+optionSet*mouseChoiceArea/6.#deg visual angle?  origin=2
+                            if showClickableRegions: #revealed in green every time you click
+                                clickableRegion.setPos([x,y])
+                                clickableRegion.setRadius(mouseToler)
+                                clickableRegion.draw()
+                                #print('mouseXY=',round(mouseX,2),',',round(mouseY,2),'xy=',x,',',y, ' distance=',distance, ' mouseToler=',mouseToler)
                             if distance<mouseToler:
                                 c = opts[optionSet][ncheck] #idx of color that this option num corresponds to
                                 if respondedEachToken[optionSet][ncheck]:  #clicked one that already clicked on
                                     if lastClickState ==0: #only count this event if is a distinct click from the one that selected the blob!
                                         respondedEachToken[optionSet][ncheck] =0
                                         responses[optionSet].remove(c) #this redundant list also of course encodes the order
-                                        
                                         respcount -= 1
-                                        #print 'removed number ',ncheck,' color ',colorNames[c], ' from clicked list'
+                                        #print('removed number ',ncheck, ' from clicked list')
                                 else:         #clicked on new one, need to add to response    
                                     numRespsAlready = len(  where(respondedEachToken[optionSet])[0]  )
                                     #print('numRespsAlready=',numRespsAlready,' numRespsNeeded= ',numRespsNeeded,'  responses=',responses)   #debugOFF
@@ -449,8 +457,7 @@ def  collectResponses(n,responses,responsesAutopilot,respRadius,currAngle,expSto
                                         respondedEachToken[optionSet][ncheck] = 1 #register this one has been clicked
                                         responses[optionSet].append(c) #this redundant list also of course encodes the order
                                         respcount += 1  
-                         
-                                        #print 'added  ',ncheck,'th response, which is color ',colorNames[c], ' or color index ',c,' to clicked list'
+                                        #print('added  ',ncheck,'th response to clicked list')
                         #print 'response=', response, '  respcount=',respcount, ' lastClickState=',lastClickState, '  after affected by click'
                    #end if mouse clicked
                    

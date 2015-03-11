@@ -3,8 +3,9 @@ Multiple object tracking experiment
 This program is super-complicated, legacy of many different papers using tracking. I don't recommend you use it without my guidance. My other repositories, such as attentional-blink, are more user-friendly.
 
 Want to add
-- Modulation of radius as function of time. Radius calls function to determine its value at each time. 
-- Add waveform to the trajectory. This is something added to radius, is function of angle.
+- Modulation of radius as function of time. Radius calls function to determine its value at each time.
+- Spatial modulation of radius, yielding a radial frequency pattern. This is something added to radius, is function of angle.
+
 Should also be a function of time? But if the idea is to know/determine individual objects' trajectories, then reversals will mess it up.
 Is it about individual object paths or not?
 
