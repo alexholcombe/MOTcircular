@@ -237,7 +237,7 @@ maskOrbit = visual.PatchStim(myWin,tex='none',colorSpace='rgb',color=(1,1,0),mas
 stimList = []
 # temporalfrequency limit test
 numObjsInRing = [9]
-speedsEachNumObjs = 10* [ [0.01,.02],     #these correspond to the speeds to use for each entry of numObjsInRing
+speedsEachNumObjs = 60* [ [0.01,.02],     #these correspond to the speeds to use for each entry of numObjsInRing
                                          [0.01,.02], 
                                          [0.01,.02]        ]
 numTargets = np.array([1,2])  # np.array([1,2,3])
@@ -282,11 +282,11 @@ numRightWrongEachSpeedIdent = deepcopy(numRightWrongEachSpeedOrder)
 
 blockReps=1       #14
 trials = data.TrialHandler(stimList,blockReps) #constant stimuli method
-
+refreshTimingCheck = None #'grating'
 try:
     runInfo = psychopy.info.RunTimeInfo(
             win=myWin,    ## a psychopy.visual.Window() instance; None = default temp window used; False = no win, no win.flips()
-            refreshTest='grating', ## None, True, or 'grating' (eye-candy to avoid a blank screen)
+            refreshTest=refreshTimingCheck, ## None, True, or 'grating' (eye-candy to avoid a blank screen)
             verbose=True, ## True means report on everything 
             userProcsDetailed=True,  ## if verbose and userProcsDetailed, return (command, process-ID) of the user's processes
             )
@@ -334,8 +334,10 @@ def  oneFrameOfStim(n,currAngle,blobToCueEachRing,reversalValue,reversalNo,ShowT
                             reversalValue[noRing]=-1*reversalValue[noRing]
                             reversalNo[noRing] +=1
                     currAngle[noRing]=currAngle[noRing]+angleMove*(reversalValue[noRing])
-                x=offsetXYeachRing[noRing][0]+radii[noRing]*cos(angleIni[noRing]+anglePair+currAngle[noRing]); 
+                #debugOFF print('currAngle=',currAngle)
+                x=offsetXYeachRing[noRing][0]+radii[noRing]*cos(angleIni[noRing]+anglePair+currAngle[noRing])
                 y=offsetXYeachRing[noRing][1]+radii[noRing]*sin(angleIni[noRing]+anglePair+currAngle[noRing])
+                #debugOFF print('angleMove=',angleMove,' nobject=',nobject)
                 if   n< ShowTrackCueFrames and nobject==blobToCueEachRing[noRing]: #cue in white  
                     weightToTrueColor = n*1.0/ShowTrackCueFrames #compute weighted average to ramp from white to correct color
                     blobColor = (1-weightToTrueColor)*array([1,1,1])  +  weightToTrueColor*colorsInInnerRingOrder[nColor] 
@@ -347,8 +349,7 @@ def  oneFrameOfStim(n,currAngle,blobToCueEachRing,reversalValue,reversalNo,ShowT
           if blindspotFill:
               blindspotStim.draw()
           if thisTrial['slitView']: maskOrbit.draw()
-          lastlocation=array([angleIni,currAngle,reversalValue,reversalNo]) #fix counterclockwise displacement problems [WingAdd]
-          return lastlocation   
+          return angleIni,currAngle,reversalValue,reversalNo   
 # #######End of function definition that displays the stimuli!!!! #####################################
 
 def  collectResponses(n,responses,responsesAutopilot,respRadius,expStop ): 
@@ -375,12 +376,11 @@ def  collectResponses(n,responses,responsesAutopilot,respRadius,expStop ):
             responses.append( list() )
             responsesAutopilot.append( [0]*numRespsNeeded[r] )  #autopilot response is 0
     passThisTrial = False; 
-    baseAngle = lastStimAngle #needs to be in radians   #print 'baseAngle=lastStimAngle= ',baseAngle, ' in deg = ',baseAngle/(2*pi)*360.
     numRespSound=0
     while respcount < sum(numRespsNeeded): #collecting response
                for optionSet in range(optionSets):  #draw blobs available to click on
                   for ncheck in range( numOptionsEachSet[optionSet] ): 
-                        angle =  (baseAngle[0][optionSet]+baseAngle[1][optionSet]) + ncheck*1.0/numOptionsEachSet[optionSet] *2.*pi  #first ring [WingAdd]
+                        angle =  (angleIni[optionSet]+currAngle[optionSet]) + ncheck*1.0/numOptionsEachSet[optionSet] *2.*pi  #first ring [WingAdd]
                         stretchOutwardRingsFactor = 1
                         r = respRadius+ optionSet*(stretchOutwardRingsFactor*(radii[1]-radii[0]))
                         x = offsetXYeachRing[optionSet][0]+r*cos(angle);  y = offsetXYeachRing[optionSet][1]+r*sin(angle)
@@ -408,7 +408,7 @@ def  collectResponses(n,responses,responsesAutopilot,respRadius,expStop ):
                     dy = (mouseY) * degpercm #mouse x location relative to center, converted to degrees from pixels
                     for optionSet in range(optionSets):
                       for ncheck in range( numOptionsEachSet[optionSet] ): 
-                            angle =  (baseAngle[0][optionSet]+baseAngle[1][optionSet]) + ncheck*1.0/numOptionsEachSet[optionSet] *2.*pi #first quadrant [WingAdd]
+                            angle =  (angleIni[optionSet]+currAngle[optionSet]) + ncheck*1.0/numOptionsEachSet[optionSet] *2.*pi #radians
                             r = respRadius+ optionSet*(radii[1]-radii[0]-0.2)-0.3
                             x = offsetXYeachRing[optionSet][0]+r*cos(angle);  y = offsetXYeachRing[optionSet][1]+r*sin(angle)                              
                             #check whether mouse click was close to any of the colors
@@ -492,38 +492,34 @@ while nDone <= trials.nTotal and expStop==False:
     xyTargets = np.zeros( [thisTrial['numTargets'], 2] ) #need this for eventual case where targets can change what ring they are in
     numDistracters = numRings*thisTrial['numObjectsInRing'] - thisTrial['numTargets']
     xyDistracters = np.zeros( [numDistracters, 2] )
-    for Ini in range(numRings): # initial the parameter...
+    for ringNum in range(numRings): # initialise  parameters
          #angleIni.append(random.uniform(0,2*pi));
          angleIni.append(random.uniform(0,360));
          currAngle.append(0);
          moveDirection.append(-999);
          RAI.append(list());
          reversalValue.append(1);
-         reversalNo.append(0);
-         if Ini==0:
+         reversalNo.append(0)
+         moveDirection[ringNum] = np.random.random_integers(0,1) *2 -1 #randomise initial direction
+         if ringNum==0: #set up disc colors, vestige of Current Biology paper
             colors_ind.append([0,0,0,0])
             #colors_ind.append(np.random.permutation(total_colors)[0:nb_colors]) #random subset of colors in random order
-            colorRings.append(colors_all[colors_ind[Ini]])
+            colorRings.append(colors_all[colors_ind[ringNum]])
          else: 
             '''colors_indnext= setdiff1d(xrange(total_colors), colors_ind[Ini-1])
             np.random.shuffle(colors_indnext)
             colors_ind.append(colors_indnext)'''
             colors_ind.append([0,0,0,0])
-            colorRings.append(colors_all[colors_ind[Ini]])
+            colorRings.append(colors_all[colors_ind[ringNum]])
     colorsInInnerRingOrder=colorsInOuterRingOrder=colors_all[[0, 0, 0]]
-    '''for i in range(len(moveDirection)):# random direction
-        moveDirection[i]=np.random.random_integers(1,2, size=1)
-        if moveDirection[i]==2: moveDirection[i]=-1
-        else:moveDirection[i]=1'''
-    moveDirection=[1,-1,1] #WING what is this?
     stimColorIdxsOrder=[[0,0],[0,0],[0,0]]#this is used for drawing blobs during stimulus
-    for u in range(numRings): # random to design reversal times
+    for u in range(numRings): # set random reversal times
         thisReversalDur=trackingExtraTime
         countn=1
         while thisReversalDur<trialDurTotal:
             if countn==1:
                 thisReversalDur=thisReversalDur+random.uniform(0.7,2)
-            else:   thisReversalDur+=   random.uniform(timeTillReversalMin,timeTillReversalMax)
+            else:   thisReversalDur += random.uniform(timeTillReversalMin,timeTillReversalMax)
             RAI[u].append(thisReversalDur)
             countn=countn+1
  
@@ -544,10 +540,7 @@ while nDone <= trials.nTotal and expStop==False:
     t0=trialClock.getTime(); t=trialClock.getTime()-t0     
     for L in range(len(ts)):ts.remove(ts[0]) # clear all ts array
     for n in range(trialDurFrames): #this is the loop for this trial's stimulus!
-            lastStimAngle = oneFrameOfStim(n,currAngle,blobsToPreCue,reversalValue,reversalNo,ShowTrackCueFrames) #da big function
-            currAngle=lastStimAngle[1]
-            reversalValue=lastStimAngle[2]
-            reversalNo=lastStimAngle[3]
+            (angleIni,currAngle,reversalValue,reversalNo) = oneFrameOfStim(n,currAngle,blobsToPreCue,reversalValue,reversalNo,ShowTrackCueFrames) #da big function
             if exportImages:
                 myWin.getMovieFrame(buffer='back') #for later saving
                 framesSaved +=1              
