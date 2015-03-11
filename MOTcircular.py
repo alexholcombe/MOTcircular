@@ -1,6 +1,5 @@
 from __future__ import print_function
 __author__ = """Alex "O." Holcombe, Wei-Ying Chen""" ## double-quotes will be silently removed, single quotes will be left, eg, O'Connor
-__version__ = "v'''" ## in-line comments are ignored, but comment characters within strings are retained
 from psychopy import *
 import psychopy.info
 from psychopy import sound, monitors, logging
@@ -238,7 +237,7 @@ maskOrbit = visual.PatchStim(myWin,tex='none',colorSpace='rgb',color=(1,1,0),mas
 stimList = []
 # temporalfrequency limit test
 numObjsInRing = [9]
-speedsEachNumObjs = [ [0.01,.02],     #these correspond to the speeds to use for each entry of numObjsInRing
+speedsEachNumObjs = 10* [ [0.01,.02],     #these correspond to the speeds to use for each entry of numObjsInRing
                                          [0.01,.02], 
                                          [0.01,.02]        ]
 numTargets = np.array([1,2])  # np.array([1,2,3])
@@ -246,7 +245,7 @@ leastCommonMultipleSubsets = calcCondsPerNumTargets(numRings,numTargets)
 leastCommonMultipleTargetNums = LCM( numTargets )  #have to use this to choose whichToQuery. For explanation see newTrajectoryEventuallyForIdentityTracking.oo3
 print('leastCommonMultipleSubsets=',leastCommonMultipleSubsets)
                 
-for numObjs in numObjsInRing:
+for numObjs in numObjsInRing: #set up experiment design
     idx = numObjsInRing.index(numObjs)
     speeds= speedsEachNumObjs[  idx   ]
     for speed in speeds:
@@ -266,7 +265,7 @@ for numObjs in numObjsInRing:
                                               #might give more resources to one that's queried more often. Therefore for whichToQuery need to use least common multiple.
                               ringToQuery = s[whichSubsetEntry];  print('ringToQuery=',ringToQuery,'subset=',s)
                               for relPhaseOuterRing in np.array([0]):
-                                 for direction in [1.0]:  #WING why is this constant?
+                                 for direction in [-1.0,1.0]:  
                                     relPhaseOuterRing = relPhaseOuterRing*(2*pi)/2
                                     relPhaseOuterRingPositiveInDirectionOfMotion = relPhaseOuterRing*direction
                                     stimList.append( {'numObjectsInRing':numObjs,'speed':speed, 'direction':direction,'slitView':slitView,'numTargets':nt,'whichIsTarget':whichIsTarget,\
@@ -306,7 +305,11 @@ logging.info( 'colors_all='+str(colors_all)+ '\ncolorNames='+str(colorNames)+ ' 
 logging.info(   'radii=' + str(radii)   )
 logging.flush()
 
-def  oneFrameOfStim(n,angleMovement,blobToCueEachRing,reversalValue,reversalNo,ShowTrackCueFrames): 
+def angleChangeThisFrame(thisTrial, moveDirection, numRing, thisFrameN, lastFrameN):
+        anglemove = moveDirection[numRing]*thisTrial['direction']*thisTrial['speed']*2*pi*(thisFrameN-lastFrameN)/hz
+        return anglemove
+
+def  oneFrameOfStim(n,currAngle,blobToCueEachRing,reversalValue,reversalNo,ShowTrackCueFrames): 
 #defining a function to draw each frame of stim. So can call second time for tracking task response phase
           global cueRing,ringRadial,ringRadialR, currentlyCuedBlob #makes python treat it as a local variable
           global angleIni, correctAnswers
@@ -324,15 +327,15 @@ def  oneFrameOfStim(n,angleMovement,blobToCueEachRing,reversalValue,reversalNo,S
           for noRing in range(numRings):
             for nobject in range(numObjects):
                 anglePair=(2*pi/numObjects)*nobject
-                nColor =nobject % nb_colors 
-                anglemove=moveDirection[noRing]*thisTrial['direction']*thisTrial['speed']*2*pi*(n-(n-1))/hz
+                nColor =nobject % nb_colors
+                angleMove = angleChangeThisFrame(thisTrial, moveDirection, noRing, n, n-1)
                 if nobject==0:
                     if Reversal and reversalNo[noRing] <= len(RAI[noRing]) and n>RAI[noRing][int(reversalNo[noRing])]*hz:
                             reversalValue[noRing]=-1*reversalValue[noRing]
                             reversalNo[noRing] +=1
-                    angleMovement[noRing]=angleMovement[noRing]+anglemove*(reversalValue[noRing])
-                x=offsetXYeachRing[noRing][0]+radii[noRing]*cos(angleIni[noRing]+anglePair+angleMovement[noRing]); 
-                y=offsetXYeachRing[noRing][1]+radii[noRing]*sin(angleIni[noRing]+anglePair+angleMovement[noRing])
+                    currAngle[noRing]=currAngle[noRing]+angleMove*(reversalValue[noRing])
+                x=offsetXYeachRing[noRing][0]+radii[noRing]*cos(angleIni[noRing]+anglePair+currAngle[noRing]); 
+                y=offsetXYeachRing[noRing][1]+radii[noRing]*sin(angleIni[noRing]+anglePair+currAngle[noRing])
                 if   n< ShowTrackCueFrames and nobject==blobToCueEachRing[noRing]: #cue in white  
                     weightToTrueColor = n*1.0/ShowTrackCueFrames #compute weighted average to ramp from white to correct color
                     blobColor = (1-weightToTrueColor)*array([1,1,1])  +  weightToTrueColor*colorsInInnerRingOrder[nColor] 
@@ -344,7 +347,7 @@ def  oneFrameOfStim(n,angleMovement,blobToCueEachRing,reversalValue,reversalNo,S
           if blindspotFill:
               blindspotStim.draw()
           if thisTrial['slitView']: maskOrbit.draw()
-          lastlocation=array([angleIni,angleMovement,reversalValue,reversalNo]) #fix counterclockwise displacement problems [WingAdd]
+          lastlocation=array([angleIni,currAngle,reversalValue,reversalNo]) #fix counterclockwise displacement problems [WingAdd]
           return lastlocation   
 # #######End of function definition that displays the stimuli!!!! #####################################
 
@@ -482,7 +485,7 @@ thisTrial = trials.next()
 trialDurTotal=0;
 ts = list();
 while nDone <= trials.nTotal and expStop==False:
-    angleIni=list();angleMovement=list();moveDirection=list();RAI=list();reversalValue=list();reversalNo=list();colors_ind=list();colorRings=list();preDrawStimToGreasePipeline = list()
+    angleIni=list();currAngle=list();moveDirection=list();RAI=list();reversalValue=list();reversalNo=list();colors_ind=list();colorRings=list();preDrawStimToGreasePipeline = list()
     trackingVariableInterval=random.uniform(0,.8) #random interval extra for tracking so cant predict final position
     trialDurFrames= int( (trialDur+trackingExtraTime+trackingVariableInterval)*hz ) #variable the tracking time on each trial.
     trialDurTotal=trialDur+trackingExtraTime+trackingVariableInterval;
@@ -492,7 +495,7 @@ while nDone <= trials.nTotal and expStop==False:
     for Ini in range(numRings): # initial the parameter...
          #angleIni.append(random.uniform(0,2*pi));
          angleIni.append(random.uniform(0,360));
-         angleMovement.append(0);
+         currAngle.append(0);
          moveDirection.append(-999);
          RAI.append(list());
          reversalValue.append(1);
@@ -541,8 +544,8 @@ while nDone <= trials.nTotal and expStop==False:
     t0=trialClock.getTime(); t=trialClock.getTime()-t0     
     for L in range(len(ts)):ts.remove(ts[0]) # clear all ts array
     for n in range(trialDurFrames): #this is the loop for this trial's stimulus!
-            lastStimAngle = oneFrameOfStim(n,angleMovement,blobsToPreCue,reversalValue,reversalNo,ShowTrackCueFrames) #da big function
-            angleMovement=lastStimAngle[1]
+            lastStimAngle = oneFrameOfStim(n,currAngle,blobsToPreCue,reversalValue,reversalNo,ShowTrackCueFrames) #da big function
+            currAngle=lastStimAngle[1]
             reversalValue=lastStimAngle[2]
             reversalNo=lastStimAngle[3]
             if exportImages:
