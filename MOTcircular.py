@@ -237,9 +237,9 @@ maskOrbit = visual.PatchStim(myWin,tex='none',colorSpace='rgb',color=(1,1,0),mas
 stimList = []
 # temporalfrequency limit test
 numObjsInRing = [9]
-speedsEachNumObjs = 60* [ [0.01,.02],     #these correspond to the speeds to use for each entry of numObjsInRing
-                                         [0.01,.02], 
-                                         [0.01,.02]        ]
+speedsEachNumObjs = [ [0.3,0.4],     #these correspond to the speeds to use for each entry of numObjsInRing
+                                         [0.3,0.4], 
+                                         [0.3,0.4]   ]
 numTargets = np.array([1,2])  # np.array([1,2,3])
 leastCommonMultipleSubsets = calcCondsPerNumTargets(numRings,numTargets)
 leastCommonMultipleTargetNums = LCM( numTargets )  #have to use this to choose whichToQuery. For explanation see newTrajectoryEventuallyForIdentityTracking.oo3
@@ -305,9 +305,13 @@ logging.info( 'colors_all='+str(colors_all)+ '\ncolorNames='+str(colorNames)+ ' 
 logging.info(   'radii=' + str(radii)   )
 logging.flush()
 
+def radiusThisFrame(numRing, angle, thisFrameN):
+    r = radii[numRing]
+    return r
+    
 def angleChangeThisFrame(thisTrial, moveDirection, numRing, thisFrameN, lastFrameN):
-        anglemove = moveDirection[numRing]*thisTrial['direction']*thisTrial['speed']*2*pi*(thisFrameN-lastFrameN)/hz
-        return anglemove
+    anglemove = moveDirection[numRing]*thisTrial['direction']*thisTrial['speed']*2*pi*(thisFrameN-lastFrameN)/hz
+    return anglemove
 
 def  oneFrameOfStim(n,currAngle,blobToCueEachRing,reversalValue,reversalNo,ShowTrackCueFrames): 
 #defining a function to draw each frame of stim. So can call second time for tracking task response phase
@@ -326,7 +330,6 @@ def  oneFrameOfStim(n,currAngle,blobToCueEachRing,reversalValue,reversalNo,ShowT
     
           for noRing in range(numRings):
             for nobject in range(numObjects):
-                anglePair=(2*pi/numObjects)*nobject
                 nColor =nobject % nb_colors
                 angleMove = angleChangeThisFrame(thisTrial, moveDirection, noRing, n, n-1)
                 if nobject==0:
@@ -334,10 +337,12 @@ def  oneFrameOfStim(n,currAngle,blobToCueEachRing,reversalValue,reversalNo,ShowT
                             reversalValue[noRing]=-1*reversalValue[noRing]
                             reversalNo[noRing] +=1
                     currAngle[noRing]=currAngle[noRing]+angleMove*(reversalValue[noRing])
-                #debugOFF print('currAngle=',currAngle)
-                x=offsetXYeachRing[noRing][0]+radii[noRing]*cos(angleIni[noRing]+anglePair+currAngle[noRing])
-                y=offsetXYeachRing[noRing][1]+radii[noRing]*sin(angleIni[noRing]+anglePair+currAngle[noRing])
-                #debugOFF print('angleMove=',angleMove,' nobject=',nobject)
+                r = radiusThisFrame(noRing,currAngle[noRing],n)
+                angleObject0 = angleIni[noRing] + currAngle[noRing]
+                angleThisObject = angleObject0 + (2*pi)/numObjects*nobject
+                x = offsetXYeachRing[noRing][0] + r*cos(angleThisObject)
+                y = offsetXYeachRing[noRing][1] + r*sin(angleThisObject)
+                print('angleThisObject =',angleThisObject, 'x=',round(x,2),' y=',round(y,2))                
                 if   n< ShowTrackCueFrames and nobject==blobToCueEachRing[noRing]: #cue in white  
                     weightToTrueColor = n*1.0/ShowTrackCueFrames #compute weighted average to ramp from white to correct color
                     blobColor = (1-weightToTrueColor)*array([1,1,1])  +  weightToTrueColor*colorsInInnerRingOrder[nColor] 
