@@ -5,20 +5,19 @@ import psychopy.info
 from psychopy import sound, monitors, logging
 import numpy as np
 import itertools #to calculate all subsets
-from numpy import *  #some programs import random, which is also its own library as well as a numpy sub-module
+#from numpy import *  #some programs import random, which is also its own library as well as a numpy sub-module
 from copy import deepcopy
-from math import atan
+from math import atan, pi, cos, sin, sqrt
 import time, colorsys
 import sys, platform, os, StringIO
 #BEGIN helper functions from primes.py
 def gcd(a,b): 
    """Return greatest common divisor using Euclid's Algorithm."""
    while b:      
-	a, b = b, a % b
+        a, b = b, a % b
    return a
 def lcm(a,b):
-   """
-   Return lowest common multiple."""
+   """Return lowest common multiple."""
    return (a*b)/gcd(a,b)
 def LCM(terms):
    "Return lcm of a list of numbers."   
@@ -68,7 +67,6 @@ respTypes=['order']; respType=respTypes[0]
 bindRadiallyRingToIdentify=1 #0 is inner, 1 is outer
 trackPostcueOrClick = 1 #postcue means say yes/no postcued was a target, click means click on which you think was/were the targets
 
-#open directory
 if os.path.isdir('.'+os.sep+'data'):
     dataDir='data'
 else:
@@ -87,15 +85,14 @@ if demo or exportImages:
   logging.console.setLevel(logging.ERROR)  #only show this level  messages and higher
 logging.console.setLevel(logging.WARNING) #DEBUG means set the console to receive nearly all messges, INFO is for everything else, INFO, EXP, DATA, WARNING and ERROR 
 
-#Trial parameter setting...............
 numRings=2
 RANum=8 #reversal times record. Recording reversal times of each ring
-radii=[4,8,12] # used in paper: [4,10,26]
+radii=[3,3,3] #[4,8,12] 
 respRadius=radii[0] #deg
 hz=60 *1.0;  #set to the framerate of the monitor
 trialDur =1 #3 4.8;
 if demo:trialDur = 5;hz = 60.; 
-tokenChosen=[-999,-999,-999,-999]  #mouse click use[WingAdd]
+tokenChosenEachRing= [-999]*numRings
 rampUpDur=.3; rampDownDur=.7; trackingExtraTime=.7; #giving the person time to attend to the cue (secs)
 toTrackCueDur = rampUpDur+rampDownDur+trackingExtraTime
 trialDurFrames=int(trialDur*hz)+int( trackingExtraTime*hz )
@@ -108,24 +105,26 @@ units='deg' #'cm'
 if showRefreshMisses:fixSize = 2.6  #make fixation bigger so flicker more conspicuous
 else: fixSize = 0.3
 timeTillReversalMin = 0.25; timeTillReversalMax = 2.95  #reversal time 
+offsetXYeachRingPeripheryExperiment= [[-6,6],[6,-6],[0,0],[0,0]]
 offsetXYeachRing=[[0,0],[0,0],[0,0],[0,0]]
+offsetXYeachRing = offsetXYeachRingPeripheryExperiment
 jumpFrame=9;
 patchAngleBase = 20#20
 
 #start definition of colors 
-hues=arange(16)/16.
-saturatns = array( [1]*16 )
-vals= array( [1]*16 )
+hues=np.arange(16)/16.
+saturatns = np.array( [1]*16 )
+vals= np.array( [1]*16 )
 colors=list()
 for i in range(16):
   if i==5 or i==6 or i==7 or i==8 or i==10 or i==11 :continue
   else: colors.append( colorsys.hsv_to_rgb(hues[i],saturatns[i],vals[i]) ) #actually colorsys is really lame!
-colors = array(colors)  
+colors = np.array(colors)  
 
-maxlum = array([30.,80.,20.]); #I dunno if these are correct, they were for an old monitor of mine
-gamma=array([2.2,2.2,2.2]);
-totLums = array(   [0.0]*len(colors) )  #calculate luminance of each color
-lums = zeros((len(colors),3))
+maxlum = np.array([30.,80.,20.]); #I dunno if these are correct, they were for an old monitor of mine
+gamma=np.array([2.2,2.2,2.2]);
+totLums = np.array(   [0.0]*len(colors) )  #calculate luminance of each color
+lums = np.zeros((len(colors),3))
 for c in range( len(colors) ):
     for guni in range(3):
         lums[c][guni] = maxlum[guni] *  pow( colors[c][guni], gamma[guni] )  
@@ -149,7 +148,7 @@ widthPix =1024#1024  #monitor width in pixels
 heightPix =768#768  #monitor height in pixels
 monitorwidth = 38.5 #28.5 #monitor width in centimeters
 viewdist = 57.; #cm
-pixelperdegree = widthPix/ (atan(monitorwidth/viewdist) /pi*180)
+pixelperdegree = widthPix/ (atan(monitorwidth/viewdist) /np.pi*180)
 bgColor = [-1,-1,-1] #black background
 monitorname = 'mitsubishi' #in psychopy Monitors Center
 if exportImages:
@@ -191,11 +190,11 @@ myWin.update(); myWin.update();myWin.update();myWin.update();
 for i in range(50):
 	myWin.update()
 	Hzs.append( myWin.fps() )  #varies wildly on successive runs!
-Hzs = array( Hzs );     Hz= median(Hzs)
+Hzs = np.array( Hzs );     Hz= np.median(Hzs)
 msPerFrame= 1000./Hz
 print('psychopy is reporting that frames per second are around = ', round(Hz,3),' and your drawing calculations are being done using the figure of ',hz, end=' ') 
 NY='y'
-if abs( (median(Hzs)-hz) / hz) > .05: 
+if abs( (np.median(Hzs)-hz) / hz) > .05: 
 	print(' which is off by more than 5%') 
 	NY ='Y' # raw_input("Do you wish to continue nonetheless? ")
 if NY.upper()<>'Y':
@@ -212,11 +211,10 @@ if (not demo) and (myWin.size != [widthPix,heightPix]).any():
     myDlg.show()
     core.quit()
 
-
 # mask setting..................
 maskOrbitSize = 2*(radii[1] +ballStdDev)#perhaps draw a big rectangle with a custom transparency layer (mask) in the shape of a thick ring
 maskSz=512
-myMask =ones([maskSz,maskSz]) #let everything through
+myMask = np.ones([maskSz,maskSz]) #let everything through
 blockingWidth = int( (ballStdDev+radii[0])/maskOrbitSize * maskSz )
 #show the center so can see fixation point
 centralShowDiam = round( fixSize/maskOrbitSize * maskSz )
@@ -237,7 +235,7 @@ maskOrbit = visual.PatchStim(myWin,tex='none',colorSpace='rgb',color=(1,1,0),mas
 
 stimList = []
 # temporalfrequency limit test
-numObjsInRing = [9]
+numObjsInRing = [2]
 speedsEachNumObjs = [ [0.3,0.4],     #these correspond to the speeds to use for each entry of numObjsInRing
                                          [0.3,0.4], 
                                          [0.3,0.4]   ]
@@ -267,7 +265,7 @@ for numObjs in numObjsInRing: #set up experiment design
                               ringToQuery = s[whichSubsetEntry];  print('ringToQuery=',ringToQuery,'subset=',s)
                               for relPhaseOuterRing in np.array([0]):
                                  for direction in [-1.0,1.0]:  
-                                    relPhaseOuterRing = relPhaseOuterRing*(2*pi)/2
+                                    relPhaseOuterRing = relPhaseOuterRing*(2*np.pi)/2
                                     relPhaseOuterRingPositiveInDirectionOfMotion = relPhaseOuterRing*direction
                                     stimList.append( {'numObjectsInRing':numObjs,'speed':speed, 'direction':direction,'slitView':slitView,'numTargets':nt,'whichIsTarget':whichIsTarget,\
                                                                  'ringToQuery':ringToQuery,'relPhaseOuterRing':relPhaseOuterRingPositiveInDirectionOfMotion} )
@@ -314,7 +312,7 @@ def RFcontourCalcModulation(angle,freq,phase):
     return modulation
 
 ampTemporalRadiusModulation = 0.0 # 1.0/3.0
-ampModulatnEachRingTemporalPhase = np.random.rand(numRings) * 2*pi
+ampModulatnEachRingTemporalPhase = np.random.rand(numRings) * 2*np.pi
 def radiusThisFrameThisAngle(numRing, angle, thisFrameN):
     r = radii[numRing]
     timeSeconds = thisFrameN / hz
@@ -359,7 +357,7 @@ def  oneFrameOfStim(n,currAngle,blobToCueEachRing,reversalValue,reversalNo,ShowT
                 y = offsetXYeachRing[noRing][1] + r*sin(angleThisObject)
                 if   n< ShowTrackCueFrames and nobject==blobToCueEachRing[noRing]: #cue in white  
                     weightToTrueColor = n*1.0/ShowTrackCueFrames #compute weighted average to ramp from white to correct color
-                    blobColor = (1-weightToTrueColor)*array([1,1,1])  +  weightToTrueColor*colorsInInnerRingOrder[nColor] 
+                    blobColor = (1-weightToTrueColor)*np.array([1,1,1])  +  weightToTrueColor*colorsInInnerRingOrder[nColor] 
                     blobColor = blobColor*contrast #also might want to change contrast, if everybody's contrast changing in contrast ramp
                 else: blobColor = colorsInInnerRingOrder[nColor]*contrast    
                 gaussian.setColor( blobColor, log=autoLogging )
@@ -373,14 +371,14 @@ def  oneFrameOfStim(n,currAngle,blobToCueEachRing,reversalValue,reversalNo,ShowT
 
 showClickableRegions = True
 def  collectResponses(n,responses,responsesAutopilot,respRadius,currAngle,expStop ): 
-    respondedEachToken = zeros([numRings,numObjects])  #potentially two sets of responses, one for each of two concentric rings
+    respondedEachToken = np.zeros([numRings,numObjects])  #potentially two sets of responses, one for each of two concentric rings
     optionIdexs=list();baseSeq=list();numOptionsEachSet=list();numRespsNeeded=list()
     numRespsNeeded = np.zeros(numRings) 
     for ring in xrange(numRings):
         optionIdexs.append([])
         noArray=list()
         for k in range(numObjects):noArray.append(colors_ind[0])
-        baseSeq.append(array(noArray))
+        baseSeq.append(np.array(noArray))
         for i in range(numObjects):
             optionIdexs[ring].append(baseSeq[ring][i % len(baseSeq[ring])] )
         if ring == thisTrial['ringToQuery']:
@@ -449,7 +447,7 @@ def  collectResponses(n,responses,responsesAutopilot,respRadius,currAngle,expSto
                                         respcount -= 1
                                         #print('removed number ',ncheck, ' from clicked list')
                                 else:         #clicked on new one, need to add to response    
-                                    numRespsAlready = len(  where(respondedEachToken[optionSet])[0]  )
+                                    numRespsAlready = len(  np.where(respondedEachToken[optionSet])[0]  )
                                     #print('numRespsAlready=',numRespsAlready,' numRespsNeeded= ',numRespsNeeded,'  responses=',responses)   #debugOFF
                                     if numRespsAlready >= numRespsNeeded[optionSet]:
                                         pass #not allowed to select this one until de-select other
@@ -508,7 +506,7 @@ trialDurTotal=0;
 ts = list();
 while nDone <= trials.nTotal and expStop==False:
     angleIni=list();currAngle=list();moveDirection=list();RAI=list();reversalValue=list();reversalNo=list();colors_ind=list();colorRings=list();preDrawStimToGreasePipeline = list()
-    trackingVariableInterval=random.uniform(0,.8) #random interval extra for tracking so cant predict final position
+    trackingVariableInterval=np.random.uniform(0,.8) #random interval extra for tracking so cant predict final position
     trialDurFrames= int( (trialDur+trackingExtraTime+trackingVariableInterval)*hz ) #variable the tracking time on each trial.
     trialDurTotal=trialDur+trackingExtraTime+trackingVariableInterval;
     xyTargets = np.zeros( [thisTrial['numTargets'], 2] ) #need this for eventual case where targets can change what ring they are in
@@ -516,7 +514,7 @@ while nDone <= trials.nTotal and expStop==False:
     xyDistracters = np.zeros( [numDistracters, 2] )
     for ringNum in range(numRings): # initialise  parameters
          #angleIni.append(random.uniform(0,2*pi));
-         angleIni.append(random.uniform(0,360));
+         angleIni.append(np.random.uniform(0,360));
          currAngle.append(0);
          moveDirection.append(-999);
          RAI.append(list());
@@ -540,8 +538,8 @@ while nDone <= trials.nTotal and expStop==False:
         countn=1
         while thisReversalDur<trialDurTotal:
             if countn==1:
-                thisReversalDur=thisReversalDur+random.uniform(0.7,2)
-            else:   thisReversalDur += random.uniform(timeTillReversalMin,timeTillReversalMax)
+                thisReversalDur=thisReversalDur+np.random.uniform(0.7,2)
+            else:   thisReversalDur += np.random.uniform(timeTillReversalMin,timeTillReversalMax)
             RAI[u].append(thisReversalDur)
             countn=countn+1
  
@@ -565,18 +563,18 @@ while nDone <= trials.nTotal and expStop==False:
             (angleIni,currAngle,reversalValue,reversalNo) = oneFrameOfStim(n,currAngle,blobsToPreCue,reversalValue,reversalNo,ShowTrackCueFrames) #da big function
             if exportImages:
                 myWin.getMovieFrame(buffer='back') #for later saving
-                framesSaved +=1              
-            myWin.flip(clearBuffer=True)   
+                framesSaved +=1
+            myWin.flip(clearBuffer=True)
             t=trialClock.getTime()-t0; ts.append(t);
             if n==trialDurFrames-1: event.clearEvents(eventType='mouse');
     #end of big stimulus loop
     
     #check for timing problems
-    interframeIntervs = diff(ts)*1000 #difference in time between successive frames, in ms
+    interframeIntervs = np.diff(ts)*1000 #difference in time between successive frames, in ms
     #print >>logF, 'trialnum=',nDone, '   interframe intervs were ',around(interframeIntervs,1)
     longerThanRefreshTolerance = 0.1
     longFrameLimit = round(1000./hz*(1.0+longerThanRefreshTolerance),2) # round(1000/hz*1.5,2) #
-    idxsInterframeLong = where( interframeIntervs > longFrameLimit ) [0] #frames that exceeded longerThanRefreshTolerance of expected duration
+    idxsInterframeLong = np.where( interframeIntervs > longFrameLimit ) [0] #frames that exceeded longerThanRefreshTolerance of expected duration
     numCasesInterframeLong = len( idxsInterframeLong )
     if numCasesInterframeLong >0:
        longFramesStr =  'ERROR,'+str(numCasesInterframeLong)+' frames were longer than '+str(longFrameLimit)+' ms'
@@ -584,7 +582,7 @@ while nDone <= trials.nTotal and expStop==False:
          longFramesStr += 'not printing them all because in demo mode'
        else:
            longFramesStr += ' apparently screen refreshes skipped, interframe durs were:'+\
-                    str( around(  interframeIntervs[idxsInterframeLong] ,1  ) )+ ' and was these frames: '+ str(idxsInterframeLong)
+                    str( np.around(  interframeIntervs[idxsInterframeLong] ,1  ) )+ ' and was these frames: '+ str(idxsInterframeLong)
        if longFramesStr != None:
                 print('trialnum=',nDone,'  ',longFramesStr, file=logF)
                 if not demo:
@@ -595,7 +593,7 @@ while nDone <= trials.nTotal and expStop==False:
                         flankingAlso.append(idx)
                         if idx+1<len(interframeIntervs):  flankingAlso.append(idx+1)
                         else: flankingAlso.append(NaN)
-                    #print >>logF, 'flankers also='+str( around( interframeIntervs[flankingAlso], 1) )
+                    #print >>logF, 'flankers also='+str( np.around( interframeIntervs[flankingAlso], 1) )
             #end timing check
     myMouse.setVisible(True)
     #ansIter=(answer).reshape(1,-1)[0]; ln=len(ansIter) #in case it's two dimensions like in bindRadially
@@ -629,12 +627,12 @@ while nDone <= trials.nTotal and expStop==False:
         orderCorrect=0; numColorsCorrectlyIdentified=0; blueMistake=0;respAdj=list();sCorrect=list();targetCorrect=0;
         for l in range(numRings):
                     if responses[l] !=[]: 
-                       tokenChosen[l]=where(respondedEachToken[l])  [0][0] 
-                       respAdjs= thisTrial['direction']*moveDirection[l]*reversalValue[l]*(tokenChosen[l]-thisTrial['whichIsTarget'][l])
+                       tokenChosenEachRing[l]=np.where(respondedEachToken[l])  [0][0] 
+                       respAdjs= thisTrial['direction']*moveDirection[l]*reversalValue[l]*(tokenChosenEachRing[l]-thisTrial['whichIsTarget'][l])
                        if respAdjs> numObjects/2. : respAdjs-= numObjects  #code in terms of closest way around. So if 9 objects and 8 ahead, code as -1
                        if respAdjs < -numObjects/2. : respAdjs += numObjects
                        respAdj.append(respAdjs)
-                       if tokenChosen[l]==thisTrial['whichIsTarget'][l]: 
+                       if tokenChosenEachRing[l]==thisTrial['whichIsTarget'][l]: 
                           sCorrects=1
                           sCorrect.append(sCorrects);
                           targetCorrect+=sCorrects
