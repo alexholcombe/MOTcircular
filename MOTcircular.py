@@ -63,7 +63,7 @@ else:
 subject='test'#'AH'
 autoLogging = False
 demo = False
-autopilot=True
+autopilot=False
 if autopilot:  subject='auto'
 feedback=True
 exportImages= False #quits after one trial / output image
@@ -180,9 +180,10 @@ myWin.setRecordFrameIntervals(False)
 myMouse = event.Mouse(visible = 'true',win=myWin)
 gaussian = visual.PatchStim(myWin, tex='none',mask='gauss',colorSpace='rgb',size=ballStdDev,autoLog=autoLogging)
 gaussian2 = visual.PatchStim(myWin, tex='none',mask='gauss',colorSpace='rgb',size=ballStdDev,autoLog=autoLogging)
-circle = visual.Circle(myWin, radius=mouseChoiceArea, edges=32, fillColorSpace='rgb',fillColor = (1,0,1),autoLog=autoLogging) #to outline chosen options
+optionChosenCircle = visual.Circle(myWin, radius=mouseChoiceArea, edges=32, fillColorSpace='rgb',fillColor = (1,0,1),autoLog=autoLogging) #to outline chosen options
 clickableRegion = visual.Circle(myWin, radius=0.5, edges=32, fillColorSpace='rgb',fillColor = (-1,1,-1),autoLog=autoLogging) #to show clickable zones
-circleCue = visual.PatchStim(myWin, tex='none',mask='circle',size=mouseChoiceAreaCue,colorSpace='rgb',color = (1,1,1),autoLog=autoLogging)
+circleCue = visual.Circle(myWin, radius=radii[0], edges=32, fillColorSpace='rgb',fillColor = (1,1,1),autoLog=autoLogging) #visual postcue
+
 blindspotFill = 0 #a way for people to know if they move their eyes
 if blindspotFill:
     blindspotStim = visual.PatchStim(myWin, tex='none',mask='circle',size=4.8,colorSpace='rgb',color = (-1,1,-1),autoLog=autoLogging) #to outline chosen options
@@ -408,7 +409,7 @@ def  collectResponses(n,responses,responsesAutopilot,respRadius,currAngle,expSto
             responses.append( list() )
             responsesAutopilot.append( [0]*numRespsNeeded[ring] )  #autopilot response is 0
     passThisTrial = False; 
-    numRespSound=0
+    numTimesRespSoundPlayed=0
     while respcount < sum(numRespsNeeded): #collecting response
                for optionSet in range(optionSets):  #draw this group (ring) of options
                   for ncheck in range( numOptionsEachSet[optionSet] ):  #draw each available to click on in this ring
@@ -422,9 +423,9 @@ def  collectResponses(n,responses,responsesAutopilot,respRadius,currAngle,expSto
                         opts=optionIdexs;
                         c = opts[optionSet][ncheck] #idx of color that this option num corresponds to. Need an extra [0] b/c list of arrays
                         if respondedEachToken[optionSet][ncheck]:  #draw circle around this one to indicate this option has been chosen
-                               circle.setColor(array([1,-1,1]), log=autoLogging)
-                               circle.setPos([x,y])
-                               circle.draw()                
+                               optionChosenCircle.setColor(array([1,-1,1]), log=autoLogging)
+                               optionChosenCircle.setPos([x,y])
+                               optionChosenCircle.draw()                
                         #gaussian.setRGB( colors_all[c] )  #draw blob
                         gaussian.setColor(  colors_all[0], log=autoLogging )  #draw blob
                         gaussian.setPos([x,y]);  
@@ -490,11 +491,18 @@ def  collectResponses(n,responses,responsesAutopilot,respRadius,currAngle,expSto
                             respondedEachToken[i][j] = 1 #must set to True for tracking task with click responses, because it uses to determine which one was clicked on
                if blindspotFill:
                     blindspotStim.draw()
+                    
+               #Draw response cues
                #respText.draw()
-               if numRespSound<2:
+               #Draw visual response cue here
+               if visuallyPostCue:
+                   for optionSet in range(optionSets):  #draw this group (ring) of options
+                        circleCue.setPos(offsetXYeachRing[optionSet])
+                        circleCue.draw()
+               if numTimesRespSoundPlayed<1: #2
                     respSound.setVolume(1)
                     respSound.play()
-                    numRespSound +=1
+                    numTimesRespSoundPlayed +=1
                myWin.flip(clearBuffer=True)  
                if screenshot and ~screenshotDone:
                    myWin.getMovieFrame()       
@@ -526,8 +534,8 @@ trialDurTotal=0;
 ts = list();
 while nDone <= trials.nTotal and expStop==False:
     angleIni=list();currAngle=list();moveDirection=list();RAI=list();isReversed=list();reversalNo=list();colors_ind=list();colorRings=list();preDrawStimToGreasePipeline = list()
-    trackingVariableInterval=np.random.uniform(0,.8) #random interval extra for tracking so cant predict final position
-    trialDurFrames= int( (trialDur+trackingExtraTime+trackingVariableInterval)*hz ) #variable the tracking time on each trial.
+    trackingVariableInterval=np.random.uniform(0,.8) #random interval taked onto tracking to make total duration variable so cant predict final position
+    trialDurFrames= int( (trialDur+trackingExtraTime+trackingVariableInterval)*hz )
     trialDurTotal=trialDur+trackingExtraTime+trackingVariableInterval;
     xyTargets = np.zeros( [thisTrial['numTargets'], 2] ) #need this for eventual case where targets can change what ring they are in
     numDistracters = numRings*thisTrial['numObjectsInRing'] - thisTrial['numTargets']
@@ -623,7 +631,8 @@ while nDone <= trials.nTotal and expStop==False:
     #     np.random.shuffle(shuffledAns[:,0]) #unfortunately for bindRadially task, previous shuffling shuffled pairs, not individuals
     #print 'answer after shuffling=',shuffledAns 
     passThisTrial=False
-    # draw instruction words
+    #Create postcues
+    visuallyPostCue = False
     ringQuerySoundFileNames = [ 'innerring.wav', 'middlering.wav', 'outerring.wav' ]
     soundDir = 'sounds'
     soundPathAndFile= os.path.join(soundDir, ringQuerySoundFileNames[ thisTrial['ringToQuery'] ])
@@ -706,7 +715,7 @@ while nDone <= trials.nTotal and expStop==False:
     
     if nDone< trials.nTotal:
         nextTrial=True
-        NextText.setText('Press "SPACE" to continue!')
+        NextText.setText('Press "SPACE" to continue')
         NextText.draw()
         if nDone%(    max(trials.nTotal/4,1) ) ==0:  #have to enforce at least 1, otherwise will modulus by 0 when #trials is less than 4
             NextRemindCountText.setText(  round(    (1.0*nDone) / (1.0*trials.nTotal)*100,2    )    )
