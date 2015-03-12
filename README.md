@@ -14,9 +14,8 @@ How do we handle reversals? Reversals necessitate integration. So, either pre-ge
 In the long term, want to set up exchange of objects among rings. Necessary to conduct an identity-tracking experiment. Can also push harder on speed limit that way.
 
 Experiments
-- Is the speed limit the same in the periphery?
+- Is the speed limit the same in the periphery, when not rotating about fixation?
 
 Issues
 - Check timing
-- numRespSound. Why might it be played more than once?
 - Sometimes program dies due to reversal indexing issue. Looks like didn't allocate enough RAIs

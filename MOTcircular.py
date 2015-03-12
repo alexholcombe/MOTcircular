@@ -182,7 +182,7 @@ gaussian = visual.PatchStim(myWin, tex='none',mask='gauss',colorSpace='rgb',size
 gaussian2 = visual.PatchStim(myWin, tex='none',mask='gauss',colorSpace='rgb',size=ballStdDev,autoLog=autoLogging)
 optionChosenCircle = visual.Circle(myWin, radius=mouseChoiceArea, edges=32, fillColorSpace='rgb',fillColor = (1,0,1),autoLog=autoLogging) #to outline chosen options
 clickableRegion = visual.Circle(myWin, radius=0.5, edges=32, fillColorSpace='rgb',fillColor = (-1,1,-1),autoLog=autoLogging) #to show clickable zones
-circleCue = visual.Circle(myWin, radius=radii[0], edges=32, fillColorSpace='rgb',fillColor = (1,1,1),autoLog=autoLogging) #visual postcue
+circlePostCue = visual.Circle(myWin, radius=2*radii[0], edges=32, fillColorSpace='rgb',fillColor = (-.9,-.9,-.9),lineColor=(-1,-1,-1),autoLog=autoLogging) #visual postcue
 
 blindspotFill = 0 #a way for people to know if they move their eyes
 if blindspotFill:
@@ -390,18 +390,15 @@ def  oneFrameOfStim(currFrame,clock,useClock,currAngle,blobToCueEachRing,isRever
 
 showClickableRegions = True
 def  collectResponses(n,responses,responsesAutopilot,respRadius,currAngle,expStop ):
+    optionSets=numRings;    
+    
+   #Draw response cues
     numTimesRespSoundPlayed=0
     if numTimesRespSoundPlayed<1: #2
         respSound.setVolume(1)
         respSound.play()
         numTimesRespSoundPlayed +=1
-   #Draw response cues
    #respText.draw()
-   #Draw visual response cue here
-    if visuallyPostCue:
-       for optionSet in range(optionSets):  #draw this group (ring) of options
-            circleCue.setPos(offsetXYeachRing[optionSet])
-            circleCue.draw()
 
     respondedEachToken = np.zeros([numRings,numObjects])  #potentially two sets of responses, one for each of two concentric rings
     optionIdexs=list();baseSeq=list();numOptionsEachSet=list();numRespsNeeded=list()
@@ -417,13 +414,18 @@ def  collectResponses(n,responses,responsesAutopilot,respRadius,currAngle,expSto
             numRespsNeeded[ ring ] = 1
         else: numRespsNeeded[ ring ] = 0
         numOptionsEachSet.append(len(optionIdexs[ring]))
-    optionSets=numRings;     respcount = 0;     tClicked = 0;       lastClickState=0;       mouse1=0
+    respcount = 0;     tClicked = 0;       lastClickState=0;       mouse1=0
     for ring in range(optionSets): 
             responses.append( list() )
             responsesAutopilot.append( [0]*numRespsNeeded[ring] )  #autopilot response is 0
     passThisTrial = False; 
     numTimesRespSoundPlayed=0
     while respcount < sum(numRespsNeeded): #collecting response
+               #Draw visual response cue
+               if visuallyPostCue:
+                        circlePostCue.setPos( offsetXYeachRing[ thisTrial['ringToQuery'] ] )
+                        circlePostCue.draw()
+                        
                for optionSet in range(optionSets):  #draw this group (ring) of options
                   for ncheck in range( numOptionsEachSet[optionSet] ):  #draw each available to click on in this ring
                         angle =  (angleIni[optionSet]+currAngle[optionSet]) + ncheck*1.0/numOptionsEachSet[optionSet] *2.*pi
@@ -634,7 +636,7 @@ while nDone <= trials.nTotal and expStop==False:
     #print 'answer after shuffling=',shuffledAns 
     passThisTrial=False
     #Create postcues
-    visuallyPostCue = False
+    visuallyPostCue = True
     ringQuerySoundFileNames = [ 'innerring.wav', 'middlering.wav', 'outerring.wav' ]
     soundDir = 'sounds'
     soundPathAndFile= os.path.join(soundDir, ringQuerySoundFileNames[ thisTrial['ringToQuery'] ])
