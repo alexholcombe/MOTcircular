@@ -395,7 +395,14 @@ def  collectResponses(n,responses,responsesAutopilot,respRadius,currAngle,expSto
         respSound.setVolume(1)
         respSound.play()
         numTimesRespSoundPlayed +=1
-                    
+   #Draw response cues
+   #respText.draw()
+   #Draw visual response cue here
+    if visuallyPostCue:
+       for optionSet in range(optionSets):  #draw this group (ring) of options
+            circleCue.setPos(offsetXYeachRing[optionSet])
+            circleCue.draw()
+
     respondedEachToken = np.zeros([numRings,numObjects])  #potentially two sets of responses, one for each of two concentric rings
     optionIdexs=list();baseSeq=list();numOptionsEachSet=list();numRespsNeeded=list()
     numRespsNeeded = np.zeros(numRings) 
@@ -497,14 +504,6 @@ def  collectResponses(n,responses,responsesAutopilot,respRadius,currAngle,expSto
                             respondedEachToken[i][j] = 1 #must set to True for tracking task with click responses, because it uses to determine which one was clicked on
                if blindspotFill:
                     blindspotStim.draw()
-                    
-               #Draw response cues
-               #respText.draw()
-               #Draw visual response cue here
-               if visuallyPostCue:
-                   for optionSet in range(optionSets):  #draw this group (ring) of options
-                        circleCue.setPos(offsetXYeachRing[optionSet])
-                        circleCue.draw()
 
                myWin.flip(clearBuffer=True)  
                if screenshot and ~screenshotDone:
