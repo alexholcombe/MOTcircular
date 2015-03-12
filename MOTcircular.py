@@ -389,7 +389,13 @@ def  oneFrameOfStim(currFrame,clock,useClock,currAngle,blobToCueEachRing,isRever
 # #######End of function definition that displays the stimuli!!!! #####################################
 
 showClickableRegions = True
-def  collectResponses(n,responses,responsesAutopilot,respRadius,currAngle,expStop ): 
+def  collectResponses(n,responses,responsesAutopilot,respRadius,currAngle,expStop ):
+    numTimesRespSoundPlayed=0
+    if numTimesRespSoundPlayed<1: #2
+        respSound.setVolume(1)
+        respSound.play()
+        numTimesRespSoundPlayed +=1
+                    
     respondedEachToken = np.zeros([numRings,numObjects])  #potentially two sets of responses, one for each of two concentric rings
     optionIdexs=list();baseSeq=list();numOptionsEachSet=list();numRespsNeeded=list()
     numRespsNeeded = np.zeros(numRings) 
@@ -499,10 +505,7 @@ def  collectResponses(n,responses,responsesAutopilot,respRadius,currAngle,expSto
                    for optionSet in range(optionSets):  #draw this group (ring) of options
                         circleCue.setPos(offsetXYeachRing[optionSet])
                         circleCue.draw()
-               if numTimesRespSoundPlayed<1: #2
-                    respSound.setVolume(1)
-                    respSound.play()
-                    numTimesRespSoundPlayed +=1
+
                myWin.flip(clearBuffer=True)  
                if screenshot and ~screenshotDone:
                    myWin.getMovieFrame()       
