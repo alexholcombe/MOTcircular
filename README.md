@@ -17,4 +17,4 @@ Experiments
 - Is the speed limit the same in the periphery?
 
 Issues
-- Change so doesn't go slower when miss frames
+- Check timing

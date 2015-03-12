@@ -8,8 +8,7 @@ import itertools #to calculate all subsets
 #from numpy import *  #some programs import random, which is also its own library as well as a numpy sub-module
 from copy import deepcopy
 from math import atan, pi, cos, sin, sqrt
-import time, colorsys
-import sys, platform, os, StringIO
+import time, colorsys, sys, platform, os, StringIO
 #BEGIN helper functions from primes.py
 def gcd(a,b): 
    """Return greatest common divisor using Euclid's Algorithm."""
@@ -49,6 +48,17 @@ if quitFinder:
     applescript="\'tell application \"Finder\" to quit\'" #quit Finder.
     shellCmd = 'osascript -e '+applescript
     os.system(shellCmd)
+process_priority = 'realtime' # 'normal' 'high' or 'realtime'
+if process_priority == 'normal':
+    pass
+elif process_priority == 'high':
+    core.rush(True)
+elif process_priority == 'realtime':
+    # Only makes a diff compared to 'high' on Windows.
+    core.rush(True, realtime = True)
+else:
+    print('Invalid process priority:',process_priority,"Process running at normal.")
+    process_priority = 'normal'
 
 subject='test'#'AH'
 autoLogging = False
@@ -90,6 +100,7 @@ RANum=8 #reversal times record. Recording reversal times of each ring
 radii=[3,3,3] #[4,8,12] 
 respRadius=radii[0] #deg
 hz=60 *1.0;  #set to the framerate of the monitor
+useClock = True
 trialDur =1 #3 4.8;
 if demo:trialDur = 5;hz = 60.; 
 tokenChosenEachRing= [-999]*numRings
@@ -143,9 +154,9 @@ total_colors = 6; #6 #universe of colors that nb_colors color set for this displ
 nb_colors = 3; #3 #number unique colors in display. Works except answer and options doesn't take it into account. Assumes this value is 3
 
 #definition of monitor
-fullscr=0; scrn=0
-widthPix =1024#1024  #monitor width in pixels
-heightPix =768#768  #monitor height in pixels
+fullscr=1 ; scrn=0
+widthPix =1440#1024  #monitor width in pixels
+heightPix =900#768  #monitor height in pixels
 monitorwidth = 38.5 #28.5 #monitor width in centimeters
 viewdist = 57.; #cm
 pixelperdegree = widthPix/ (atan(monitorwidth/viewdist) /np.pi*180)
@@ -236,9 +247,9 @@ maskOrbit = visual.PatchStim(myWin,tex='none',colorSpace='rgb',color=(1,1,0),mas
 stimList = []
 # temporalfrequency limit test
 numObjsInRing = [2]
-speedsEachNumObjs = [ [0.3,0.4],     #these correspond to the speeds to use for each entry of numObjsInRing
-                                         [0.3,0.4], 
-                                         [0.3,0.4]   ]
+speedsEachNumObjs = [ [1.0,1.4],     #these correspond to the speeds to use for each entry of numObjsInRing
+                                         [1.0,1.4], 
+                                         [1.0,1.4]   ]
 numTargets = np.array([1,2])  # np.array([1,2,3])
 leastCommonMultipleSubsets = calcCondsPerNumTargets(numRings,numTargets)
 leastCommonMultipleTargetNums = LCM( numTargets )  #have to use this to choose whichToQuery. For explanation see newTrajectoryEventuallyForIdentityTracking.oo3
@@ -326,11 +337,16 @@ def angleChangeThisFrame(thisTrial, moveDirection, numRing, thisFrameN, lastFram
     anglemove = moveDirection[numRing]*thisTrial['direction']*thisTrial['speed']*2*pi*(thisFrameN-lastFrameN)/hz
     return anglemove
 
-def  oneFrameOfStim(n,currAngle,blobToCueEachRing,reversalValue,reversalNo,ShowTrackCueFrames): 
+def  oneFrameOfStim(currFrame,clock,useClock,currAngle,blobToCueEachRing,reversalValue,reversalNo,ShowTrackCueFrames): 
 #defining a function to draw each frame of stim. So can call second time for tracking task response phase
           global cueRing,ringRadial,ringRadialR, currentlyCuedBlob #makes python treat it as a local variable
           global angleIni, correctAnswers
-
+          if useClock: #Don't count on not missing frames. Use actual time.
+            t = clock.getTime()
+            n = round(t*hz)
+          else:
+            n = currFrame
+          
           if n<rampUpFrames:
                 contrast = cos( -pi+ pi* n/rampUpFrames  ) /2. +.5 #starting from -pi trough of cos, and scale into 0->1 range
           elif n> rampDownStart:
@@ -500,6 +516,7 @@ for i in range(numRings):
 print('timingBlips', file=dataFile)
 #end of header
 trialClock = core.Clock()
+stimClock = core.Clock()
 nDone=0; numTrialsOrderCorrect=0; numAllCorrectlyIdentified=0; blueMistakes=0; expStop=False; framesSaved=0;
 thisTrial = trials.next()
 trialDurTotal=0;
@@ -559,8 +576,10 @@ while nDone <= trials.nTotal and expStop==False:
         fixation.draw(); myWin.flip(clearBuffer=True)  
     t0=trialClock.getTime(); t=trialClock.getTime()-t0     
     for L in range(len(ts)):ts.remove(ts[0]) # clear all ts array
+    stimClock.reset()
     for n in range(trialDurFrames): #this is the loop for this trial's stimulus!
-            (angleIni,currAngle,reversalValue,reversalNo) = oneFrameOfStim(n,currAngle,blobsToPreCue,reversalValue,reversalNo,ShowTrackCueFrames) #da big function
+            (angleIni,currAngle,reversalValue,reversalNo) = \
+                            oneFrameOfStim(n,stimClock,useClock,currAngle,blobsToPreCue,reversalValue,reversalNo,ShowTrackCueFrames) #da big function
             if exportImages:
                 myWin.getMovieFrame(buffer='back') #for later saving
                 framesSaved +=1
@@ -592,7 +611,7 @@ while nDone <= trials.nTotal and expStop==False:
                         else: flankingAlso.append(NaN)
                         flankingAlso.append(idx)
                         if idx+1<len(interframeIntervs):  flankingAlso.append(idx+1)
-                        else: flankingAlso.append(NaN)
+                        else: flankingAlso.append(np.NaN)
                     #print >>logF, 'flankers also='+str( np.around( interframeIntervs[flankingAlso], 1) )
             #end timing check
     myMouse.setVisible(True)
