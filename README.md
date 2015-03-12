@@ -18,3 +18,5 @@ Experiments
 
 Issues
 - Check timing
+- numRespSound. Why might it be played more than once?
+- Sometimes program dies due to reversal indexing issue. Looks like didn't allocate enough RAIs

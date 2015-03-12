@@ -62,8 +62,8 @@ else:
 
 subject='test'#'AH'
 autoLogging = False
-demo = False 
-autopilot=False
+demo = False
+autopilot=True
 if autopilot:  subject='auto'
 feedback=True
 exportImages= False #quits after one trial / output image
@@ -115,7 +115,7 @@ mouseChoiceAreaCue = ballStdDev*0.8
 units='deg' #'cm'
 if showRefreshMisses:fixSize = 2.6  #make fixation bigger so flicker more conspicuous
 else: fixSize = 0.3
-timeTillReversalMin = 0.25; timeTillReversalMax = 2.95  #reversal time 
+timeTillReversalMin = 0.25; timeTillReversalMax = .8 #2.9
 offsetXYeachRingPeripheryExperiment= [[-6,6],[6,-6],[0,0],[0,0]]
 offsetXYeachRing=[[0,0],[0,0],[0,0],[0,0]]
 offsetXYeachRing = offsetXYeachRingPeripheryExperiment
@@ -213,10 +213,10 @@ if NY.upper()<>'Y':
     myWin.close()
 # end testing of screen refresh########################################################################
 if (not demo) and (myWin.size != [widthPix,heightPix]).any():
-    myDlg = gui.Dlg(title="RSVP experiment", pos=(200,400))
+    myDlg = gui.Dlg(title="MOT experiment", pos=(200,400))
     msgWrongResolution = 'Screen NOT the desired resolution of '+ str(widthPix)+'x'+str(heightPix)+ ' pixels!!'
     myDlg.addText(msgWrongResolution, color='Red')
-    logging.error(msgWrongResolution)
+    logging.warning(msgWrongResolution)
     print(msgWrongResolution)
     myDlg.addText('Note: during the experiment, press ESC at response screen to quit', color='DimGrey')
     myDlg.show()
@@ -247,9 +247,9 @@ maskOrbit = visual.PatchStim(myWin,tex='none',colorSpace='rgb',color=(1,1,0),mas
 stimList = []
 # temporalfrequency limit test
 numObjsInRing = [2]
-speedsEachNumObjs = [ [1.0,1.4],     #these correspond to the speeds to use for each entry of numObjsInRing
-                                         [1.0,1.4], 
-                                         [1.0,1.4]   ]
+speedsEachNumObjs = [ [1.2,1.4, 1.8, 2.0, 2.25],     #these correspond to the speeds to use for each entry of numObjsInRing
+                                         [1.2,1.4, 1.8, 2.0, 2.25], 
+                                         [1.2,1.4, 1.8, 2.0, 2.25]   ]
 numTargets = np.array([1,2])  # np.array([1,2,3])
 leastCommonMultipleSubsets = calcCondsPerNumTargets(numRings,numTargets)
 leastCommonMultipleTargetNums = LCM( numTargets )  #have to use this to choose whichToQuery. For explanation see newTrajectoryEventuallyForIdentityTracking.oo3
@@ -337,7 +337,7 @@ def angleChangeThisFrame(thisTrial, moveDirection, numRing, thisFrameN, lastFram
     anglemove = moveDirection[numRing]*thisTrial['direction']*thisTrial['speed']*2*pi*(thisFrameN-lastFrameN)/hz
     return anglemove
 
-def  oneFrameOfStim(currFrame,clock,useClock,currAngle,blobToCueEachRing,reversalValue,reversalNo,ShowTrackCueFrames): 
+def  oneFrameOfStim(currFrame,clock,useClock,currAngle,blobToCueEachRing,isReversed,reversalNo,ShowTrackCueFrames): 
 #defining a function to draw each frame of stim. So can call second time for tracking task response phase
           global cueRing,ringRadial,ringRadialR, currentlyCuedBlob #makes python treat it as a local variable
           global angleIni, correctAnswers
@@ -362,10 +362,12 @@ def  oneFrameOfStim(currFrame,clock,useClock,currAngle,blobToCueEachRing,reversa
                 nColor =nobject % nb_colors
                 angleMove = angleChangeThisFrame(thisTrial, moveDirection, noRing, n, n-1)
                 if nobject==0:
-                    if Reversal and reversalNo[noRing] <= len(RAI[noRing]) and n>RAI[noRing][int(reversalNo[noRing])]*hz:
-                            reversalValue[noRing]=-1*reversalValue[noRing]
-                            reversalNo[noRing] +=1
-                    currAngle[noRing]=currAngle[noRing]+angleMove*(reversalValue[noRing])
+                    if Reversal:
+                        if reversalNo[noRing] <= len(RAI[noRing]):   #When reversals times assigned, e.g. RAI. They are accumulated WHILE thisReversalDur<trialDurTotal:  line 558
+                            if n > hz * RAI[noRing][ int(reversalNo[noRing]) ]:
+                                isReversed[noRing] = -1*isReversed[noRing]
+                                reversalNo[noRing] +=1
+                    currAngle[noRing]=currAngle[noRing]+angleMove*(isReversed[noRing])
                 angleObject0 = angleIni[noRing] + currAngle[noRing]
                 angleThisObject = angleObject0 + (2*pi)/numObjects*nobject
                 r = radiusThisFrameThisAngle(noRing,angleThisObject,n)
@@ -382,7 +384,7 @@ def  oneFrameOfStim(currFrame,clock,useClock,currAngle,blobToCueEachRing,reversa
           if blindspotFill:
               blindspotStim.draw()
           if thisTrial['slitView']: maskOrbit.draw()
-          return angleIni,currAngle,reversalValue,reversalNo   
+          return angleIni,currAngle,isReversed,reversalNo   
 # #######End of function definition that displays the stimuli!!!! #####################################
 
 showClickableRegions = True
@@ -502,7 +504,8 @@ def  collectResponses(n,responses,responsesAutopilot,respRadius,currAngle,expSto
     #if [] in responses: responses.remove([]) #this is for case of tracking with click response, when only want one response but draw both rings. One of responses to optionset will then be blank. Need to get rid of it
     return responses,responsesAutopilot,respondedEachToken, expStop
     ####### #End of function definition that collects responses!!!! #################################################
-    
+
+print('Starting experiment of',trials.nTotal,'trials. Current trial is trial 0.')
 #print header for data file
 print('trialnum\tsubject\tnumObjects\tspeed\tdirection', end='\t', file=dataFile)
 print('orderCorrect\ttrialDurTotal\tnumTargets', end= '\t', file=dataFile) 
@@ -522,7 +525,7 @@ thisTrial = trials.next()
 trialDurTotal=0;
 ts = list();
 while nDone <= trials.nTotal and expStop==False:
-    angleIni=list();currAngle=list();moveDirection=list();RAI=list();reversalValue=list();reversalNo=list();colors_ind=list();colorRings=list();preDrawStimToGreasePipeline = list()
+    angleIni=list();currAngle=list();moveDirection=list();RAI=list();isReversed=list();reversalNo=list();colors_ind=list();colorRings=list();preDrawStimToGreasePipeline = list()
     trackingVariableInterval=np.random.uniform(0,.8) #random interval extra for tracking so cant predict final position
     trialDurFrames= int( (trialDur+trackingExtraTime+trackingVariableInterval)*hz ) #variable the tracking time on each trial.
     trialDurTotal=trialDur+trackingExtraTime+trackingVariableInterval;
@@ -535,7 +538,7 @@ while nDone <= trials.nTotal and expStop==False:
          currAngle.append(0);
          moveDirection.append(-999);
          RAI.append(list());
-         reversalValue.append(1);
+         isReversed.append(1)
          reversalNo.append(0)
          moveDirection[ringNum] = np.random.random_integers(0,1) *2 -1 #randomise initial direction
          if ringNum==0: #set up disc colors, vestige of Current Biology paper
@@ -550,20 +553,15 @@ while nDone <= trials.nTotal and expStop==False:
             colorRings.append(colors_all[colors_ind[ringNum]])
     colorsInInnerRingOrder=colorsInOuterRingOrder=colors_all[[0, 0, 0]]
     stimColorIdxsOrder=[[0,0],[0,0],[0,0]]#this is used for drawing blobs during stimulus
-    for u in range(numRings): # set random reversal times
-        thisReversalDur=trackingExtraTime
-        countn=1
+    for r in range(numRings): # set random reversal times
+        thisReversalDur = trackingExtraTime
         while thisReversalDur<trialDurTotal:
-            if countn==1:
-                thisReversalDur=thisReversalDur+np.random.uniform(0.7,2)
-            else:   thisReversalDur += np.random.uniform(timeTillReversalMin,timeTillReversalMax)
-            RAI[u].append(thisReversalDur)
-            countn=countn+1
+            thisReversalDur += np.random.uniform(timeTillReversalMin,timeTillReversalMax)
+            RAI[r].append(thisReversalDur)
  
     numObjects = thisTrial['numObjectsInRing']
     centerInMiddleOfSegment =360./numObjects/2.0
     blobsToPreCue=thisTrial['whichIsTarget']
-    print('blobsToPreCue=',blobsToPreCue)  #debugON
     core.wait(.1)
     myMouse.setVisible(False)      
     fixatnPeriodFrames = int(   (np.random.rand(1)/2.+0.8)   *hz)  #random interval between 800ms and 1.3s (changed when Fahed ran outer ring ident)
@@ -578,8 +576,8 @@ while nDone <= trials.nTotal and expStop==False:
     for L in range(len(ts)):ts.remove(ts[0]) # clear all ts array
     stimClock.reset()
     for n in range(trialDurFrames): #this is the loop for this trial's stimulus!
-            (angleIni,currAngle,reversalValue,reversalNo) = \
-                            oneFrameOfStim(n,stimClock,useClock,currAngle,blobsToPreCue,reversalValue,reversalNo,ShowTrackCueFrames) #da big function
+            (angleIni,currAngle,isReversed,reversalNo) = \
+                            oneFrameOfStim(n,stimClock,useClock,currAngle,blobsToPreCue,isReversed,reversalNo,ShowTrackCueFrames) #da big function
             if exportImages:
                 myWin.getMovieFrame(buffer='back') #for later saving
                 framesSaved +=1
@@ -633,7 +631,6 @@ while nDone <= trials.nTotal and expStop==False:
     postCueNumBlobsAway=-999 #doesn't apply to click tracking and non-tracking task
      # ####### response set up answer
     responses = list();  responsesAutopilot = list()
-    print ("Entering collectResponses") #debugON
     responses,responsesAutopilot,respondedEachToken,expStop = collectResponses(n,responses,responsesAutopilot,respRadius,currAngle,expStop)  #collect responses!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#####
     #print("responses=",responses,";respondedEachToken=",respondedEachToken,"expStop=",expStop) #debugOFF
     core.wait(.1)
@@ -647,7 +644,7 @@ while nDone <= trials.nTotal and expStop==False:
         for l in range(numRings):
                     if responses[l] !=[]: 
                        tokenChosenEachRing[l]=np.where(respondedEachToken[l])  [0][0] 
-                       respAdjs= thisTrial['direction']*moveDirection[l]*reversalValue[l]*(tokenChosenEachRing[l]-thisTrial['whichIsTarget'][l])
+                       respAdjs= thisTrial['direction']*moveDirection[l]*isReversed[l]*(tokenChosenEachRing[l]-thisTrial['whichIsTarget'][l])
                        if respAdjs> numObjects/2. : respAdjs-= numObjects  #code in terms of closest way around. So if 9 objects and 8 ahead, code as -1
                        if respAdjs < -numObjects/2. : respAdjs += numObjects
                        respAdj.append(respAdjs)
@@ -705,14 +702,14 @@ while nDone <= trials.nTotal and expStop==False:
             lowD = sound.Sound('E',octave=3, sampleRate=6000, secs=.8, bits=8)
             lowD.setVolume(0.8)
             lowD.play()
-    nDone+=1    
+    nDone+=1
     
     if nDone< trials.nTotal:
         nextTrial=True
         NextText.setText('Press "SPACE" to continue!')
         NextText.draw()
         if nDone%(    max(trials.nTotal/4,1) ) ==0:  #have to enforce at least 1, otherwise will modulus by 0 when #trials is less than 4
-            NextRemindCountText.setText(round((double(nDone)/double(trials.nTotal)*100),2))
+            NextRemindCountText.setText(  round(    (1.0*nDone) / (1.0*trials.nTotal)*100,2    )    )
             NextRemindText.setText(' % have done...')
             NextRemindCountText.draw()
             NextRemindText.draw()
