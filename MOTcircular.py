@@ -5,7 +5,6 @@ import psychopy.info
 from psychopy import sound, monitors, logging
 import numpy as np
 import itertools #to calculate all subsets
-#from numpy import *  #some programs import random, which is also its own library as well as a numpy sub-module
 from copy import deepcopy
 from math import atan, pi, cos, sin, sqrt
 import time, colorsys, sys, platform, os, StringIO, gc
@@ -49,7 +48,7 @@ if quitFinder:
     shellCmd = 'osascript -e '+applescript
     os.system(shellCmd)
 process_priority = 'realtime' # 'normal' 'high' or 'realtime'
-disable_gc = False
+disable_gc = True
 def acceleratePsychopy(slowFast):
     global process_priority, disable_gc
     if slowFast:
@@ -72,7 +71,7 @@ def acceleratePsychopy(slowFast):
 subject='test'#'AH'
 autoLogging = False
 demo = False
-autopilot=True
+autopilot=False
 if autopilot:  subject='auto'
 feedback=True
 exportImages= False #quits after one trial / output image
@@ -106,7 +105,7 @@ logging.console.setLevel(logging.WARNING) #DEBUG means set the console to receiv
 
 numRings=2
 RANum=8 #reversal times record. Recording reversal times of each ring
-radii=[4,8,12] #[4,8,12] 
+radii=[2.5,8,12] #[4,8,12] 
 respRadius=radii[0] #deg
 hz=120 *1.0;  #set to the framerate of the monitor
 useClock = True
@@ -119,17 +118,14 @@ trialDurFrames=int(trialDur*hz)+int( trackingExtraTime*hz )
 rampUpFrames = hz*rampUpDur;   rampDownFrames = hz*rampDownDur;  ShowTrackCueFrames = int( hz*toTrackCueDur )
 rampDownStart = trialDurFrames-rampDownFrames
 ballStdDev = 1.8
-mouseChoiceArea = ballStdDev*0.6 # origin =1.3
-mouseChoiceAreaCue = ballStdDev*0.8
+mouseChoiceArea = ballStdDev*0.8 # origin =1.3
 units='deg' #'cm'
 if showRefreshMisses:fixSize = 2.6  #make fixation bigger so flicker more conspicuous
 else: fixSize = 0.3
-timeTillReversalMin = 0.25; timeTillReversalMax = .8 #2.9
+timeTillReversalMin = 0.25; timeTillReversalMax = 1.0 #2.9
 offsetXYeachRingPeripheryExperiment= [[-6,3],[10,-4.5],[0,0],[0,0]]
 offsetXYeachRing=[[0,0],[0,0],[0,0],[0,0]]
 offsetXYeachRing = offsetXYeachRingPeripheryExperiment
-jumpFrame=9;
-patchAngleBase = 20#20
 
 #start definition of colors 
 hues=np.arange(16)/16.
@@ -304,7 +300,7 @@ numRightWrongEachSpeedOrder = np.zeros([ len(allSpeeds), 2 ]); #summary results 
 numRightWrongEachSpeedIdent = deepcopy(numRightWrongEachSpeedOrder)
 #end setup of record of proportion correct in various conditions
 
-blockReps=1       #14
+blockReps=5       #14
 trials = data.TrialHandler(stimList,blockReps) #constant stimuli method
 refreshTimingCheck = None #'grating'
 try:
@@ -437,6 +433,7 @@ def  collectResponses(n,responses,responsesAutopilot,respRadius,currAngle,expSto
                #Draw visual response cue
                if visuallyPostCue:
                         circlePostCue.setPos( offsetXYeachRing[ thisTrial['ringToQuery'] ] )
+                        circlePostCue.setRadius( radii[ thisTrial['ringToQuery'] ] )
                         circlePostCue.draw()
                         
                for optionSet in range(optionSets):  #draw this group (ring) of options
@@ -478,8 +475,7 @@ def  collectResponses(n,responses,responsesAutopilot,respRadius,currAngle,expSto
                             #check whether mouse click was close to any of the colors
                             #Colors were drawn in order they're in in optionsIdxs
                             distance = sqrt(pow((x-mouseX),2)+pow((y-mouseY),2))
-                            #mouseToler = mouseChoiceArea/3.#deg visual angle?  origin=2
-                            mouseToler = mouseChoiceArea/3+optionSet*mouseChoiceArea/6.#deg visual angle?  origin=2
+                            mouseToler = mouseChoiceArea + optionSet*mouseChoiceArea/6.#deg visual angle?  origin=2
                             if showClickableRegions: #revealed in green every time you click
                                 clickableRegion.setPos([x,y])
                                 clickableRegion.setRadius(mouseToler)
