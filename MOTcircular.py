@@ -8,7 +8,7 @@ import itertools #to calculate all subsets
 #from numpy import *  #some programs import random, which is also its own library as well as a numpy sub-module
 from copy import deepcopy
 from math import atan, pi, cos, sin, sqrt
-import time, colorsys, sys, platform, os, StringIO
+import time, colorsys, sys, platform, os, StringIO, gc
 #BEGIN helper functions from primes.py
 def gcd(a,b): 
    """Return greatest common divisor using Euclid's Algorithm."""
@@ -42,28 +42,37 @@ def calcCondsPerNumTargets(numRings,numTargets):
     leastCommonMultiple = LCM( numPossibilitiesEach )  #to have equal number of trials per numtargets, would have to use this figure for each
     #print('biggest=',m, ' Least common multiple=', leastCommonMultiple)
     return leastCommonMultiple
-    
-quitFinder = False
+
+quitFinder = True
 if quitFinder:
     applescript="\'tell application \"Finder\" to quit\'" #quit Finder.
     shellCmd = 'osascript -e '+applescript
     os.system(shellCmd)
 process_priority = 'realtime' # 'normal' 'high' or 'realtime'
-if process_priority == 'normal':
-    pass
-elif process_priority == 'high':
-    core.rush(True)
-elif process_priority == 'realtime':
-    # Only makes a diff compared to 'high' on Windows.
-    core.rush(True, realtime = True)
-else:
-    print('Invalid process priority:',process_priority,"Process running at normal.")
-    process_priority = 'normal'
+disable_gc = False
+def acceleratePsychopy(slowFast):
+    global process_priority, disable_gc
+    if slowFast:
+        if process_priority == 'normal':
+            pass
+        elif process_priority == 'high':
+            core.rush(True)
+        elif process_priority == 'realtime': # Only makes a diff compared to 'high' on Windows.
+            core.rush(True, realtime = True)
+        else:
+            print('Invalid process priority:',process_priority,"Process running at normal.")
+            process_priority = 'normal'
+        if disable_gc:
+            gc.disable()
+    if slowFast==0: #turn off the speed-up
+        if disable_gc:
+            gc.enable()
+        core.rush(False)
 
 subject='test'#'AH'
 autoLogging = False
 demo = False
-autopilot=False
+autopilot=True
 if autopilot:  subject='auto'
 feedback=True
 exportImages= False #quits after one trial / output image
@@ -97,9 +106,9 @@ logging.console.setLevel(logging.WARNING) #DEBUG means set the console to receiv
 
 numRings=2
 RANum=8 #reversal times record. Recording reversal times of each ring
-radii=[3,3,3] #[4,8,12] 
+radii=[4,8,12] #[4,8,12] 
 respRadius=radii[0] #deg
-hz=60 *1.0;  #set to the framerate of the monitor
+hz=120 *1.0;  #set to the framerate of the monitor
 useClock = True
 trialDur =1 #3 4.8;
 if demo:trialDur = 5;hz = 60.; 
@@ -116,7 +125,7 @@ units='deg' #'cm'
 if showRefreshMisses:fixSize = 2.6  #make fixation bigger so flicker more conspicuous
 else: fixSize = 0.3
 timeTillReversalMin = 0.25; timeTillReversalMax = .8 #2.9
-offsetXYeachRingPeripheryExperiment= [[-6,6],[6,-6],[0,0],[0,0]]
+offsetXYeachRingPeripheryExperiment= [[-6,3],[10,-4.5],[0,0],[0,0]]
 offsetXYeachRing=[[0,0],[0,0],[0,0],[0,0]]
 offsetXYeachRing = offsetXYeachRingPeripheryExperiment
 jumpFrame=9;
@@ -155,8 +164,8 @@ nb_colors = 3; #3 #number unique colors in display. Works except answer and opti
 
 #definition of monitor
 fullscr=1 ; scrn=0
-widthPix =1440#1024  #monitor width in pixels
-heightPix =900#768  #monitor height in pixels
+widthPix = 1024 #1440  #monitor width in pixels
+heightPix =768  #900 #monitor height in pixels
 monitorwidth = 38.5 #28.5 #monitor width in centimeters
 viewdist = 57.; #cm
 pixelperdegree = widthPix/ (atan(monitorwidth/viewdist) /np.pi*180)
@@ -182,7 +191,7 @@ gaussian = visual.PatchStim(myWin, tex='none',mask='gauss',colorSpace='rgb',size
 gaussian2 = visual.PatchStim(myWin, tex='none',mask='gauss',colorSpace='rgb',size=ballStdDev,autoLog=autoLogging)
 optionChosenCircle = visual.Circle(myWin, radius=mouseChoiceArea, edges=32, fillColorSpace='rgb',fillColor = (1,0,1),autoLog=autoLogging) #to outline chosen options
 clickableRegion = visual.Circle(myWin, radius=0.5, edges=32, fillColorSpace='rgb',fillColor = (-1,1,-1),autoLog=autoLogging) #to show clickable zones
-circlePostCue = visual.Circle(myWin, radius=2*radii[0], edges=32, fillColorSpace='rgb',fillColor = (-.9,-.9,-.9),lineColor=(-1,-1,-1),autoLog=autoLogging) #visual postcue
+circlePostCue = visual.Circle(myWin, radius=2*radii[0], edges=32, fillColorSpace='rgb',fillColor = (-.7,-.7,-.7),lineColor=(-1,-1,-1),autoLog=autoLogging) #visual postcue
 
 blindspotFill = 0 #a way for people to know if they move their eyes
 if blindspotFill:
@@ -222,6 +231,10 @@ if (not demo) and (myWin.size != [widthPix,heightPix]).any():
     myDlg.addText('Note: during the experiment, press ESC at response screen to quit', color='DimGrey')
     myDlg.show()
     core.quit()
+longerThanRefreshTolerance = 0.2
+longFrameLimit = round(1000./hz*(1.0+longerThanRefreshTolerance),3) # round(1000/hz*1.5,2)
+print('longFrameLimit=',longFrameLimit,' Recording trials where one or more interframe interval exceeded this figure ', file=logF)
+print('longFrameLimit=',longFrameLimit,' Recording trials where one or more interframe interval exceeded this figure ')
 
 # mask setting..................
 maskOrbitSize = 2*(radii[1] +ballStdDev)#perhaps draw a big rectangle with a custom transparency layer (mask) in the shape of a thick ring
@@ -251,7 +264,7 @@ numObjsInRing = [2]
 speedsEachNumObjs = [ [1.2,1.4, 1.8, 2.0, 2.25],     #these correspond to the speeds to use for each entry of numObjsInRing
                                          [1.2,1.4, 1.8, 2.0, 2.25], 
                                          [1.2,1.4, 1.8, 2.0, 2.25]   ]
-numTargets = np.array([1,2])  # np.array([1,2,3])
+numTargets = np.array([2])  # np.array([1,2,3])
 leastCommonMultipleSubsets = calcCondsPerNumTargets(numRings,numTargets)
 leastCommonMultipleTargetNums = LCM( numTargets )  #have to use this to choose whichToQuery. For explanation see newTrajectoryEventuallyForIdentityTracking.oo3
 print('leastCommonMultipleSubsets=',leastCommonMultipleSubsets)
@@ -537,6 +550,7 @@ thisTrial = trials.next()
 trialDurTotal=0;
 ts = list();
 while nDone <= trials.nTotal and expStop==False:
+    acceleratePsychopy(slowFast=1)
     angleIni=list();currAngle=list();moveDirection=list();RAI=list();isReversed=list();reversalNo=list();colors_ind=list();colorRings=list();preDrawStimToGreasePipeline = list()
     trackingVariableInterval=np.random.uniform(0,.8) #random interval taked onto tracking to make total duration variable so cant predict final position
     trialDurFrames= int( (trialDur+trackingExtraTime+trackingVariableInterval)*hz )
@@ -567,7 +581,7 @@ while nDone <= trials.nTotal and expStop==False:
     stimColorIdxsOrder=[[0,0],[0,0],[0,0]]#this is used for drawing blobs during stimulus
     for r in range(numRings): # set random reversal times
         thisReversalDur = trackingExtraTime
-        while thisReversalDur<trialDurTotal:
+        while thisReversalDur< trialDurTotal+.1:  #Creating 100ms more than need, in theory. Because if miss frames and using clock time instead of frames, might go longer
             thisReversalDur += np.random.uniform(timeTillReversalMin,timeTillReversalMax)
             RAI[r].append(thisReversalDur)
  
@@ -597,12 +611,10 @@ while nDone <= trials.nTotal and expStop==False:
             t=trialClock.getTime()-t0; ts.append(t);
             if n==trialDurFrames-1: event.clearEvents(eventType='mouse');
     #end of big stimulus loop
-    
+    acceleratePsychopy(slowFast=0)
     #check for timing problems
     interframeIntervs = np.diff(ts)*1000 #difference in time between successive frames, in ms
     #print >>logF, 'trialnum=',nDone, '   interframe intervs were ',around(interframeIntervs,1)
-    longerThanRefreshTolerance = 0.1
-    longFrameLimit = round(1000./hz*(1.0+longerThanRefreshTolerance),2) # round(1000/hz*1.5,2) #
     idxsInterframeLong = np.where( interframeIntervs > longFrameLimit ) [0] #frames that exceeded longerThanRefreshTolerance of expected duration
     numCasesInterframeLong = len( idxsInterframeLong )
     if numCasesInterframeLong >0:
@@ -613,6 +625,7 @@ while nDone <= trials.nTotal and expStop==False:
            longFramesStr += ' apparently screen refreshes skipped, interframe durs were:'+\
                     str( np.around(  interframeIntervs[idxsInterframeLong] ,1  ) )+ ' and was these frames: '+ str(idxsInterframeLong)
        if longFramesStr != None:
+                print('trialnum=',nDone,'  ',longFramesStr)
                 print('trialnum=',nDone,'  ',longFramesStr, file=logF)
                 if not demo:
                     flankingAlso=list()
@@ -723,7 +736,7 @@ while nDone <= trials.nTotal and expStop==False:
         NextText.draw()
         if nDone%(    max(trials.nTotal/4,1) ) ==0:  #have to enforce at least 1, otherwise will modulus by 0 when #trials is less than 4
             NextRemindCountText.setText(  round(    (1.0*nDone) / (1.0*trials.nTotal)*100,2    )    )
-            NextRemindText.setText(' % have done...')
+            NextRemindText.setText('% complete')
             NextRemindCountText.draw()
             NextRemindText.draw()
         myWin.flip(clearBuffer=True) 
@@ -747,4 +760,8 @@ print('%corr each speed: ', end=' ')
 print(np.around( numRightWrongEachSpeedOrder[:,1] / ( numRightWrongEachSpeedOrder[:,0] + numRightWrongEachSpeedOrder[:,1]), 2))
 print('\t\t\t\tnum trials each speed =', numRightWrongEachSpeedOrder[:,0] + numRightWrongEachSpeedOrder[:,1])
 logging.flush(); dataFile.close(); logF.close()
+if quitFinder:
+        applescript="\'tell application \"Finder\" to launch\'" #turn Finder back on
+        shellCmd = 'osascript -e '+applescript
+        os.system(shellCmd)
 core.quit()

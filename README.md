@@ -15,7 +15,7 @@ In the long term, want to set up exchange of objects among rings. Necessary to c
 
 Experiments
 - Is the speed limit the same in the periphery, when not rotating about fixation?
+-- Use 2 targets, because less cognitive contamination, with different eccentricities so can have an exactly-comparable condition at fixation.
 
 Issues
-- Check timing
-- Sometimes program dies due to reversal indexing issue. Looks like didn't allocate enough RAIs
+
