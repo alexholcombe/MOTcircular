@@ -68,7 +68,7 @@ def acceleratePsychopy(slowFast):
             gc.enable()
         core.rush(False)
 
-subject='test'#'AH'
+subject='AH'#'test'
 autoLogging = False
 demo = False
 autopilot=False
@@ -109,10 +109,10 @@ radii=[2.5,8,12] #[4,8,12]
 respRadius=radii[0] #deg
 hz=120 *1.0;  #set to the framerate of the monitor
 useClock = True
-trialDur =1 #3 4.8;
+trialDur =1.9 #3 4.8;
 if demo:trialDur = 5;hz = 60.; 
 tokenChosenEachRing= [-999]*numRings
-rampUpDur=.3; rampDownDur=.7; trackingExtraTime=.7; #giving the person time to attend to the cue (secs)
+rampUpDur=.3; rampDownDur=.7; trackingExtraTime=.4; #giving the person time to attend to the cue (secs)
 toTrackCueDur = rampUpDur+rampDownDur+trackingExtraTime
 trialDurFrames=int(trialDur*hz)+int( trackingExtraTime*hz )
 rampUpFrames = hz*rampUpDur;   rampDownFrames = hz*rampDownDur;  ShowTrackCueFrames = int( hz*toTrackCueDur )
@@ -187,7 +187,7 @@ gaussian = visual.PatchStim(myWin, tex='none',mask='gauss',colorSpace='rgb',size
 gaussian2 = visual.PatchStim(myWin, tex='none',mask='gauss',colorSpace='rgb',size=ballStdDev,autoLog=autoLogging)
 optionChosenCircle = visual.Circle(myWin, radius=mouseChoiceArea, edges=32, fillColorSpace='rgb',fillColor = (1,0,1),autoLog=autoLogging) #to outline chosen options
 clickableRegion = visual.Circle(myWin, radius=0.5, edges=32, fillColorSpace='rgb',fillColor = (-1,1,-1),autoLog=autoLogging) #to show clickable zones
-circlePostCue = visual.Circle(myWin, radius=2*radii[0], edges=32, fillColorSpace='rgb',fillColor = (-.7,-.7,-.7),lineColor=(-1,-1,-1),autoLog=autoLogging) #visual postcue
+circlePostCue = visual.Circle(myWin, radius=2*radii[0], edges=32, fillColorSpace='rgb',fillColor = (-.85,-.85,-.85),lineColor=(-1,-1,-1),autoLog=autoLogging) #visual postcue
 
 blindspotFill = 0 #a way for people to know if they move their eyes
 if blindspotFill:
@@ -725,22 +725,30 @@ while nDone <= trials.nTotal and expStop==False:
             lowD.setVolume(0.8)
             lowD.play()
     nDone+=1
-    
+    waitForKeyPressBetweenTrials = False
     if nDone< trials.nTotal:
-        nextTrial=True
-        NextText.setText('Press "SPACE" to continue')
-        NextText.draw()
-        if nDone%(    max(trials.nTotal/4,1) ) ==0:  #have to enforce at least 1, otherwise will modulus by 0 when #trials is less than 4
+        if nDone%( max(trials.nTotal/4,1) ) ==0:  #have to enforce at least 1, otherwise will modulus by 0 when #trials is less than 4
             NextRemindCountText.setText(  round(    (1.0*nDone) / (1.0*trials.nTotal)*100,2    )    )
             NextRemindText.setText('% complete')
             NextRemindCountText.draw()
             NextRemindText.draw()
-        myWin.flip(clearBuffer=True) 
-        while nextTrial:
-           if autopilot: break
-           elif expStop == True:break
+        waitingForKeypress = False
+        if waitForKeyPressBetweenTrials:
+            waitingForKeypress=True
+            NextText.setText('Press "SPACE" to continue')
+            NextText.draw()
+            myWin.flip(clearBuffer=True) 
+        while waitingForKeypress:
+           if autopilot:
+                waitingForKeypress=False
+           elif expStop == True:
+                waitingForKeypress=False
            for key in event.getKeys():       #check if pressed abort-type key
-                 if key in ['space']:nextTrial=False
+                 if key in ['space']: 
+                    waitingForKeypress=False
+                 if key in ['escape','q']:
+                    expStop = True
+                    waitingForKeypress=False
         myWin.clearBuffer()
         thisTrial = trials.next()
     if thisTrial['slitView']:  #need to give preview so sudden appearance doesn't evoke saccade
