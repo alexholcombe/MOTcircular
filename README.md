@@ -20,6 +20,7 @@ Experiments
 -- Speed limits look very similar for me.
 
 Issues
+-How do I recursively change n-dimensional array into a list
 -Fix 
 %corr order report=  76.24 % of  101  trials %corr each speed:  [ 0.45  1.    0.57  0.8   1.  ]
 				num trials each speed = [ 20.  20.  21.  20.  20.]
@@ -30,9 +31,8 @@ That is wrong, actual is
 1.20 1.000
 2  1.40 1.000
 3  1.80 0.825
--Flash partway message better
 -Have to just use single ring? Although there will always be a confound between crossing hemifields and not. Speed limit could conceivably even be one of crossing hemifields.
--Randomise visual field
+-Add dialog box
 -Initialise numRings lists better
 4  2.00 0.550
 5  2.25 0.500

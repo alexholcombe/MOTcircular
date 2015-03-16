@@ -71,7 +71,7 @@ def acceleratePsychopy(slowFast):
 subject='test'#'test'
 autoLogging = False
 demo = False
-autopilot=False
+autopilot=True
 if autopilot:  subject='auto'
 feedback=True
 exportImages= False #quits after one trial / output image
@@ -107,7 +107,7 @@ numRings=2
 RANum=8 #reversal times record. Recording reversal times of each ring
 radii=[2.5,8,12] #[4,8,12] 
 respRadius=radii[0] #deg
-hz=120 *1.0;  #set to the framerate of the monitor
+hz=60.0 #120 *1.0;  #set to the framerate of the monitor
 useClock = True
 trialDur =1.9 #3 4.8;
 if demo:trialDur = 5;hz = 60.; 
@@ -156,7 +156,7 @@ total_colors = 6; #6 #universe of colors that nb_colors color set for this displ
 nb_colors = 3; #3 #number unique colors in display. Works except answer and options doesn't take it into account. Assumes this value is 3
 
 #definition of monitor
-fullscr=1 ; scrn=0
+fullscr=0 ; scrn=0
 widthPix = 1024 #1440  #monitor width in pixels
 heightPix =768  #900 #monitor height in pixels
 monitorwidth = 38.5 #28.5 #monitor width in centimeters
@@ -282,17 +282,22 @@ for numObjs in numObjsInRing: #set up experiment design
                                               #might give more resources to one that's queried more often. Therefore for whichToQuery need to use least common multiple.
                               ringToQuery = s[whichSubsetEntry];  print('ringToQuery=',ringToQuery,'subset=',s)
                               for concentric in [0,1]:
-                                for quads13or24 in [0,1]:
-                                    offsetXYeachRing = [[0,0], [0,0]]
-                                    if concentric:
-                                        offsetXYeachRing =  [[-6,3],[10,-4.5]]
-                                        if quads13or24:
-                                           offsetXYeachRing = [[6,-3],[-10,4.5]]
-                                    for direction in [-1.0,1.0]:  
+                               for quads13or24 in [0,1]:
+                                for smallInWhichQuad in [0,1]:
+                                  offsetXYeachRing = np.array([[0,0], [0,0]])
+                                  if concentric:
+                                     offsetXYeachRing =  np.array([[-6,3],[10,-4.5]])
+                                     if quads13or24:
+                                        offsetXYeachRing = np.multiply( offsetXYeachRing, np.array([[1,-1],[1,-1]]) ) #flip y coordinate of each
+                                     if smallInWhichQuad:
+                                           offsetXYeachRing *= -1 #switch quadrants of the two
+                                     offsetXYeachRing = list(offsetXYeachRing) #so that when print, prints on one line
+                                     for direction in [-1.0,1.0]:  
                                         stimList.append( {'numObjectsInRing':numObjs,'speed':speed, 'direction':direction,'slitView':slitView,'numTargets':nt,'whichIsTarget':whichIsTarget,
-                                                                 'ringToQuery':ringToQuery,'concentric':concentric,'quads13or24':quads13or24,'offsetXYeachRing':offsetXYeachRing} )
-
+                                          'ringToQuery':ringToQuery,'concentric':concentric,'quads13or24':quads13or24,'smallInWhichQuad':smallInWhichQuad,'offsetXYeachRing':offsetXYeachRing} )
 #set up record of proportion correct in various conditions
+for stim in stimList:
+    print(stim['concentric'],stim['quads13or24'],stim['smallInWhichQuad'],stim['offsetXYeachRing']) #debugON
 trialSpeeds = list() #purely to allow report at end of how many trials got right at each speed
 for s in stimList: trialSpeeds.append( s['speed'] )
 uniqSpeeds = set(trialSpeeds) #reduce speedsUsed list to unique members, unordered set
@@ -530,7 +535,7 @@ def  collectResponses(n,responses,responsesAutopilot,offsetXYeachRing,respRadius
 
 print('Starting experiment of',trials.nTotal,'trials. Current trial is trial 0.')
 #print header for data file
-print('trialnum\tsubject\tnumObjects\tspeed\tdirection\tconcentric\tquads13or24\toffsetXYeachRing\tangleIni', end='\t', file=dataFile)
+print('trialnum\tsubject\tnumObjects\tspeed\tdirection\tconcentric\tquads13or24\tsmallInWhichQuad\toffsetXYeachRing\tangleIni', end='\t', file=dataFile)
 print('orderCorrect\ttrialDurTotal\tnumTargets', end= '\t', file=dataFile) 
 for i in range(numRings):
     print('whichIsTarget',i,     sep='', end='\t', file=dataFile)
@@ -697,8 +702,8 @@ while nDone <= trials.nTotal and expStop==False:
     if passThisTrial:orderCorrect = -1    #indicate for data analysis that observer opted out of this trial, because think they moved their eyes
 
     #header starts trialnum\tsubject\tnumObjects\tspeed\tdirection\toffsetXYeachRing', 'orderCorrect\ttrialDurTotal\tnumTargets'
-    print(nDone,'\t',subject,'\t',thisTrial['numObjectsInRing'],'\t',thisTrial['speed'],'\t',thisTrial['direction'], end='\t', file=dataFile)
-    print(thisTrial['concentric'],thisTrial['quads13or24'],thisTrial['offsetXYeachRing'],angleIni,end='\t',file=dataFile)
+    print(nDone,subject,thisTrial['numObjectsInRing'],thisTrial['speed'],thisTrial['direction'],sep='\t', end='\t', file=dataFile)
+    print(thisTrial['concentric'],thisTrial['quads13or24'],thisTrial['smallInWhichQuad'],thisTrial['offsetXYeachRing'],angleIni,sep='\t',end='\t',file=dataFile)
     print(orderCorrect,'\t',trialDurTotal,'\t',thisTrial['numTargets'],'\t', end=' ', file=dataFile) #override newline end
     for i in range(numRings):  print( thisTrial['whichIsTarget'][i], end='\t', file=dataFile  )
     print( thisTrial['ringToQuery'],end='\t',file=dataFile )
