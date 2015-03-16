@@ -68,10 +68,10 @@ def acceleratePsychopy(slowFast):
             gc.enable()
         core.rush(False)
 
-subject='test'#'test'
+subject='AH'#'test'
 autoLogging = False
 demo = False
-autopilot=True
+autopilot=False
 if autopilot:  subject='auto'
 feedback=True
 exportImages= False #quits after one trial / output image
@@ -90,7 +90,8 @@ if os.path.isdir('.'+os.sep+'dataRaw'):
 else:
     print('"dataRaw" directory does not exist, so saving data in present working directory')
     dataDir='.'
-fileName = dataDir+'/'+subject+'_TemporalFrequencyLimit_3Rings_'+timeAndDateStr
+expname =''
+fileName = dataDir+'/'+subject+ '_' + expname+timeAndDateStr
 if not demo and not exportImages:
     dataFile = open(fileName+'.txt', 'w')  # sys.stdout  #StringIO.StringIO() 
     saveCodeCmd = 'cp \'' + sys.argv[0] + '\' '+ fileName + '.py'
@@ -107,7 +108,7 @@ numRings=2
 RANum=8 #reversal times record. Recording reversal times of each ring
 radii=[2.5,8,12] #[4,8,12] 
 respRadius=radii[0] #deg
-hz=60.0 #120 *1.0;  #set to the framerate of the monitor
+hz=120 *1.0;  #set to the framerate of the monitor
 useClock = True
 trialDur =1.9 #3 4.8;
 if demo:trialDur = 5;hz = 60.; 
@@ -155,8 +156,8 @@ colors_all = colors_all2  *2-1
 total_colors = 6; #6 #universe of colors that nb_colors color set for this display is drawn from
 nb_colors = 3; #3 #number unique colors in display. Works except answer and options doesn't take it into account. Assumes this value is 3
 
-#definition of monitor
-fullscr=0 ; scrn=0
+#monitor parameters
+fullscr=1 ; scrn=0
 widthPix = 1024 #1440  #monitor width in pixels
 heightPix =768  #900 #monitor height in pixels
 monitorwidth = 38.5 #28.5 #monitor width in centimeters
@@ -307,7 +308,7 @@ numRightWrongEachSpeedOrder = np.zeros([ len(uniqSpeeds), 2 ]); #summary results
 numRightWrongEachSpeedIdent = deepcopy(numRightWrongEachSpeedOrder)
 #end setup of record of proportion correct in various conditions
 
-blockReps=5       #14
+blockReps=1 #5
 trials = data.TrialHandler(stimList,blockReps) #constant stimuli method
 refreshTimingCheck = None #'grating'
 try:
