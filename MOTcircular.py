@@ -68,7 +68,7 @@ def acceleratePsychopy(slowFast):
             gc.enable()
         core.rush(False)
 
-subject='AH'#'test'
+subject='test'#'test'
 autoLogging = False
 demo = False
 autopilot=False
@@ -85,10 +85,10 @@ respTypes=['order']; respType=respTypes[0]
 bindRadiallyRingToIdentify=1 #0 is inner, 1 is outer
 trackPostcueOrClick = 1 #postcue means say yes/no postcued was a target, click means click on which you think was/were the targets
 
-if os.path.isdir('.'+os.sep+'data'):
-    dataDir='data'
+if os.path.isdir('.'+os.sep+'dataRaw'):
+    dataDir='dataRaw'
 else:
-    print('"data" directory does not exist, so saving data in present working directory')
+    print('"dataRaw" directory does not exist, so saving data in present working directory')
     dataDir='.'
 fileName = dataDir+'/'+subject+'_TemporalFrequencyLimit_3Rings_'+timeAndDateStr
 if not demo and not exportImages:
@@ -123,8 +123,8 @@ units='deg' #'cm'
 if showRefreshMisses:fixSize = 2.6  #make fixation bigger so flicker more conspicuous
 else: fixSize = 0.3
 timeTillReversalMin = 0.25; timeTillReversalMax = 1.0 #2.9
-offsetXYeachRingPeripheryExperiment= [[-6,3],[10,-4.5],[0,0],[0,0]]
-offsetXYeachRing=[[0,0],[0,0],[0,0],[0,0]]
+offsetXYeachRingPeripheryExperiment= [[-6,3],[10,-4.5],[0,0]]
+offsetXYeachRing=[[0,0],[0,0],[0,0]]
 offsetXYeachRing = offsetXYeachRingPeripheryExperiment
 
 #start definition of colors 
@@ -257,9 +257,9 @@ maskOrbit = visual.PatchStim(myWin,tex='none',colorSpace='rgb',color=(1,1,0),mas
 stimList = []
 # temporalfrequency limit test
 numObjsInRing = [2]
-speedsEachNumObjs = [ [1.2,1.4, 1.8, 2.0, 2.25],     #these correspond to the speeds to use for each entry of numObjsInRing
-                                         [1.2,1.4, 1.8, 2.0, 2.25], 
-                                         [1.2,1.4, 1.8, 2.0, 2.25]   ]
+speedsEachNumObjs = [ [1.5, 1.8, 2.0, 2.25],     #these correspond to the speeds to use for each entry of numObjsInRing
+                                         [1.5, 1.8, 2.0, 2.25], 
+                                         [1.5, 1.8, 2.0, 2.25]   ]
 numTargets = np.array([2])  # np.array([1,2,3])
 leastCommonMultipleSubsets = calcCondsPerNumTargets(numRings,numTargets)
 leastCommonMultipleTargetNums = LCM( numTargets )  #have to use this to choose whichToQuery. For explanation see newTrajectoryEventuallyForIdentityTracking.oo3
@@ -284,12 +284,11 @@ for numObjs in numObjsInRing: #set up experiment design
                               whichSubsetEntry = whichToQuery % nt  #e.g. if nt=2 and whichToQuery can be 0,1,or2 then modulus result is 0,1,0. This implies that whichToQuery won't be totally counterbalanced with which subset, which is bad because
                                               #might give more resources to one that's queried more often. Therefore for whichToQuery need to use least common multiple.
                               ringToQuery = s[whichSubsetEntry];  print('ringToQuery=',ringToQuery,'subset=',s)
-                              for relPhaseOuterRing in np.array([0]):
+                              for offsetXYeachRing in [   [[-6,3],[10,-4.5],[0,0]],   
+                                                                          [[0,0], [0,0      ],[0,0]]            ]:
                                  for direction in [-1.0,1.0]:  
-                                    relPhaseOuterRing = relPhaseOuterRing*(2*np.pi)/2
-                                    relPhaseOuterRingPositiveInDirectionOfMotion = relPhaseOuterRing*direction
-                                    stimList.append( {'numObjectsInRing':numObjs,'speed':speed, 'direction':direction,'slitView':slitView,'numTargets':nt,'whichIsTarget':whichIsTarget,\
-                                                                 'ringToQuery':ringToQuery,'relPhaseOuterRing':relPhaseOuterRingPositiveInDirectionOfMotion} )
+                                    stimList.append( {'numObjectsInRing':numObjs,'speed':speed, 'direction':direction,'slitView':slitView,'numTargets':nt,'whichIsTarget':whichIsTarget,
+                                                                 'ringToQuery':ringToQuery,'offsetXYeachRing':offsetXYeachRing} )
 
 #set up record of proportion correct in various conditions
 trialSpeeds = list() #purely to allow report at end of how many trials got right at each speed
@@ -347,7 +346,7 @@ def angleChangeThisFrame(thisTrial, moveDirection, numRing, thisFrameN, lastFram
     anglemove = moveDirection[numRing]*thisTrial['direction']*thisTrial['speed']*2*pi*(thisFrameN-lastFrameN)/hz
     return anglemove
 
-def  oneFrameOfStim(currFrame,clock,useClock,currAngle,blobToCueEachRing,isReversed,reversalNo,ShowTrackCueFrames): 
+def  oneFrameOfStim(currFrame,clock,useClock,offsetXYeachRing,currAngle,blobToCueEachRing,isReversed,reversalNo,ShowTrackCueFrames): 
 #defining a function to draw each frame of stim. So can call second time for tracking task response phase
           global cueRing,ringRadial,ringRadialR, currentlyCuedBlob #makes python treat it as a local variable
           global angleIni, correctAnswers
@@ -398,7 +397,7 @@ def  oneFrameOfStim(currFrame,clock,useClock,currAngle,blobToCueEachRing,isRever
 # #######End of function definition that displays the stimuli!!!! #####################################
 
 showClickableRegions = True
-def  collectResponses(n,responses,responsesAutopilot,respRadius,currAngle,expStop ):
+def  collectResponses(n,responses,responsesAutopilot,offsetXYeachRing,respRadius,currAngle,expStop ):
     optionSets=numRings;    
     
    #Draw response cues
@@ -528,7 +527,7 @@ def  collectResponses(n,responses,responsesAutopilot,respRadius,currAngle,expSto
 
 print('Starting experiment of',trials.nTotal,'trials. Current trial is trial 0.')
 #print header for data file
-print('trialnum\tsubject\tnumObjects\tspeed\tdirection', end='\t', file=dataFile)
+print('trialnum\tsubject\tnumObjects\tspeed\tdirection\toffsetXYeachRing', end='\t', file=dataFile)
 print('orderCorrect\ttrialDurTotal\tnumTargets', end= '\t', file=dataFile) 
 for i in range(numRings):
     print('whichIsTarget',i,     sep='', end='\t', file=dataFile)
@@ -555,8 +554,7 @@ while nDone <= trials.nTotal and expStop==False:
     numDistracters = numRings*thisTrial['numObjectsInRing'] - thisTrial['numTargets']
     xyDistracters = np.zeros( [numDistracters, 2] )
     for ringNum in range(numRings): # initialise  parameters
-         #angleIni.append(random.uniform(0,2*pi));
-         angleIni.append(np.random.uniform(0,360));
+         angleIni.append(np.random.uniform(0,2*pi)) #radians
          currAngle.append(0);
          moveDirection.append(-999);
          RAI.append(list());
@@ -599,7 +597,7 @@ while nDone <= trials.nTotal and expStop==False:
     stimClock.reset()
     for n in range(trialDurFrames): #this is the loop for this trial's stimulus!
             (angleIni,currAngle,isReversed,reversalNo) = \
-                            oneFrameOfStim(n,stimClock,useClock,currAngle,blobsToPreCue,isReversed,reversalNo,ShowTrackCueFrames) #da big function
+                            oneFrameOfStim(n,stimClock,useClock,thisTrial['offsetXYeachRing'],currAngle,blobsToPreCue,isReversed,reversalNo,ShowTrackCueFrames) #da big function
             if exportImages:
                 myWin.getMovieFrame(buffer='back') #for later saving
                 framesSaved +=1
@@ -653,7 +651,8 @@ while nDone <= trials.nTotal and expStop==False:
     postCueNumBlobsAway=-999 #doesn't apply to click tracking and non-tracking task
      # ####### response set up answer
     responses = list();  responsesAutopilot = list()
-    responses,responsesAutopilot,respondedEachToken,expStop = collectResponses(n,responses,responsesAutopilot,respRadius,currAngle,expStop)  #collect responses!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#####
+    responses,responsesAutopilot,respondedEachToken,expStop = \
+            collectResponses(n,responses,responsesAutopilot,thisTrial['offsetXYeachRing'],respRadius,currAngle,expStop)  #collect responses!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#####
     #print("responses=",responses,";respondedEachToken=",respondedEachToken,"expStop=",expStop) #debugOFF
     core.wait(.1)
     if exportImages:  #maybe catch one frame of response
@@ -693,9 +692,11 @@ while nDone <= trials.nTotal and expStop==False:
                         blueMistake =1                
         #end if statement for if not expStop
     if passThisTrial:orderCorrect = -1    #indicate for data analysis that observer opted out of this trial, because think they moved their eyes
-    
-    print(nDone,'\t',subject,'\t',thisTrial['numObjectsInRing'],'\t',thisTrial['speed'],'\t',thisTrial['direction'], end=' ', file=dataFile)
-    print('\t', orderCorrect,'\t',trialDurTotal,'\t',thisTrial['numTargets'],'\t', end=' ', file=dataFile) #override newline end
+
+    #header starts trialnum\tsubject\tnumObjects\tspeed\tdirection\toffsetXYeachRing', 'orderCorrect\ttrialDurTotal\tnumTargets'
+    print(nDone,'\t',subject,'\t',thisTrial['numObjectsInRing'],'\t',thisTrial['speed'],'\t',thisTrial['direction'], end='\t', file=dataFile)
+    print(thisTrial['offsetXYeachRing'],end='\t',file=dataFile)
+    print(orderCorrect,'\t',trialDurTotal,'\t',thisTrial['numTargets'],'\t', end=' ', file=dataFile) #override newline end
     for i in range(numRings):  print( thisTrial['whichIsTarget'][i], end='\t', file=dataFile  )
     print( thisTrial['ringToQuery'],end='\t',file=dataFile )
     for i in range(numRings):dataFile.write(str(round(moveDirection[i],4))+'\t') 
