@@ -286,14 +286,14 @@ for numObjs in numObjsInRing: #set up experiment design
                                for quads13or24 in [0,1]:
                                 for smallInWhichQuad in [0,1]:
                                   offsetXYeachRing = np.array([[0,0], [0,0]])
-                                  if concentric:
-                                     offsetXYeachRing =  np.array([[-6,3],[10,-4.5]])
-                                     if quads13or24:
-                                        offsetXYeachRing = np.multiply( offsetXYeachRing, np.array([[1,-1],[1,-1]]) ) #flip y coordinate of each
-                                     if smallInWhichQuad:
-                                           offsetXYeachRing *= -1 #switch quadrants of the two
-                                     offsetXYeachRing = list(offsetXYeachRing) #so that when print, prints on one line
-                                     for direction in [-1.0,1.0]:  
+                                  if not concentric:
+                                         offsetXYeachRing =  np.array([[-6,3],[10,-4.5]])
+                                         if quads13or24:
+                                            offsetXYeachRing = np.multiply( offsetXYeachRing, np.array([[1,-1],[1,-1]]) ) #flip y coordinate of each
+                                         if smallInWhichQuad:
+                                               offsetXYeachRing *= -1 #switch quadrants of the two
+                                  offsetXYeachRing = list(offsetXYeachRing) #so that when print, prints on one line
+                                  for direction in [-1.0,1.0]:  
                                         stimList.append( {'numObjectsInRing':numObjs,'speed':speed, 'direction':direction,'slitView':slitView,'numTargets':nt,'whichIsTarget':whichIsTarget,
                                           'ringToQuery':ringToQuery,'concentric':concentric,'quads13or24':quads13or24,'smallInWhichQuad':smallInWhichQuad,'offsetXYeachRing':offsetXYeachRing} )
 #set up record of proportion correct in various conditions

@@ -13,11 +13,12 @@ How do we handle reversals? Reversals necessitate integration. So, either pre-ge
 
 In the long term, want to set up exchange of objects among rings. Necessary to conduct an identity-tracking experiment. Can also push harder on speed limit that way.
 
-Experiments
-- Is the speed limit the same in the periphery, when not rotating about fixation?
--- Use 2 targets, because less cognitive contamination, with different eccentricities so can have an exactly-comparable condition at fixation.
--- Run interleaved concentric versus out to side
--- Speed limits look very similar for me.
+## Experiment: Concentric vs. peripheral
+Is the speed limit the same in the periphery, when not rotating about fixation?
+- Use 2 targets, because less cognitive contamination, with different eccentricities so can have an exactly-comparable condition at fixation.
+- Downside of 2 targets is that when concentric you can occasionally group them. That will make concentric look better than it should.
+- We know the speed limit can't be a blur-limited limit because temporal blurring length is proportional to linear speed, not rps. So in periphery, looks really blurred yet speed limit doesn't go down much. (Ultimately temporal blurring predicts a tf limit but already shown that doesn't hit until 7 Hz, far faster than 2 rps).
+- Could do it with 1 target, but then have the eye movements problem and worse blurring problem at 120 Hz. Somewhat mitigated by having both orbits present but only one with a target.
 
 Issues
 -How do I recursively change n-dimensional array into a list
