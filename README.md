@@ -16,6 +16,7 @@ In the long term, want to set up exchange of objects among rings. Necessary to c
 Experiments
 - Is the speed limit the same in the periphery, when not rotating about fixation?
 -- Use 2 targets, because less cognitive contamination, with different eccentricities so can have an exactly-comparable condition at fixation.
+-- Run interleaved concentric versus out to side
 
 Issues
 -Analyze data, see if matches
@@ -25,4 +26,9 @@ and
 				
  79.21 % of  101  trials %corr each speed:  [ 0.55  1.    0.55  0.85  1.  ]
 				num trials each speed = [ 20.  20.  20.  20.  21.]
-
+That is wrong, actual is
+1.20 1.000
+2  1.40 1.000
+3  1.80 0.825
+4  2.00 0.550
+5  2.25 0.500
