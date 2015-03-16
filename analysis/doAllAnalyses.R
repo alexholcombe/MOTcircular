@@ -10,6 +10,7 @@ load(anonDataFilename,verbose=TRUE)  #returns dat
 
 offCenter = dat
 iv= 'speed'
+#need to add offsetXYeachRing to factors analysed
 source('analyzeMakeReadyForPlot.R') #returns fitParms, psychometrics, and function calcPctCorrThisSpeed
 source('plotIndividDataWithPsychometricCurves.R')
 

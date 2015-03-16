@@ -17,6 +17,7 @@ Experiments
 - Is the speed limit the same in the periphery, when not rotating about fixation?
 -- Use 2 targets, because less cognitive contamination, with different eccentricities so can have an exactly-comparable condition at fixation.
 -- Run interleaved concentric versus out to side
+-- Speed limits look very similar for me.
 
 Issues
 -Fix 
@@ -29,7 +30,9 @@ That is wrong, actual is
 1.20 1.000
 2  1.40 1.000
 3  1.80 0.825
-
+-Flash partway message better
+-Have to just use single ring? Although there will always be a confound between crossing hemifields and not. Speed limit could conceivably even be one of crossing hemifields.
+-Randomise visual field
 -Initialise numRings lists better
 4  2.00 0.550
 5  2.25 0.500

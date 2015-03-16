@@ -34,9 +34,9 @@ for ( expThis in sort(unique(dat$exp)) ) {  #draw individual Ss' data, for each 
   title<-paste('E',expThis,' individual Ss data',sep='')
   quartz(title,width=10,height=7)
   thisExpDat <- subset(dat,exp==expThis)
-  g=ggplot(data= thisExpDat,aes(x=speed,y=correct,color=factor(numTargets),shape=factor(numObjects)))
+  g=ggplot(data= thisExpDat,aes(x=speed,y=correct,color=factor(numTargets),shape=factor(offsetXYeachRing)))
   g=g+stat_summary(fun.y=mean,geom="point", position=position_jitter(w=0.04,h=0),alpha=.95)
-  g=g+facet_grid(numObjects ~ subject)+theme_bw()
+  g=g+facet_grid(ringToQuery ~ subject)+theme_bw()
   #g<-g+ coord_cartesian( xlim=c(xLims[1],xLims[2]), ylim=yLims ) #have to use coord_cartesian here instead of naked ylim()
   show(g)
   #draw individual psychometric functions, for only one experiment  

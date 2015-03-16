@@ -123,9 +123,6 @@ units='deg' #'cm'
 if showRefreshMisses:fixSize = 2.6  #make fixation bigger so flicker more conspicuous
 else: fixSize = 0.3
 timeTillReversalMin = 0.25; timeTillReversalMax = 1.0 #2.9
-offsetXYeachRingPeripheryExperiment= [[-6,3],[10,-4.5],[0,0]]
-offsetXYeachRing=[[0,0],[0,0],[0,0]]
-offsetXYeachRing = offsetXYeachRingPeripheryExperiment
 
 #start definition of colors 
 hues=np.arange(16)/16.
@@ -257,9 +254,9 @@ maskOrbit = visual.PatchStim(myWin,tex='none',colorSpace='rgb',color=(1,1,0),mas
 stimList = []
 # temporalfrequency limit test
 numObjsInRing = [2]
-speedsEachNumObjs = [ [1.5, 1.8, 2.0, 2.25],     #these correspond to the speeds to use for each entry of numObjsInRing
-                                         [1.5, 1.8, 2.0, 2.25], 
-                                         [1.5, 1.8, 2.0, 2.25]   ]
+speedsEachNumObjs = [ [1.5, 1.65, 1.8, 2.0],     #these correspond to the speeds to use for each entry of numObjsInRing
+                                         [1.5, 1.65, 1.8, 2.0], 
+                                         [1.5, 1.65, 1.8, 2.0]   ]
 numTargets = np.array([2])  # np.array([1,2,3])
 leastCommonMultipleSubsets = calcCondsPerNumTargets(numRings,numTargets)
 leastCommonMultipleTargetNums = LCM( numTargets )  #have to use this to choose whichToQuery. For explanation see newTrajectoryEventuallyForIdentityTracking.oo3
@@ -284,18 +281,24 @@ for numObjs in numObjsInRing: #set up experiment design
                               whichSubsetEntry = whichToQuery % nt  #e.g. if nt=2 and whichToQuery can be 0,1,or2 then modulus result is 0,1,0. This implies that whichToQuery won't be totally counterbalanced with which subset, which is bad because
                                               #might give more resources to one that's queried more often. Therefore for whichToQuery need to use least common multiple.
                               ringToQuery = s[whichSubsetEntry];  print('ringToQuery=',ringToQuery,'subset=',s)
-                              for offsetXYeachRing in [   [[-6,3],[10,-4.5],[0,0]],   
-                                                                          [[0,0], [0,0      ],[0,0]]            ]:
-                                 for direction in [-1.0,1.0]:  
-                                    stimList.append( {'numObjectsInRing':numObjs,'speed':speed, 'direction':direction,'slitView':slitView,'numTargets':nt,'whichIsTarget':whichIsTarget,
-                                                                 'ringToQuery':ringToQuery,'offsetXYeachRing':offsetXYeachRing} )
+                              for concentric in [0,1]:
+                                for quads13or24 in [0,1]:
+                                    offsetXYeachRing = [[0,0], [0,0]]
+                                    if concentric:
+                                        offsetXYeachRing =  [[-6,3],[10,-4.5]]
+                                        if quads13or24:
+                                           offsetXYeachRing = [[6,-3],[-10,4.5]]
+                                    for direction in [-1.0,1.0]:  
+                                        stimList.append( {'numObjectsInRing':numObjs,'speed':speed, 'direction':direction,'slitView':slitView,'numTargets':nt,'whichIsTarget':whichIsTarget,
+                                                                 'ringToQuery':ringToQuery,'concentric':concentric,'quads13or24':quads13or24,'offsetXYeachRing':offsetXYeachRing} )
 
 #set up record of proportion correct in various conditions
 trialSpeeds = list() #purely to allow report at end of how many trials got right at each speed
 for s in stimList: trialSpeeds.append( s['speed'] )
-allSpeeds = set(trialSpeeds)  #reduce speedsUsed list to unique members
-allSpeeds = np.array( list(allSpeeds) ) #to turn a set into an array, have to first cast it as a list
-numRightWrongEachSpeedOrder = np.zeros([ len(allSpeeds), 2 ]); #summary results to print out at end
+uniqSpeeds = set(trialSpeeds) #reduce speedsUsed list to unique members, unordered set
+uniqSpeeds = sorted( list(uniqSpeeds)  )
+uniqSpeeds = np.array( uniqSpeeds ) 
+numRightWrongEachSpeedOrder = np.zeros([ len(uniqSpeeds), 2 ]); #summary results to print out at end
 numRightWrongEachSpeedIdent = deepcopy(numRightWrongEachSpeedOrder)
 #end setup of record of proportion correct in various conditions
 
@@ -527,7 +530,7 @@ def  collectResponses(n,responses,responsesAutopilot,offsetXYeachRing,respRadius
 
 print('Starting experiment of',trials.nTotal,'trials. Current trial is trial 0.')
 #print header for data file
-print('trialnum\tsubject\tnumObjects\tspeed\tdirection\toffsetXYeachRing', end='\t', file=dataFile)
+print('trialnum\tsubject\tnumObjects\tspeed\tdirection\tconcentric\tquads13or24\toffsetXYeachRing\tangleIni', end='\t', file=dataFile)
 print('orderCorrect\ttrialDurTotal\tnumTargets', end= '\t', file=dataFile) 
 for i in range(numRings):
     print('whichIsTarget',i,     sep='', end='\t', file=dataFile)
@@ -695,7 +698,7 @@ while nDone <= trials.nTotal and expStop==False:
 
     #header starts trialnum\tsubject\tnumObjects\tspeed\tdirection\toffsetXYeachRing', 'orderCorrect\ttrialDurTotal\tnumTargets'
     print(nDone,'\t',subject,'\t',thisTrial['numObjectsInRing'],'\t',thisTrial['speed'],'\t',thisTrial['direction'], end='\t', file=dataFile)
-    print(thisTrial['offsetXYeachRing'],end='\t',file=dataFile)
+    print(thisTrial['concentric'],thisTrial['quads13or24'],thisTrial['offsetXYeachRing'],angleIni,end='\t',file=dataFile)
     print(orderCorrect,'\t',trialDurTotal,'\t',thisTrial['numTargets'],'\t', end=' ', file=dataFile) #override newline end
     for i in range(numRings):  print( thisTrial['whichIsTarget'][i], end='\t', file=dataFile  )
     print( thisTrial['ringToQuery'],end='\t',file=dataFile )
@@ -708,7 +711,7 @@ while nDone <= trials.nTotal and expStop==False:
     print(numCasesInterframeLong, file=dataFile)
     numTrialsOrderCorrect += (orderCorrect >0)  #so count -1 as 0
     numAllCorrectlyIdentified += (numColorsCorrectlyIdentified==3)
-    speedIdx = np.where(allSpeeds==thisTrial['speed'])[0][0]  #extract index, where returns a list with first element array of the indexes
+    speedIdx = np.where(uniqSpeeds==thisTrial['speed'])[0][0]  #extract index, where returns a list with first element array of the indexes
     numRightWrongEachSpeedOrder[ speedIdx, (orderCorrect >0) ] +=1  #if right, add to 1th column, otherwise add to 0th column count
     numRightWrongEachSpeedIdent[ speedIdx, (numColorsCorrectlyIdentified==3) ] +=1
     blueMistakes+=blueMistake
@@ -738,7 +741,10 @@ while nDone <= trials.nTotal and expStop==False:
             waitingForKeypress=True
             NextText.setText('Press "SPACE" to continue')
             NextText.draw()
+            NextRemindCountText.draw()
+            NextRemindText.draw()
             myWin.flip(clearBuffer=True) 
+        else: core.wait(0.15)
         while waitingForKeypress:
            if autopilot:
                 waitingForKeypress=False
