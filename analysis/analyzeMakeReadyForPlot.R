@@ -6,7 +6,7 @@ varyLapseRate = FALSE
 if (varyLapseRate) { lapseMinMax= c(0,0.05) }  else  #range of lapseRates to try for best fit
 	{ lapseMinMax = c(0.01,0.01) }
 chanceRate=.5
-factorsForBreakdown = c('exp','numObjects','numTargets')
+factorsForBreakdown = c('exp','concentric','ringToQuery') #'offsetXYeachRing' #'numTargets'
 xLims=c(.04,4);  if (iv=="tf") {xLims=c(.5,8)}
 yLims=c(.3,1.05)
 numPointsForPsychometricCurve=150 #250

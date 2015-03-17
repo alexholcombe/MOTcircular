@@ -326,9 +326,10 @@ makeMyPlotCurve4<- function(iv,xmin,xmax,numxs) {#create psychometric curve plot
     if (df$method=="brglm.fit" | df$method=="glm.fit") {#Doesn't support custom link function, so had to scale from guessing->1-lapsing manually
 		  pfit<-unscale0to1(pfit,df$chanceRate,df$lapseRate)
 	  }
-    if(df$numTargets=="2P"){ #Parameters were duplicate of numTargets==1, and p's are corresponding prediction averaged with chance
-      pfit<-0.5*(df$chanceRate+pfit)
-    }	
+    if ("numTargets" %in% names(fitParms))
+      if(df$numTargets=="2P"){ #Parameters were duplicate of numTargets==1, and p's are corresponding prediction averaged with chance
+        pfit<-0.5*(df$chanceRate+pfit)
+      }	
     #returning the dependent variable with two names because some functions expect one
     #Reason is that want to be able to plot it with same ggplot stat_summary as use for raw
     #data that expects "correct"
