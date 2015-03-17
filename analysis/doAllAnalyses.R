@@ -14,6 +14,9 @@ iv= 'speed'
 source('analyzeMakeReadyForPlot.R') #returns fitParms, psychometrics, and function calcPctCorrThisSpeed
 source('plotIndividDataWithPsychometricCurves.R')
 
+source("extractThreshesAndPlot.R") #provides threshes, thresh plots
+
+
 #MAYBE TO BE USED IN FUTURE, BUT PRESENTLY OFF-CENTER EXPERIMENT ANALYZED BY
 #PRE-REPOSITORY R FILES
 # expName="postVSS_13targets2349objects" 

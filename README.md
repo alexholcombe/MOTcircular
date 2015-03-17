@@ -19,21 +19,14 @@ Is the speed limit the same in the periphery, when not rotating about fixation?
 - Downside of 2 targets is that when concentric you can occasionally group them. That will make concentric look better than it should.
 - We know the speed limit can't be a blur-limited limit because temporal blurring length is proportional to linear speed, not rps. So in periphery, looks really blurred yet speed limit doesn't go down much. (Ultimately temporal blurring predicts a tf limit but already shown that doesn't hit until 7 Hz, far faster than 2 rps).
 - Could do it with 1 target, but then have the eye movements problem and worse blurring problem at 120 Hz. Somewhat mitigated by having both orbits present but only one with a target.
+- Have to just use single ring? Although there will always be a confound between crossing hemifields and not. Speed limit could conceivably even have been one of crossing hemifields. Yes, so I'm testing that hypothesis.
+
+Results
+- Critical issue is speed limit of smaller-radius one when not concentric. Smaller one is always ringToQuery=0. Speed limit for me is lower by about 0.4rps. Went from mean eccentricity of 2.5 to centered on -6,3 which has eccentricity of 6.7. Mean eccentricity of that circle is then what?  Anyway, speed limit should go down by a factor of 2 according to the number of neurons crossed theory? 
+
 
 Issues
 -How do I recursively change n-dimensional array into a list
--Fix 
-%corr order report=  76.24 % of  101  trials %corr each speed:  [ 0.45  1.    0.57  0.8   1.  ]
-				num trials each speed = [ 20.  20.  21.  20.  20.]
-				
- 79.21 % of  101  trials %corr each speed:  [ 0.55  1.    0.55  0.85  1.  ]
-				num trials each speed = [ 20.  20.  20.  20.  21.]
-That is wrong, actual is
-1.20 1.000
-2  1.40 1.000
-3  1.80 0.825
--Have to just use single ring? Although there will always be a confound between crossing hemifields and not. Speed limit could conceivably even be one of crossing hemifields.
--Add dialog box
+-Still not seeing progress message.
+-Add dialog box, for Arni
 -Initialise numRings lists better
-4  2.00 0.550
-5  2.25 0.500
