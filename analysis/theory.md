@@ -3,15 +3,11 @@ Neurons-per-unit-time theory
 
 - The speed limit is caused by a minimum time required to deselect neurons corresponding to old locations and select neurons corresponding to new locations.
 
--- explains why the rps speed limit is approximately the same for higher eccentricity. The # of neurons one needs to select/deselect per degree of visual angle decreases by 2*pi for every unit increase in deg of visual angle. In other words, neurons at 5 deg ecc are spaced 2pi further apart than are neurons at 4 deg ecc. 
-
--- makes a prediction for what will happen when we move a circular trajectory from being centred on fixation into the periphery. When we move something from a mean eccentricity of 2.5 to a mean eccentricity of 6.7, that's an increase of 4.2 deg. So we'd have to increase the distance traveled by 8.4pi to have the same level of performance.
-
--- By simply shifting the whole trajectory to be more eccentric, we instead didn't increase the distance traveled at all. That means that the speed limit should now be much higher. I guess it should be 8.4pi times higher.
-
--- Speed limit in deg/sec (e) = `4*pi*e`   which is always equal to 2 rps
-
--- E.g. if test at e=6.7, speed limit = `4*pi*6.7deg/sec`
+- explains why the rps speed limit is approximately the same for higher eccentricity. The # of neurons one needs to select/deselect per degree of visual angle decreases by 2*pi for every unit increase in deg of visual angle. In other words, neurons at 5 deg ecc are spaced 2pi further apart than are neurons at 4 deg ecc. 
+- makes a prediction for what will happen when we move a circular trajectory from being centred on fixation into the periphery. When we move something from a mean eccentricity of 2.5 to a mean eccentricity of 6.7, that's an increase of 4.2 deg. So we'd have to increase the distance traveled by 8.4pi to have the same level of performance.
+- By simply shifting the whole trajectory to be more eccentric, we instead didn't increase the distance traveled at all. That means that the speed limit should now be much higher. I guess it should be 8.4pi times higher.
+- Speed limit in deg/sec (e) = `4*pi*e`   which is always equal to 2 rps
+- E.g. if test at e=6.7, speed limit = `4*pi*6.7deg/sec`
  - If that traj has a radius of 2.5, then its path length is 5*pi.
  - So in rps, that's `(4*pi*6.7 deg/sec) / (5*pi deg/rev) ` = 5.36 rps
  
