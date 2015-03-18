@@ -17,7 +17,11 @@ Neurons-per-unit-time theory
 - Figure 6b of Gurnsey, Roddy & Chanab 2011 shows critical separation as a function of eccentricity and how it varies. As they say in their discussion on p. 14, 0.5 is plenty. So to be safe, let's not allow spacing to go below 0.55 of eccentricity.
 - r will be `0.55*e`   Therefore, e = r/0.55
 - Speed limit =`4*pi*e` 
-- Substitute in r/ 
+- Substitute in r/0.55 for e
+- `4*pi*r/0.55` deg per second
+- In rps, `4*pi*r/0.55 / (2*pi*r)` = `2/0.55` = 3.64 rps
+- In other words, shifting any trajectory as peripheral as you can before running into crowding should inflate the speed limit to 3.64 rps.
+
 
 the size of the effect as a function of r = e/2   So for every radius r, the biggest eccentricity I can use is e = r*2 .
 
