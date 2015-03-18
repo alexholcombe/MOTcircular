@@ -3,6 +3,8 @@ Specific experiments
 
 ## Experiment: Concentric vs. peripheral
 Is the speed limit the same in the periphery, when not rotating about fixation?
+- See [theory](analysis/theory.md) for uncrowded stimulus choice and prediction
+- To eyetrack or not to eyetrack? Could include the flicker-revealer and appeal to past recordings of these participants.. Or ask Chris to show me his code, pay someone to go through the trials and find those that must be excluded.
 - Use 2 targets, because less cognitive contamination, with different eccentricities so can have an exactly-comparable condition at fixation.
 - Downside of 2 targets is that when concentric you can occasionally group them. That will make concentric look better than it should.
 - We know the speed limit can't be a blur-limited limit because temporal blurring length is proportional to linear speed, not rps. So in periphery, looks really blurred yet speed limit doesn't go down much. (Ultimately temporal blurring predicts a tf limit but already shown that doesn't hit until 7 Hz, far faster than 2 rps).
@@ -11,11 +13,13 @@ Is the speed limit the same in the periphery, when not rotating about fixation?
 
 ## Experiment: Circular speed is the limiting factor
 
-- Adding modulations to the trajectory has little effect, in other words rotational speed is the determinant.  Try square trajectory.
+- Adding modulations to the trajectory has little effect, in other words rotational speed is the determinant.  
+- Try square trajectory.
+- This finally helps answer those interested in linear speed limit
+- Compare square trajectory to circular and to a big modulation.
+ - First pilot myself on one of the modulations.
 
 Results
 - Critical issue is speed limit of smaller-radius one when not concentric. Smaller one is always ringToQuery=0. Speed limit for me is lower by about 0.4rps.
 
-## Square and other trajectories
 
-See also [theory](analysis/theory.MD)
