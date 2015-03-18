@@ -107,6 +107,14 @@ logging.console.setLevel(logging.WARNING) #DEBUG means set the console to receiv
 numRings=2
 RANum=8 #reversal times record. Recording reversal times of each ring
 radii=[2.5,8,12] #[4,8,12] 
+offsetsForPeripheryEachRadius = np.array([[-6,3],[10,-4.5]])
+def vecLength(xy):
+    length = (xy[0]**2 + xy[1]**2) **0.5
+    return length
+offsetsEccentricities = [ vecLength( offsetsForPeripheryEachRadius[0] ),
+                                        vecLength( offsetsForPeripheryEachRadius[1] ) ]
+print('offsetsEccentricities =',offsetsEccentricities)
+
 respRadius=radii[0] #deg
 hz=120 *1.0;  #set to the framerate of the monitor
 useClock = True
@@ -287,7 +295,7 @@ for numObjs in numObjsInRing: #set up experiment design
                                 for smallInWhichQuad in [0,1]:
                                   offsetXYeachRing = np.array([[0,0], [0,0]])
                                   if not concentric:
-                                         offsetXYeachRing =  np.array([[-6,3],[10,-4.5]])
+                                         offsetXYeachRing =  offsetsForPeripheryEachRadius
                                          if quads13or24:
                                             offsetXYeachRing = np.multiply( offsetXYeachRing, np.array([[1,-1],[1,-1]]) ) #flip y coordinate of each
                                          if smallInWhichQuad:
