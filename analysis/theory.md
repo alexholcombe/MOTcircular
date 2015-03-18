@@ -21,7 +21,10 @@ Neurons-per-unit-time theory
 - `4*pi*r/0.55` deg per second
 - In rps, `4*pi*r/0.55 / (2*pi*r)` = `2/0.55` = 3.64 rps
 - In other words, shifting any trajectory as peripheral as you can before running into crowding should inflate the speed limit to 3.64 rps.
-- This assumes that the average eccentricity of the displaced circle is equal to the eccentricity of its center. That's true that for a circle fully away from fixation. But when *interior of circle includes fixation, it would only work if eccentricities on other side were treated as negative. But they are instead positive eccentricities. Have to integrate*
+- This assumes that the average eccentricity of the displaced circle is equal to the eccentricity of its center. That's true that for a circle fully away from fixation. But when interior of circle includes fixation, it would only work if eccentricities on other side were treated as negative. But they are instead positive eccentricities. 
+ - By symmetry, all that matters is the radius `r` of the circle and the distance of its center from fixation, `d` . The sum of its eccentricities is
+ ![integral](https://github.com/alexholcombe/MOTcircular/blob/master/analysis/integral.png "staircase plot") and dividing that by the circumference would give the average eccentricity. The equation can be fed into WolframAlpha with [this URL](http://www.wolframalpha.com/input/?i=+integrate+%28+++%28d%2B+r+cos+%CE%B8+%29%5E2+%2B+%28r+sin+%CE%B8%29%5E2++++%29%5E0.5+d%CE%B8+from+%CE%B8%3D0+to+2pi) but it won't solve it in standard computation time and you have to pay to find out if it can ever solve it.
+ 
 
 ## Crossing hemifields. A countervailing factor may be a cost for crossing between hemifields. I could address this by maybe moving it only partly off-center? What is the mean eccentricity for a circle at a particular eccentricity?
 
