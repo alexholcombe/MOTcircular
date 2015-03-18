@@ -10,8 +10,23 @@ Neurons-per-unit-time theory
 - E.g. if test at e=6.7, speed limit = `4*pi*6.7deg/sec`
  - If that traj has a radius of 2.5, then its path length is 5*pi.
  - So in rps, that's `(4*pi*6.7 deg/sec) / (5*pi deg/rev) ` = 5.36 rps
- 
- But there was a bit of crowding there, which cuold be blamed for the bad speed limit.
+ - That's a prediction that's easy to falsify!
+ - But a radius of 2.5 at e=6.7 could be crowded, which could be blamed for the bad speed limit.
+
+## Crowding. Design experiment to avoid shift of trajectory into periphery introducing crowding. 
+- Figure 6b of Gurnsey, Roddy & Chanab 2011 shows critical separation as a function of eccentricity and how it varies. As they say in their discussion on p. 14, 0.5 is plenty. So to be safe, let's not allow spacing to go below 0.55 of eccentricity.
+- r will be `0.55*e`   Therefore, e = r/0.55
+- Speed limit =`4*pi*e` 
+- Substitute in r/ 
+
+the size of the effect as a function of r = e/2   So for every radius r, the biggest eccentricity I can use is e = r*2 .
+
+Speed limit (deg/sec) = 4*pi*(r*2) = 8*pi*r
+
+The distance per revolution is only 2*pi*r
+
+8*pi*r deg/sec   /    2*pi*r deg/rev   = 4 rev/sec
+
 
 So speed limit at e=6.7 = 4*pi*6.7deg/sec.   I instead test a distance traveled of 5*pi = 1 revolution there, speed limit in revolutions per second will then be 
 
