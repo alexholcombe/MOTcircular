@@ -35,7 +35,11 @@ To predict the speed limit according to the neurons per unit time theory, we mus
 - By symmetry, all that matters is the radius `r` of the circle and the distance of its center from fixation, `d` . The sum of its eccentricities is
  ![integral](https://github.com/alexholcombe/MOTcircular/blob/master/analysis/integral.png "staircase plot") and dividing that by the circumference would give the average eccentricity. The equation can be fed into WolframAlpha with [this URL](http://www.wolframalpha.com/input/?i=+integrate+%28+++%28d%2B+r+cos+%CE%B8+%29%5E2+%2B+%28r+sin+%CE%B8%29%5E2++++%29%5E0.5+d%CE%B8+from+%CE%B8%3D0+to+2pi) but it won't solve it in standard computation time and you have to pay to find out if it can ever solve it.
  - Someone asked [essentially the same question](http://math.stackexchange.com/questions/98231/is-there-a-simple-formula-for-this-simple-question-about-a-circle) on Mathematics StackExchange and only the limiting cases were solved.
- - write a function to approximate it in python or R. Then plot the average eccentricity as a function of d and r. Because near the fovea, Bouma's law again would err on side of caution. Try something reasonable first. HAVE STARTED THEORY.R WITH A FUNCTION
+ - write a function to approximate it in python or R. Then plot the average eccentricity as a function of d and r. Because near the fovea, Bouma's law again would err on side of caution. Try something reasonable first. 
+ Increases with r and d. 
+ theory.R is in analysis folder calcMeanEccentricityOfCircle(6, 5, .001) / 6 #1.18   An 18% boost in speed limit predicted.
+
+
  
 
 
