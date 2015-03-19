@@ -90,7 +90,7 @@ if os.path.isdir('.'+os.sep+'dataRaw'):
 else:
     print('"dataRaw" directory does not exist, so saving data in present working directory')
     dataDir='.'
-expname =''
+expname = ''
 fileName = dataDir+'/'+subject+ '_' + expname+timeAndDateStr
 if not demo and not exportImages:
     dataFile = open(fileName+'.txt', 'w')  # sys.stdout  #StringIO.StringIO() 
@@ -106,7 +106,7 @@ logging.console.setLevel(logging.WARNING) #DEBUG means set the console to receiv
 
 numRings=2
 RANum=8 #reversal times record. Recording reversal times of each ring
-radii=[2.5,8,12] #[4,8,12] 
+radii=[6] #[2.5,8,12] #[4,8,12] 
 offsetsForPeripheryEachRadius = np.array([[-6,3],[10,-4.5]])
 def vecLength(xy):
     length = (xy[0]**2 + xy[1]**2) **0.5
