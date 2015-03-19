@@ -68,7 +68,7 @@ def acceleratePsychopy(slowFast):
             gc.enable()
         core.rush(False)
 
-subject='AH'#'test'
+subject='test'#'test'
 autoLogging = False
 demo = False
 autopilot=False
@@ -116,7 +116,7 @@ offsetsEccentricities = [ vecLength( offsetsForPeripheryEachRadius[0] ),
 print('offsetsEccentricities =',offsetsEccentricities)
 
 respRadius=radii[0] #deg
-hz=120 *1.0;  #set to the framerate of the monitor
+hz= 60.0 #120 *1.0;  #set to the framerate of the monitor
 useClock = True
 trialDur =1.9 #3 4.8;
 if demo:trialDur = 5;hz = 60.; 
@@ -165,7 +165,7 @@ total_colors = 6; #6 #universe of colors that nb_colors color set for this displ
 nb_colors = 3; #3 #number unique colors in display. Works except answer and options doesn't take it into account. Assumes this value is 3
 
 #monitor parameters
-fullscr=1 ; scrn=0
+fullscr=0; scrn=1
 widthPix = 1024 #1440  #monitor width in pixels
 heightPix =768  #900 #monitor height in pixels
 monitorwidth = 38.5 #28.5 #monitor width in centimeters
