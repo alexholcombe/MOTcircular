@@ -15,6 +15,9 @@ Is the speed limit the same in the periphery, when not rotating about fixation?
 - One trajectory, centered.  r=6
 - One trajectory, a bit off center. e=5
 - One trajectory, way off center. e=10 or 11
+- Crossed with a second factor which puts the periphery one in each quadrant, yielding 12 conditions. Actually that's a bit too many conditions, so let's only go left and right, not up and down also.
+
+So the centered one won't happen very often because the two others each have two versions, making a total of 5 conditions.
 
 ## Experiment: Circular speed is the limiting factor
 

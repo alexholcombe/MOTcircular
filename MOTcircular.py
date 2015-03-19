@@ -104,16 +104,10 @@ if demo or exportImages:
   logging.console.setLevel(logging.ERROR)  #only show this level  messages and higher
 logging.console.setLevel(logging.WARNING) #DEBUG means set the console to receive nearly all messges, INFO is for everything else, INFO, EXP, DATA, WARNING and ERROR 
 
-numRings=2
-RANum=8 #reversal times record. Recording reversal times of each ring
+RANum=8 #Number of reversal tims to log to datafile for each ring
+numRings=1
 radii=[6] #[2.5,8,12] #[4,8,12] 
-offsetsForPeripheryEachRadius = np.array([[-6,3],[10,-4.5]])
-def vecLength(xy):
-    length = (xy[0]**2 + xy[1]**2) **0.5
-    return length
-offsetsEccentricities = [ vecLength( offsetsForPeripheryEachRadius[0] ),
-                                        vecLength( offsetsForPeripheryEachRadius[1] ) ]
-print('offsetsEccentricities =',offsetsEccentricities)
+offsets = np.array([[0,0],[-5,0],[-10,0]])
 
 respRadius=radii[0] #deg
 hz= 60.0 #120 *1.0;  #set to the framerate of the monitor
@@ -165,7 +159,7 @@ total_colors = 6; #6 #universe of colors that nb_colors color set for this displ
 nb_colors = 3; #3 #number unique colors in display. Works except answer and options doesn't take it into account. Assumes this value is 3
 
 #monitor parameters
-fullscr=0; scrn=1
+fullscr=0; scrn=0
 widthPix = 1024 #1440  #monitor width in pixels
 heightPix =768  #900 #monitor height in pixels
 monitorwidth = 38.5 #28.5 #monitor width in centimeters
@@ -239,7 +233,7 @@ print('longFrameLimit=',longFrameLimit,' Recording trials where one or more inte
 print('longFrameLimit=',longFrameLimit,' Recording trials where one or more interframe interval exceeded this figure ')
 
 # mask setting..................
-maskOrbitSize = 2*(radii[1] +ballStdDev)#perhaps draw a big rectangle with a custom transparency layer (mask) in the shape of a thick ring
+maskOrbitSize = 2*(radii[numRings-1] +ballStdDev)#perhaps draw a big rectangle with a custom transparency layer (mask) in the shape of a thick ring
 maskSz=512
 myMask = np.ones([maskSz,maskSz]) #let everything through
 blockingWidth = int( (ballStdDev+radii[0])/maskOrbitSize * maskSz )
@@ -266,7 +260,7 @@ numObjsInRing = [2]
 speedsEachNumObjs = [ [1.5, 1.65, 1.8, 2.0],     #these correspond to the speeds to use for each entry of numObjsInRing
                                          [1.5, 1.65, 1.8, 2.0], 
                                          [1.5, 1.65, 1.8, 2.0]   ]
-numTargets = np.array([2])  # np.array([1,2,3])
+numTargets = np.array([1])  # np.array([1,2,3])
 leastCommonMultipleSubsets = calcCondsPerNumTargets(numRings,numTargets)
 leastCommonMultipleTargetNums = LCM( numTargets )  #have to use this to choose whichToQuery. For explanation see newTrajectoryEventuallyForIdentityTracking.oo3
 print('leastCommonMultipleSubsets=',leastCommonMultipleSubsets)
@@ -290,23 +284,17 @@ for numObjs in numObjsInRing: #set up experiment design
                               whichSubsetEntry = whichToQuery % nt  #e.g. if nt=2 and whichToQuery can be 0,1,or2 then modulus result is 0,1,0. This implies that whichToQuery won't be totally counterbalanced with which subset, which is bad because
                                               #might give more resources to one that's queried more often. Therefore for whichToQuery need to use least common multiple.
                               ringToQuery = s[whichSubsetEntry];  print('ringToQuery=',ringToQuery,'subset=',s)
-                              for concentric in [0,1]:
-                               for quads13or24 in [0,1]:
-                                for smallInWhichQuad in [0,1]:
-                                  offsetXYeachRing = np.array([[0,0], [0,0]])
-                                  if not concentric:
-                                         offsetXYeachRing =  offsetsForPeripheryEachRadius
-                                         if quads13or24:
-                                            offsetXYeachRing = np.multiply( offsetXYeachRing, np.array([[1,-1],[1,-1]]) ) #flip y coordinate of each
-                                         if smallInWhichQuad:
-                                               offsetXYeachRing *= -1 #switch quadrants of the two
+                              for condition in [0,1,2]: #centered, slightly off-center, or fully off-center
+                               for leftOrRight in [0,1]:
+                                  offsetXYeachRing = np.array([ offsets[condition] ]) #because other experiments involve multiple rings, it's a 2-d array
+                                  if condition >0:
+                                         if leftOrRight: #flip to right
+                                            offsetXYeachRing *= -1
                                   offsetXYeachRing = list(offsetXYeachRing) #so that when print, prints on one line
                                   for direction in [-1.0,1.0]:  
                                         stimList.append( {'numObjectsInRing':numObjs,'speed':speed, 'direction':direction,'slitView':slitView,'numTargets':nt,'whichIsTarget':whichIsTarget,
-                                          'ringToQuery':ringToQuery,'concentric':concentric,'quads13or24':quads13or24,'smallInWhichQuad':smallInWhichQuad,'offsetXYeachRing':offsetXYeachRing} )
+                                          'ringToQuery':ringToQuery,'condition':condition,'leftOrRight':leftOrRight,'offsetXYeachRing':offsetXYeachRing} )
 #set up record of proportion correct in various conditions
-for stim in stimList:
-    print(stim['concentric'],stim['quads13or24'],stim['smallInWhichQuad'],stim['offsetXYeachRing']) #debugON
 trialSpeeds = list() #purely to allow report at end of how many trials got right at each speed
 for s in stimList: trialSpeeds.append( s['speed'] )
 uniqSpeeds = set(trialSpeeds) #reduce speedsUsed list to unique members, unordered set
@@ -421,11 +409,12 @@ def  collectResponses(n,responses,responsesAutopilot,offsetXYeachRing,respRadius
     numTimesRespSoundPlayed=0
     if numTimesRespSoundPlayed<1: #2
         respSound.setVolume(1)
-        respSound.play()
+        if numRings > 1:
+            respSound.play()
         numTimesRespSoundPlayed +=1
    #respText.draw()
 
-    respondedEachToken = np.zeros([numRings,numObjects])  #potentially two sets of responses, one for each of two concentric rings
+    respondedEachToken = np.zeros([numRings,numObjects])  #potentially two sets of responses, one for each ring
     optionIdexs=list();baseSeq=list();numOptionsEachSet=list();numRespsNeeded=list()
     numRespsNeeded = np.zeros(numRings) 
     for ring in xrange(numRings):
@@ -456,7 +445,6 @@ def  collectResponses(n,responses,responsesAutopilot,offsetXYeachRing,respRadius
                   for ncheck in range( numOptionsEachSet[optionSet] ):  #draw each available to click on in this ring
                         angle =  (angleIni[optionSet]+currAngle[optionSet]) + ncheck*1.0/numOptionsEachSet[optionSet] *2.*pi
                         stretchOutwardRingsFactor = 1
-                        #r = respRadius+ optionSet*(stretchOutwardRingsFactor*(radii[1]-radii[0]))
                         r = radiusThisFrameThisAngle(optionSet,angle,n)
                         x = offsetXYeachRing[optionSet][0]+r*cos(angle);  
                         y = offsetXYeachRing[optionSet][1]+r*sin(angle)
@@ -484,7 +472,6 @@ def  collectResponses(n,responses,responsesAutopilot,offsetXYeachRing,respRadius
                     for optionSet in range(optionSets):
                       for ncheck in range( numOptionsEachSet[optionSet] ): 
                             angle =  (angleIni[optionSet]+currAngle[optionSet]) + ncheck*1.0/numOptionsEachSet[optionSet] *2.*pi #radians
-                            #r = respRadius+ optionSet*(radii[1]-radii[0]-0.2)-0.3
                             r = radiusThisFrameThisAngle(optionSet,angle,n)
                             x = offsetXYeachRing[optionSet][0]+r*cos(angle)
                             y = offsetXYeachRing[optionSet][1]+r*sin(angle)
@@ -544,7 +531,7 @@ def  collectResponses(n,responses,responsesAutopilot,offsetXYeachRing,respRadius
 
 print('Starting experiment of',trials.nTotal,'trials. Current trial is trial 0.')
 #print header for data file
-print('trialnum\tsubject\tnumObjects\tspeed\tdirection\tconcentric\tquads13or24\tsmallInWhichQuad\toffsetXYeachRing\tangleIni', end='\t', file=dataFile)
+print('trialnum\tsubject\tnumObjects\tspeed\tdirection\tcondition\leftOrRight\toffsetXYeachRing\tangleIni', end='\t', file=dataFile)
 print('orderCorrect\ttrialDurTotal\tnumTargets', end= '\t', file=dataFile) 
 for i in range(numRings):
     print('whichIsTarget',i,     sep='', end='\t', file=dataFile)
@@ -710,9 +697,9 @@ while nDone <= trials.nTotal and expStop==False:
         #end if statement for if not expStop
     if passThisTrial:orderCorrect = -1    #indicate for data analysis that observer opted out of this trial, because think they moved their eyes
 
-    #header starts trialnum\tsubject\tnumObjects\tspeed\tdirection\toffsetXYeachRing', 'orderCorrect\ttrialDurTotal\tnumTargets'
+    #header trialnum\tsubject\tnumObjects\tspeed\tdirection\tcondition\leftOrRight\toffsetXYeachRing\tangleIni
     print(nDone,subject,thisTrial['numObjectsInRing'],thisTrial['speed'],thisTrial['direction'],sep='\t', end='\t', file=dataFile)
-    print(thisTrial['concentric'],thisTrial['quads13or24'],thisTrial['smallInWhichQuad'],thisTrial['offsetXYeachRing'],angleIni,sep='\t',end='\t',file=dataFile)
+    print(thisTrial['condition'],thisTrial['leftOrRight'],thisTrial['offsetXYeachRing'],angleIni,sep='\t',end='\t',file=dataFile)
     print(orderCorrect,'\t',trialDurTotal,'\t',thisTrial['numTargets'],'\t', end=' ', file=dataFile) #override newline end
     for i in range(numRings):  print( thisTrial['whichIsTarget'][i], end='\t', file=dataFile  )
     print( thisTrial['ringToQuery'],end='\t',file=dataFile )

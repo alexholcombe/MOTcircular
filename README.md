@@ -19,3 +19,4 @@ Issues
 - Still not seeing progress message.
 - Add dialog box, for Arni
 - Initialise numRings lists better
+- reversals. Make sure all recorded. Make function that does reversals
