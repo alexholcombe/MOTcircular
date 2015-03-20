@@ -359,10 +359,8 @@ def xyThisFrameThisAngle(numRing, angle, thisFrameN, speed):
         x = rThis*cos(angle)
         y = rThis*sin(angle)
     elif basicShape == 'square': #actual square-shaped trajectory. Could also add all the modulations to this, later
-            #Varying angle continuously will lead to slowdown on the long stretches and a big jump  at the corners.
-            #This is a parametrisation issue. Some function should invert the polar transformation intrinsic here. Don't want x jumps to be bigger as theta approaches pi/2
-            #Well, theta varies from 0 to 2pi. Instead of taking its cosine, I should just pretend it is linear. Map it to 0->1 with triangle wave
-            #Want 0 to pi to be 1 to -1
+            #Theta varies from 0 to 2pi. Instead of taking its cosine, I should just pretend it is linear. Map it to 0->1 with triangle wave
+            #Want 0 to pi to be -1 to 1
             def triangleWave(period, phase):
                    #triangle wave is in sine phase (starts at 0)
                    y = -abs(phase % (2*period) - period) # http://stackoverflow.com/questions/1073606/is-there-a-one-line-function-that-generates-a-triangle-wave
@@ -372,7 +370,7 @@ def xyThisFrameThisAngle(numRing, angle, thisFrameN, speed):
                    return y
             x = r * triangleWave(pi,angle)
             y = r * triangleWave(pi, (angle-pi/2)%(2*pi ))
-            #This will always describe a 
+            #This will always describe a diamond. To change the shape would have to use vector rotation formula
     return x,y
 
 def angleChangeThisFrame(thisTrial, moveDirection, numRing, thisFrameN, lastFrameN):
