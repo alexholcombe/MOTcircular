@@ -68,7 +68,7 @@ def acceleratePsychopy(slowFast):
             gc.enable()
         core.rush(False)
 
-subject='test'#'test'
+subject='AH'#'test'
 autoLogging = False
 demo = False
 autopilot=False
@@ -110,12 +110,28 @@ radii=[6] #[2.5,8,12] #[4,8,12]
 offsets = np.array([[0,0],[-5,0],[-10,0]])
 
 respRadius=radii[0] #deg
-hz= 60.0 #120 *1.0;  #set to the framerate of the monitor
-useClock = True
-trialDur = 4 #1.9 #3 4.8;
+hz= 60.0 #160 *1.0;  #set to the framerate of the monitor
+useClock = True #as opposed to using frame count, which assumes no frames are ever missed
+fullscr=0; scrn=0
+# create a dialog from dictionary 
+infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':False, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': hz }
+OK = gui.DlgFromDict(dictionary=infoFirst, 
+    title='MOT', 
+    order=['Autopilot','Check refresh etc',  'Screen refresh rate', 'Fullscreen (timing errors if not)'], 
+    tip={'Check refresh etc': 'To confirm refresh rate and that can keep up, at least when drawing a grating'},
+    #fixed=['Check refresh etc'])#this attribute can't be changed by the user
+    )
+if not OK.OK:
+    print('User cancelled from dialog box'); core.quit()
+autopilot = infoFirst['Autopilot']
+checkRefreshEtc = infoFirst['Check refresh etc']
+fullscr = infoFirst['Fullscreen (timing errors if not)']
+refreshRate = infoFirst['Screen refresh rate']
+    
+trialDur = 3.3 #1.9 #3 4.8;
 if demo:trialDur = 5;hz = 60.; 
 tokenChosenEachRing= [-999]*numRings
-rampUpDur=.3; rampDownDur=.7; trackingExtraTime=.4; #giving the person time to attend to the cue (secs)
+rampUpDur=.3; rampDownDur=.7; trackingExtraTime=.7; #giving the person time to attend to the cue (secs)
 toTrackCueDur = rampUpDur+rampDownDur+trackingExtraTime
 trialDurFrames=int(trialDur*hz)+int( trackingExtraTime*hz )
 rampUpFrames = hz*rampUpDur;   rampDownFrames = hz*rampDownDur;  ShowTrackCueFrames = int( hz*toTrackCueDur )
@@ -125,7 +141,7 @@ mouseChoiceArea = ballStdDev*0.8 # origin =1.3
 units='deg' #'cm'
 if showRefreshMisses:fixSize = 2.6  #make fixation bigger so flicker more conspicuous
 else: fixSize = 0.3
-timeTillReversalMin = 0.25; timeTillReversalMax = 1.0 #2.9
+timeTillReversalMin = 0.5; timeTillReversalMax = 1.3 #2.9
 
 #start definition of colors 
 hues=np.arange(16)/16.
@@ -159,9 +175,8 @@ total_colors = 6; #6 #universe of colors that nb_colors color set for this displ
 nb_colors = 3; #3 #number unique colors in display. Works except answer and options doesn't take it into account. Assumes this value is 3
 
 #monitor parameters
-fullscr=0; scrn=0
-widthPix = 1024 #1440  #monitor width in pixels
-heightPix =768  #900 #monitor height in pixels
+widthPix = 800 #1440  #monitor width in pixels
+heightPix =600  #900 #monitor height in pixels
 monitorwidth = 38.5 #28.5 #monitor width in centimeters
 viewdist = 57.; #cm
 pixelperdegree = widthPix/ (atan(monitorwidth/viewdist) /np.pi*180)
@@ -180,7 +195,14 @@ if demo:
 
 mon = monitors.Monitor(monitorname,width=monitorwidth, distance=viewdist)#fetch the most recent calib for this monitor
 mon.setSizePix( (widthPix,heightPix) )
-myWin = visual.Window(monitor=mon,size=(widthPix,heightPix),allowGUI=allowGUI,units=units,color=bgColor,colorSpace='rgb',fullscr=fullscr,screen=scrn,waitBlanking=waitBlank) #Holcombe lab monitor
+def openMyStimWindow(): #make it a function because have to do it several times, want to be sure is identical each time
+    myWin = visual.Window(monitor=mon,size=(widthPix,heightPix),allowGUI=allowGUI,units=units,color=bgColor,colorSpace='rgb',fullscr=fullscr,screen=scrn,waitBlanking=waitBlank) #Holcombe lab monitor
+    if myWin is None:
+        print('ERROR: Failed to open window in openMyStimWindow!')
+        core.quit()
+    return myWin
+myWin = openMyStimWindow()
+
 myWin.setRecordFrameIntervals(False)
 myMouse = event.Mouse(visible = 'true',win=myWin)
 gaussian = visual.PatchStim(myWin, tex='none',mask='gauss',colorSpace='rgb',size=ballStdDev,autoLog=autoLogging)
@@ -201,39 +223,99 @@ respText = visual.TextStim(myWin,pos=(0, -.8),colorSpace='rgb',color = (1,1,1),a
 NextText = visual.TextStim(myWin,pos=(0, 0),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
 NextRemindText = visual.TextStim(myWin,pos=(.3, -.4),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
 NextRemindCountText = visual.TextStim(myWin,pos=(-.1, -.4),colorSpace='rgb',color= (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
+trialsPerCondition = 1 #default value
 
-#check screen refresh is what assuming it is, hz ########################################################################
-Hzs=list()
-myWin.setRecordFrameIntervals(True) #otherwise myWin.fps won't work
-myWin.update(); myWin.update();myWin.update();myWin.update();
-for i in range(50):
-	myWin.update()
-	Hzs.append( myWin.fps() )  #varies wildly on successive runs!
-Hzs = np.array( Hzs );     Hz= np.median(Hzs)
-msPerFrame= 1000./Hz
-print('psychopy is reporting that frames per second are around = ', round(Hz,3),' and your drawing calculations are being done using the figure of ',hz, end=' ') 
-NY='y'
-if abs( (np.median(Hzs)-hz) / hz) > .05: 
-	print(' which is off by more than 5%') 
-	NY ='Y' # raw_input("Do you wish to continue nonetheless? ")
-if NY.upper()<>'Y':
-    core.quit()
-    myWin.close()
-# end testing of screen refresh########################################################################
-if (not demo) and (myWin.size != [widthPix,heightPix]).any():
-    myDlg = gui.Dlg(title="MOT experiment", pos=(200,400))
-    msgWrongResolution = 'Screen NOT the desired resolution of '+ str(widthPix)+'x'+str(heightPix)+ ' pixels!!'
-    myDlg.addText(msgWrongResolution, color='Red')
-    logging.warning(msgWrongResolution)
-    print(msgWrongResolution)
-    myDlg.addText('Note: during the experiment, press ESC at response screen to quit', color='DimGrey')
-    myDlg.show()
-    core.quit()
+refreshMsg2 = ''
+if not checkRefreshEtc:
+    refreshMsg1 = 'REFRESH RATE WAS NOT CHECKED'
+    refreshRateWrong = False
+else: #checkRefreshEtc
+    runInfo = psychopy.info.RunTimeInfo(
+            # if you specify author and version here, it overrides the automatic detection of __author__ and __version__ in your script
+            #author='<your name goes here, plus whatever you like, e.g., your lab or contact info>',
+            #version="<your experiment version info>",
+            win=myWin,    ## a psychopy.visual.Window() instance; None = default temp window used; False = no win, no win.flips()
+            refreshTest='grating', ## None, True, or 'grating' (eye-candy to avoid a blank screen)
+            verbose=True, ## True means report on everything 
+            userProcsDetailed=True  ## if verbose and userProcsDetailed, return (command, process-ID) of the user's processes
+            )
+    #print(runInfo)
+    logging.info(runInfo)
+    print('Finished runInfo- which assesses the refresh and processes of this computer')
+    runInfo["windowRefreshTimeMedian_ms"]
+    refreshMsg1 = 'Median frames per second ='+ str( np.round(1000./runInfo["windowRefreshTimeMedian_ms"],1) )
+    refreshRateTolerancePct = 3
+    pctOff = abs( (1000./runInfo["windowRefreshTimeMedian_ms"]-refreshRate) / refreshRate)
+    refreshRateWrong =  pctOff > (refreshRateTolerancePct/100.)
+    if refreshRateWrong:
+        refreshMsg1 += ' BUT'
+        refreshMsg1 += ' program assumes ' + str(refreshRate)
+        refreshMsg2 =  'which is off by more than' + str(round(refreshRateTolerancePct,0)) + '%!!'
+    else:
+        refreshMsg1 += ', which is close enough to desired val of ' + str( round(refreshRate,1) )
+    myWinRes = myWin.size
+    myWin.allowGUI =True
+print(refreshMsg1) #debugON
+#myWin.close() #have to close window to show dialog box
+#
+#dlgLabelsOrdered = list()
+#myDlg = gui.Dlg(title="RSVP experiment", pos=(200,400))
+#if not autopilot:
+#    myDlg.addField('Subject name (default="Hubert"):', 'Hubert', tip='or subject code')
+#    dlgLabelsOrdered.append('subject')
+#
+#myDlg.addField('Trials per condition (default=' + str(trialsPerCondition) + '):', trialsPerCondition, tip=str(trialsPerCondition))
+#dlgLabelsOrdered.append('trialsPerCondition')
+#pctCompletedBreak = 50
+#
+#myDlg.addText(refreshMsg1, color='Black')
+#if refreshRateWrong:
+#    myDlg.addText(refreshMsg2, color='Red')
+#if refreshRateWrong:
+#    logging.error(refreshMsg1+refreshMsg2)
+#else: logging.info(refreshMsg1+refreshMsg2)
+#
+#if checkRefreshEtc and (not demo) and (myWinRes != [widthPix,heightPix]).any():
+#    msgWrongResolution = 'Screen apparently NOT the desired resolution of '+ str(widthPix)+'x'+str(heightPix)+ ' pixels!!'
+#    myDlg.addText(msgWrongResolution, color='Red')
+#    logging.error(msgWrongResolution)
+#    print(msgWrongResolution)
+#myDlg.addText('Note: to abort press ESC at a trials response screen', color=[-1.,1.,-1.]) # color='DimGrey') color names stopped working along the way, for unknown reason
+#myDlg.show()
+#
+#if myDlg.OK: #unpack information from dialogue box
+#   thisInfo = myDlg.data #this will be a list of data returned from each field added in order
+#   if not autopilot:
+#       name=thisInfo[dlgLabelsOrdered.index('subject')]
+#       if len(name) > 0: #if entered something
+#         subject = name #change subject default name to what user entered
+#       trialsPerCondition = int( thisInfo[ dlgLabelsOrdered.index('trialsPerCondition') ] ) #convert string to integer
+#       print('trialsPerCondition=',trialsPerCondition)
+#       logging.info('trialsPerCondition =',trialsPerCondition)
+#else: 
+#   print('User cancelled from dialog box.')
+#   logging.flush()
+#   core.quit()
+#   
 longerThanRefreshTolerance = 0.2
 longFrameLimit = round(1000./hz*(1.0+longerThanRefreshTolerance),3) # round(1000/hz*1.5,2)
 print('longFrameLimit=',longFrameLimit,' Recording trials where one or more interframe interval exceeded this figure ', file=logF)
 print('longFrameLimit=',longFrameLimit,' Recording trials where one or more interframe interval exceeded this figure ')
 
+#myWin = openMyStimWindow()
+#myWin = visual.Window(monitor=mon,size=(widthPix,heightPix),allowGUI=allowGUI,units=units,color=bgColor,colorSpace='rgb',fullscr=fullscr,screen=scrn,waitBlanking=waitBlank) #Holcombe lab monitor
+
+runInfo = psychopy.info.RunTimeInfo(
+        # if you specify author and version here, it overrides the automatic detection of __author__ and __version__ in your script
+        #author='<your name goes here, plus whatever you like, e.g., your lab or contact info>',
+        #version="<your experiment version info>",
+        win=myWin,    ## a psychopy.visual.Window() instance; None = default temp window used; False = no win, no win.flips()
+        refreshTest='grating', ## None, True, or 'grating' (eye-candy to avoid a blank screen)
+        verbose=True, ## True means report on everything 
+        userProcsDetailed=True  ## if verbose and userProcsDetailed, return (command, process-ID) of the user's processes
+        )
+#print('second window opening runInfo='); print(runInfo)
+            
 # mask setting..................
 maskOrbitSize = 2*(radii[numRings-1] +ballStdDev)#perhaps draw a big rectangle with a custom transparency layer (mask) in the shape of a thick ring
 maskSz=512
@@ -259,7 +341,7 @@ maskOrbit = visual.PatchStim(myWin,tex='none',colorSpace='rgb',color=(1,1,0),mas
 stimList = []
 # temporalfrequency limit test
 numObjsInRing = [2]
-speedsEachNumObjs = [[0.2]] #  [ [1.5, 1.65, 1.8, 2.0] ]     #these correspond to the speeds to use for each entry of numObjsInRing
+speedsEachNumObjs = [ [ 1.9, 2.1, 2.3, 2.35 ] ] # [ [1.65, 1.8, 1.9, 2.0] ]     #dont want to go faster than 2 because of blur problem
 numTargets = np.array([1])  # np.array([1,2,3])
 leastCommonMultipleSubsets = calcCondsPerNumTargets(numRings,numTargets)
 leastCommonMultipleTargetNums = LCM( numTargets )  #have to use this to choose whichToQuery. For explanation see newTrajectoryEventuallyForIdentityTracking.oo3
@@ -304,8 +386,7 @@ numRightWrongEachSpeedOrder = np.zeros([ len(uniqSpeeds), 2 ]); #summary results
 numRightWrongEachSpeedIdent = deepcopy(numRightWrongEachSpeedOrder)
 #end setup of record of proportion correct in various conditions
 
-blockReps=1 #5
-trials = data.TrialHandler(stimList,blockReps) #constant stimuli method
+trials = data.TrialHandler(stimList,trialsPerCondition) #constant stimuli method
 refreshTimingCheck = None #'grating'
 try:
     runInfo = psychopy.info.RunTimeInfo(
@@ -336,7 +417,7 @@ def RFcontourCalcModulation(angle,freq,phase):
     modulation = sin(angle*freq + phase) #radial frequency contour equation, e.g. http://www.journalofvision.org/content/14/11/12.full from Wilkinson et al. 1998
     return modulation
 
-ampTemporalRadiusModulation = 0.3 # 1.0/3.0
+ampTemporalRadiusModulation = 0.0 # 1.0/3.0
 ampModulatnEachRingTemporalPhase = np.random.rand(numRings) * 2*np.pi
 def xyThisFrameThisAngle(numRing, angle, thisFrameN, speed):
     #period of oscillation should be in sec
@@ -352,7 +433,7 @@ def xyThisFrameThisAngle(numRing, angle, thisFrameN, speed):
             if ans==0: ans = -1+ 2*round( np.random.rand(1)[0] ) #exception case is when 0, gives 0, so randomly change that to -1 or 1
             return ans
         else: print('Error! unexpected type in radiusThisFrameThisAngle')
-    basicShape = 'square'
+    basicShape = 'circle'
     if basicShape == 'circle':
         rThis =  r + waveForm(modulatnPhaseRadians,'sin') * r * ampTemporalRadiusModulation
         rThis += r * RFcontourAmp * RFcontourCalcModulation(angle,RFcontourFreq,RFcontourPhase)
@@ -418,7 +499,7 @@ def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngl
                     blobColor = (1-weightToTrueColor)*np.array([1,1,1])  +  weightToTrueColor*colorsInInnerRingOrder[nColor] 
                     blobColor = blobColor*contrast #also might want to change contrast, if everybody's contrast changing in contrast ramp
                 else: blobColor = colorsInInnerRingOrder[nColor]*contrast
-                referenceCircle.setPos(offsetXYeachRing[noRing]);  referenceCircle.draw() #debug
+                #referenceCircle.setPos(offsetXYeachRing[noRing]);  referenceCircle.draw() #debug
                 gaussian.setColor( blobColor, log=autoLogging )
                 gaussian.setPos([x,y])
                 gaussian.draw()
@@ -585,7 +666,7 @@ while nDone <= trials.nTotal and expStop==False:
     numDistracters = numRings*thisTrial['numObjectsInRing'] - thisTrial['numTargets']
     xyDistracters = np.zeros( [numDistracters, 2] )
     for ringNum in range(numRings): # initialise  parameters
-         angleIni.append(0); print('WARNING: angleIni not randomised') #np.random.uniform(0,2*pi)) #radians
+         angleIni.append(np.random.uniform(0,2*pi))   # angleIni.append(0); print('WARNING: angleIni not randomised') 
          currAngle.append(0);
          moveDirection.append(-999);
          RAI.append(list());
@@ -607,7 +688,7 @@ while nDone <= trials.nTotal and expStop==False:
     for r in range(numRings): # set random reversal times
         thisReversalDur = trackingExtraTime
         while thisReversalDur< trialDurTotal+.1:  #Creating 100ms more than need, in theory. Because if miss frames and using clock time instead of frames, might go longer
-            thisReversalDur += 10000; print('WARNING thisReversalDur off') # np.random.uniform(timeTillReversalMin,timeTillReversalMax)
+            thisReversalDur +=  np.random.uniform(timeTillReversalMin,timeTillReversalMax) #10000; print('WARNING thisReversalDur off') 
             RAI[r].append(thisReversalDur)
  
     numObjects = thisTrial['numObjectsInRing']

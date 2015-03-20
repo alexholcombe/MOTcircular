@@ -19,12 +19,13 @@ Is the speed limit the same in the periphery, when not rotating about fixation?
 
 So the centered one won't happen very often because the two others each have two versions, making a total of 5 conditions.
 
+Seem to need more cuingTime because gotta get oneself stably fixating even when not center
+
 ## Experiment: Circular speed is the limiting factor
 
 - Adding modulations to the trajectory has little effect, in other words rotational speed is the determinant.  
 - First, blast the annoying speed limit people with a square trajectory. This finally helps answer those interested in linear speed limit
 - Compare square trajectory to circular and to a big modulation.
-- First pilot myself on one of the modulations.
 
 Results
 - Critical issue is speed limit of smaller-radius one when not concentric. Smaller one is always ringToQuery=0. Speed limit for me is lower by about 0.4rps.
