@@ -112,7 +112,7 @@ offsets = np.array([[0,0],[-5,0],[-10,0]])
 respRadius=radii[0] #deg
 hz= 60.0 #120 *1.0;  #set to the framerate of the monitor
 useClock = True
-trialDur = 3 #1.9 #3 4.8;
+trialDur = 4 #1.9 #3 4.8;
 if demo:trialDur = 5;hz = 60.; 
 tokenChosenEachRing= [-999]*numRings
 rampUpDur=.3; rampDownDur=.7; trackingExtraTime=.4; #giving the person time to attend to the cue (secs)
@@ -188,6 +188,8 @@ gaussian2 = visual.PatchStim(myWin, tex='none',mask='gauss',colorSpace='rgb',siz
 optionChosenCircle = visual.Circle(myWin, radius=mouseChoiceArea, edges=32, fillColorSpace='rgb',fillColor = (1,0,1),autoLog=autoLogging) #to outline chosen options
 clickableRegion = visual.Circle(myWin, radius=0.5, edges=32, fillColorSpace='rgb',fillColor = (-1,1,-1),autoLog=autoLogging) #to show clickable zones
 circlePostCue = visual.Circle(myWin, radius=2*radii[0], edges=32, fillColorSpace='rgb',fillColor = (-.85,-.85,-.85),lineColor=(-1,-1,-1),autoLog=autoLogging) #visual postcue
+#referenceCircle allows visualisation of trajectory, mostly for debugging
+referenceCircle = visual.Circle(myWin, radius=radii[0], edges=32, fillColorSpace='rgb',lineColor=(-1,-1,1),autoLog=autoLogging) #visual postcue
 
 blindspotFill = 0 #a way for people to know if they move their eyes
 if blindspotFill:
@@ -257,7 +259,7 @@ maskOrbit = visual.PatchStim(myWin,tex='none',colorSpace='rgb',color=(1,1,0),mas
 stimList = []
 # temporalfrequency limit test
 numObjsInRing = [2]
-speedsEachNumObjs = [[0.3,0.3,0.3,0.3]] #  [ [1.5, 1.65, 1.8, 2.0] ]     #these correspond to the speeds to use for each entry of numObjsInRing
+speedsEachNumObjs = [[0.2]] #  [ [1.5, 1.65, 1.8, 2.0] ]     #these correspond to the speeds to use for each entry of numObjsInRing
 numTargets = np.array([1])  # np.array([1,2,3])
 leastCommonMultipleSubsets = calcCondsPerNumTargets(numRings,numTargets)
 leastCommonMultipleTargetNums = LCM( numTargets )  #have to use this to choose whichToQuery. For explanation see newTrajectoryEventuallyForIdentityTracking.oo3
@@ -341,27 +343,38 @@ def xyThisFrameThisAngle(numRing, angle, thisFrameN, speed):
     periodOfRadiusModulation = 1.0/speed#so if speed=2 rps, radius modulation period = 0.5 s
     r = radii[numRing]
     timeSeconds = thisFrameN / hz
-    phaseRadians = timeSeconds/periodOfRadiusModulation * 2*pi + ampModulatnEachRingTemporalPhase[numRing]
+    modulatnPhaseRadians = timeSeconds/periodOfRadiusModulation * 2*pi + ampModulatnEachRingTemporalPhase[numRing]
     def waveForm(phase,type):
         if type=='sin':
-            return sin(phaseRadians)
+            return sin(modulatnPhaseRadians)
         elif type == 'sqrWave':
-            ans = np.sign( sin(phaseRadians) ) #-1 or 1. That's great because that's also sin min and max
+            ans = np.sign( sin(modulatnPhaseRadians) ) #-1 or 1. That's great because that's also sin min and max
             if ans==0: ans = -1+ 2*round( np.random.rand(1)[0] ) #exception case is when 0, gives 0, so randomly change that to -1 or 1
             return ans
-        elif type == 'sqr': #actual square-shaped trajectory
-            #if angle 0->90 or 180->270 x constant
-            if phaseRadians < pi/2:
-                x= -r
-            #otherwise y constant
         else: print('Error! unexpected type in radiusThisFrameThisAngle')
-            
-    rThis =  r + waveForm(phaseRadians,'sin') * r * ampTemporalRadiusModulation
-    rThis += r * RFcontourAmp * RFcontourCalcModulation(angle,RFcontourFreq,RFcontourPhase)
-    x = rThis*cos(angle)
-    y = rThis*sin(angle)
+    basicShape = 'square'
+    if basicShape == 'circle':
+        rThis =  r + waveForm(modulatnPhaseRadians,'sin') * r * ampTemporalRadiusModulation
+        rThis += r * RFcontourAmp * RFcontourCalcModulation(angle,RFcontourFreq,RFcontourPhase)
+        x = rThis*cos(angle)
+        y = rThis*sin(angle)
+    elif basicShape == 'square': #actual square-shaped trajectory. Could also add all the modulations to this, later
+            #Varying angle continuously will lead to slowdown on the long stretches and a big jump  at the corners.
+            #This is a parametrisation issue. Some function should invert the polar transformation intrinsic here. Don't want x jumps to be bigger as theta approaches pi/2
+            #Well, theta varies from 0 to 2pi. Instead of taking its cosine, I should just pretend it is linear. Map it to 0->1 with triangle wave
+            #Want 0 to pi to be 1 to -1
+            def triangleWave(period, phase):
+                   #triangle wave is in sine phase (starts at 0)
+                   y = -abs(phase % (2*period) - period) # http://stackoverflow.com/questions/1073606/is-there-a-one-line-function-that-generates-a-triangle-wave
+                   #y goes from -period to 0.  Need to rescale to -1 to 1 to match sine wave etc.
+                   y = y/period*2 + 1
+                   #Now goes from -1 to 1
+                   return y
+            x = r * triangleWave(pi,angle)
+            y = r * triangleWave(pi, (angle-pi/2)%(2*pi ))
+            #This will always describe a 
     return x,y
-    
+
 def angleChangeThisFrame(thisTrial, moveDirection, numRing, thisFrameN, lastFrameN):
     anglemove = moveDirection[numRing]*thisTrial['direction']*thisTrial['speed']*2*pi*(thisFrameN-lastFrameN)/hz
     return anglemove
@@ -406,7 +419,8 @@ def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngl
                     weightToTrueColor = n*1.0/ShowTrackCueFrames #compute weighted average to ramp from white to correct color
                     blobColor = (1-weightToTrueColor)*np.array([1,1,1])  +  weightToTrueColor*colorsInInnerRingOrder[nColor] 
                     blobColor = blobColor*contrast #also might want to change contrast, if everybody's contrast changing in contrast ramp
-                else: blobColor = colorsInInnerRingOrder[nColor]*contrast    
+                else: blobColor = colorsInInnerRingOrder[nColor]*contrast
+                referenceCircle.setPos(offsetXYeachRing[noRing]);  referenceCircle.draw() #debug
                 gaussian.setColor( blobColor, log=autoLogging )
                 gaussian.setPos([x,y])
                 gaussian.draw()
