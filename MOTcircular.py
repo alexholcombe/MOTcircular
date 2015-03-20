@@ -114,7 +114,7 @@ hz= 60.0 #160 *1.0;  #set to the framerate of the monitor
 useClock = True #as opposed to using frame count, which assumes no frames are ever missed
 fullscr=0; scrn=0
 # create a dialog from dictionary 
-infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':False, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': hz }
+infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':True, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': hz }
 OK = gui.DlgFromDict(dictionary=infoFirst, 
     title='MOT', 
     order=['Autopilot','Check refresh etc',  'Screen refresh rate', 'Fullscreen (timing errors if not)'], 
@@ -242,7 +242,6 @@ else: #checkRefreshEtc
     #print(runInfo)
     logging.info(runInfo)
     print('Finished runInfo- which assesses the refresh and processes of this computer')
-    runInfo["windowRefreshTimeMedian_ms"]
     refreshMsg1 = 'Median frames per second ='+ str( np.round(1000./runInfo["windowRefreshTimeMedian_ms"],1) )
     refreshRateTolerancePct = 3
     pctOff = abs( (1000./runInfo["windowRefreshTimeMedian_ms"]-refreshRate) / refreshRate)
@@ -256,7 +255,7 @@ else: #checkRefreshEtc
     myWinRes = myWin.size
     myWin.allowGUI =True
 print(refreshMsg1) #debugON
-#myWin.close() #have to close window to show dialog box
+myWin.close() #have to close window to show dialog box
 #
 #dlgLabelsOrdered = list()
 #myDlg = gui.Dlg(title="RSVP experiment", pos=(200,400))
@@ -302,7 +301,7 @@ longFrameLimit = round(1000./hz*(1.0+longerThanRefreshTolerance),3) # round(1000
 print('longFrameLimit=',longFrameLimit,' Recording trials where one or more interframe interval exceeded this figure ', file=logF)
 print('longFrameLimit=',longFrameLimit,' Recording trials where one or more interframe interval exceeded this figure ')
 
-#myWin = openMyStimWindow()
+myWin = openMyStimWindow()
 #myWin = visual.Window(monitor=mon,size=(widthPix,heightPix),allowGUI=allowGUI,units=units,color=bgColor,colorSpace='rgb',fullscr=fullscr,screen=scrn,waitBlanking=waitBlank) #Holcombe lab monitor
 
 runInfo = psychopy.info.RunTimeInfo(
@@ -314,8 +313,12 @@ runInfo = psychopy.info.RunTimeInfo(
         verbose=True, ## True means report on everything 
         userProcsDetailed=True  ## if verbose and userProcsDetailed, return (command, process-ID) of the user's processes
         )
-#print('second window opening runInfo='); print(runInfo)
-            
+print('second window opening runInfo='); print('median ms=',runInfo["windowRefreshTimeMedian_ms"])
+
+myWin.flip() 
+myWin.flip() 
+STOP
+
 # mask setting..................
 maskOrbitSize = 2*(radii[numRings-1] +ballStdDev)#perhaps draw a big rectangle with a custom transparency layer (mask) in the shape of a thick ring
 maskSz=512
@@ -387,16 +390,6 @@ numRightWrongEachSpeedIdent = deepcopy(numRightWrongEachSpeedOrder)
 #end setup of record of proportion correct in various conditions
 
 trials = data.TrialHandler(stimList,trialsPerCondition) #constant stimuli method
-refreshTimingCheck = None #'grating'
-try:
-    runInfo = psychopy.info.RunTimeInfo(
-            win=myWin,    ## a psychopy.visual.Window() instance; None = default temp window used; False = no win, no win.flips()
-            refreshTest=refreshTimingCheck, ## None, True, or 'grating' (eye-candy to avoid a blank screen)
-            verbose=True, ## True means report on everything 
-            userProcsDetailed=True,  ## if verbose and userProcsDetailed, return (command, process-ID) of the user's processes
-            )
-    logging.info(runInfo)
-except Exception,e: print(str(e)) #print error
 
 timeAndDateStr = time.strftime("%d%b%Y_%H-%M", time.localtime()) 
 logging.info(  str('starting exp with name: "'+'TemporalFrequencyLimit'+'" at '+timeAndDateStr)   )
@@ -627,7 +620,7 @@ def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,
                if blindspotFill:
                     blindspotStim.draw()
 
-               myWin.flip(clearBuffer=True)  
+               myWin.flip#  (clearBuffer=True)  
                if screenshot and ~screenshotDone:
                    myWin.getMovieFrame()       
                    screenshotDone = True
@@ -699,11 +692,8 @@ while nDone <= trials.nTotal and expStop==False:
     fixatnPeriodFrames = int(   (np.random.rand(1)/2.+0.8)   *hz)  #random interval between 800ms and 1.3s (changed when Fahed ran outer ring ident)
     for i in range(fixatnPeriodFrames):
         if thisTrial['slitView']: maskOrbit.draw()  
-        fixation.draw(); myWin.flip(clearBuffer=True)  
+        fixation.draw(); myWin.flip() #clearBuffer=True)  
     trialClock.reset()
-    for i in range(20):
-        if thisTrial['slitView']: maskOrbit.draw()  
-        fixation.draw(); myWin.flip(clearBuffer=True)  
     t0=trialClock.getTime(); t=trialClock.getTime()-t0     
     for L in range(len(ts)):ts.remove(ts[0]) # clear all ts array
     stimClock.reset()
