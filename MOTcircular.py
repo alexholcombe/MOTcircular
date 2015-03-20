@@ -11,7 +11,7 @@ import time, colorsys, sys, platform, os, StringIO, gc
 #BEGIN helper functions from primes.py
 def gcd(a,b): 
    """Return greatest common divisor using Euclid's Algorithm."""
-   while b:      
+   while b:
         a, b = b, a % b
    return a
 def lcm(a,b):
@@ -112,7 +112,7 @@ offsets = np.array([[0,0],[-5,0],[-10,0]])
 respRadius=radii[0] #deg
 hz= 60.0 #120 *1.0;  #set to the framerate of the monitor
 useClock = True
-trialDur =1.9 #3 4.8;
+trialDur = 3 #1.9 #3 4.8;
 if demo:trialDur = 5;hz = 60.; 
 tokenChosenEachRing= [-999]*numRings
 rampUpDur=.3; rampDownDur=.7; trackingExtraTime=.4; #giving the person time to attend to the cue (secs)
@@ -257,9 +257,7 @@ maskOrbit = visual.PatchStim(myWin,tex='none',colorSpace='rgb',color=(1,1,0),mas
 stimList = []
 # temporalfrequency limit test
 numObjsInRing = [2]
-speedsEachNumObjs = [ [1.5, 1.65, 1.8, 2.0],     #these correspond to the speeds to use for each entry of numObjsInRing
-                                         [1.5, 1.65, 1.8, 2.0], 
-                                         [1.5, 1.65, 1.8, 2.0]   ]
+speedsEachNumObjs = [[0.3,0.3,0.3,0.3]] #  [ [1.5, 1.65, 1.8, 2.0] ]     #these correspond to the speeds to use for each entry of numObjsInRing
 numTargets = np.array([1])  # np.array([1,2,3])
 leastCommonMultipleSubsets = calcCondsPerNumTargets(numRings,numTargets)
 leastCommonMultipleTargetNums = LCM( numTargets )  #have to use this to choose whichToQuery. For explanation see newTrajectoryEventuallyForIdentityTracking.oo3
@@ -336,22 +334,39 @@ def RFcontourCalcModulation(angle,freq,phase):
     modulation = sin(angle*freq + phase) #radial frequency contour equation, e.g. http://www.journalofvision.org/content/14/11/12.full from Wilkinson et al. 1998
     return modulation
 
-ampTemporalRadiusModulation = 0.0 # 1.0/3.0
+ampTemporalRadiusModulation = 0.3 # 1.0/3.0
 ampModulatnEachRingTemporalPhase = np.random.rand(numRings) * 2*np.pi
-def radiusThisFrameThisAngle(numRing, angle, thisFrameN):
+def xyThisFrameThisAngle(numRing, angle, thisFrameN, speed):
+    #period of oscillation should be in sec
+    periodOfRadiusModulation = 1.0/speed#so if speed=2 rps, radius modulation period = 0.5 s
     r = radii[numRing]
     timeSeconds = thisFrameN / hz
-    period = 0.5 #seconds
-    phaseRadians = timeSeconds/period * 2*pi + ampModulatnEachRingTemporalPhase[numRing]
-    rThis =  r + sin(phaseRadians) * r * ampTemporalRadiusModulation
+    phaseRadians = timeSeconds/periodOfRadiusModulation * 2*pi + ampModulatnEachRingTemporalPhase[numRing]
+    def waveForm(phase,type):
+        if type=='sin':
+            return sin(phaseRadians)
+        elif type == 'sqrWave':
+            ans = np.sign( sin(phaseRadians) ) #-1 or 1. That's great because that's also sin min and max
+            if ans==0: ans = -1+ 2*round( np.random.rand(1)[0] ) #exception case is when 0, gives 0, so randomly change that to -1 or 1
+            return ans
+        elif type == 'sqr': #actual square-shaped trajectory
+            #if angle 0->90 or 180->270 x constant
+            if phaseRadians < pi/2:
+                x= -r
+            #otherwise y constant
+        else: print('Error! unexpected type in radiusThisFrameThisAngle')
+            
+    rThis =  r + waveForm(phaseRadians,'sin') * r * ampTemporalRadiusModulation
     rThis += r * RFcontourAmp * RFcontourCalcModulation(angle,RFcontourFreq,RFcontourPhase)
-    return rThis
+    x = rThis*cos(angle)
+    y = rThis*sin(angle)
+    return x,y
     
 def angleChangeThisFrame(thisTrial, moveDirection, numRing, thisFrameN, lastFrameN):
     anglemove = moveDirection[numRing]*thisTrial['direction']*thisTrial['speed']*2*pi*(thisFrameN-lastFrameN)/hz
     return anglemove
 
-def  oneFrameOfStim(currFrame,clock,useClock,offsetXYeachRing,currAngle,blobToCueEachRing,isReversed,reversalNo,ShowTrackCueFrames): 
+def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngle,blobToCueEachRing,isReversed,reversalNo,ShowTrackCueFrames): 
 #defining a function to draw each frame of stim. So can call second time for tracking task response phase
           global cueRing,ringRadial,ringRadialR, currentlyCuedBlob #makes python treat it as a local variable
           global angleIni, correctAnswers
@@ -384,10 +399,10 @@ def  oneFrameOfStim(currFrame,clock,useClock,offsetXYeachRing,currAngle,blobToCu
                     currAngle[noRing]=currAngle[noRing]+angleMove*(isReversed[noRing])
                 angleObject0 = angleIni[noRing] + currAngle[noRing]
                 angleThisObject = angleObject0 + (2*pi)/numObjects*nobject
-                r = radiusThisFrameThisAngle(noRing,angleThisObject,n)
-                x = offsetXYeachRing[noRing][0] + r*cos(angleThisObject)
-                y = offsetXYeachRing[noRing][1] + r*sin(angleThisObject)
-                if   n< ShowTrackCueFrames and nobject==blobToCueEachRing[noRing]: #cue in white  
+                x,y = xyThisFrameThisAngle(noRing,angleThisObject,n,thisTrial['speed'])
+                x = x + offsetXYeachRing[noRing][0]
+                y = y + offsetXYeachRing[noRing][1]
+                if n< ShowTrackCueFrames and nobject==blobToCueEachRing[noRing]: #cue in white  
                     weightToTrueColor = n*1.0/ShowTrackCueFrames #compute weighted average to ramp from white to correct color
                     blobColor = (1-weightToTrueColor)*np.array([1,1,1])  +  weightToTrueColor*colorsInInnerRingOrder[nColor] 
                     blobColor = blobColor*contrast #also might want to change contrast, if everybody's contrast changing in contrast ramp
@@ -402,7 +417,7 @@ def  oneFrameOfStim(currFrame,clock,useClock,offsetXYeachRing,currAngle,blobToCu
 # #######End of function definition that displays the stimuli!!!! #####################################
 
 showClickableRegions = True
-def  collectResponses(n,responses,responsesAutopilot,offsetXYeachRing,respRadius,currAngle,expStop ):
+def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,respRadius,currAngle,expStop ):
     optionSets=numRings;    
     
    #Draw response cues
@@ -445,9 +460,9 @@ def  collectResponses(n,responses,responsesAutopilot,offsetXYeachRing,respRadius
                   for ncheck in range( numOptionsEachSet[optionSet] ):  #draw each available to click on in this ring
                         angle =  (angleIni[optionSet]+currAngle[optionSet]) + ncheck*1.0/numOptionsEachSet[optionSet] *2.*pi
                         stretchOutwardRingsFactor = 1
-                        r = radiusThisFrameThisAngle(optionSet,angle,n)
-                        x = offsetXYeachRing[optionSet][0]+r*cos(angle);  
-                        y = offsetXYeachRing[optionSet][1]+r*sin(angle)
+                        x,y = xyThisFrameThisAngle(optionSet,angle,n,thisTrial['speed'])
+                        x = x+ offsetXYeachRing[optionSet][0]
+                        y = y+ offsetXYeachRing[optionSet][1]
                         #draw colors, and circles around selected items. Colors are drawn in order they're in in optionsIdxs
                         opts=optionIdexs;
                         c = opts[optionSet][ncheck] #idx of color that this option num corresponds to. Need an extra [0] b/c list of arrays
@@ -472,9 +487,9 @@ def  collectResponses(n,responses,responsesAutopilot,offsetXYeachRing,respRadius
                     for optionSet in range(optionSets):
                       for ncheck in range( numOptionsEachSet[optionSet] ): 
                             angle =  (angleIni[optionSet]+currAngle[optionSet]) + ncheck*1.0/numOptionsEachSet[optionSet] *2.*pi #radians
-                            r = radiusThisFrameThisAngle(optionSet,angle,n)
-                            x = offsetXYeachRing[optionSet][0]+r*cos(angle)
-                            y = offsetXYeachRing[optionSet][1]+r*sin(angle)
+                            x,y = xyThisFrameThisAngle(optionSet,angle,n,thisTrial['speed'])
+                            x = x+ offsetXYeachRing[optionSet][0]
+                            y = y+ offsetXYeachRing[optionSet][1]
                             #check whether mouse click was close to any of the colors
                             #Colors were drawn in order they're in in optionsIdxs
                             distance = sqrt(pow((x-mouseX),2)+pow((y-mouseY),2))
@@ -534,7 +549,7 @@ print('Starting experiment of',trials.nTotal,'trials. Current trial is trial 0.'
 print('trialnum\tsubject\tnumObjects\tspeed\tdirection\tcondition\leftOrRight\toffsetXYeachRing\tangleIni', end='\t', file=dataFile)
 print('orderCorrect\ttrialDurTotal\tnumTargets', end= '\t', file=dataFile) 
 for i in range(numRings):
-    print('whichIsTarget',i,     sep='', end='\t', file=dataFile)
+    print('whichIsTarget',i,  sep='', end='\t', file=dataFile)
 print('ringToQuery',end='\t',file=dataFile)
 for i in range(numRings):dataFile.write('Direction'+str(i)+'\t')
 for i in range(numRings):dataFile.write('respAdj'+str(i)+'\t')
@@ -558,7 +573,7 @@ while nDone <= trials.nTotal and expStop==False:
     numDistracters = numRings*thisTrial['numObjectsInRing'] - thisTrial['numTargets']
     xyDistracters = np.zeros( [numDistracters, 2] )
     for ringNum in range(numRings): # initialise  parameters
-         angleIni.append(np.random.uniform(0,2*pi)) #radians
+         angleIni.append(0); print('WARNING: angleIni not randomised') #np.random.uniform(0,2*pi)) #radians
          currAngle.append(0);
          moveDirection.append(-999);
          RAI.append(list());
@@ -580,7 +595,7 @@ while nDone <= trials.nTotal and expStop==False:
     for r in range(numRings): # set random reversal times
         thisReversalDur = trackingExtraTime
         while thisReversalDur< trialDurTotal+.1:  #Creating 100ms more than need, in theory. Because if miss frames and using clock time instead of frames, might go longer
-            thisReversalDur += np.random.uniform(timeTillReversalMin,timeTillReversalMax)
+            thisReversalDur += 10000; print('WARNING thisReversalDur off') # np.random.uniform(timeTillReversalMin,timeTillReversalMax)
             RAI[r].append(thisReversalDur)
  
     numObjects = thisTrial['numObjectsInRing']
@@ -601,7 +616,7 @@ while nDone <= trials.nTotal and expStop==False:
     stimClock.reset()
     for n in range(trialDurFrames): #this is the loop for this trial's stimulus!
             (angleIni,currAngle,isReversed,reversalNo) = \
-                            oneFrameOfStim(n,stimClock,useClock,thisTrial['offsetXYeachRing'],currAngle,blobsToPreCue,isReversed,reversalNo,ShowTrackCueFrames) #da big function
+                            oneFrameOfStim(thisTrial,n,stimClock,useClock,thisTrial['offsetXYeachRing'],currAngle,blobsToPreCue,isReversed,reversalNo,ShowTrackCueFrames) #da big function
             if exportImages:
                 myWin.getMovieFrame(buffer='back') #for later saving
                 framesSaved +=1
@@ -656,7 +671,7 @@ while nDone <= trials.nTotal and expStop==False:
      # ####### response set up answer
     responses = list();  responsesAutopilot = list()
     responses,responsesAutopilot,respondedEachToken,expStop = \
-            collectResponses(n,responses,responsesAutopilot,thisTrial['offsetXYeachRing'],respRadius,currAngle,expStop)  #collect responses!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#####
+            collectResponses(thisTrial,n,responses,responsesAutopilot,thisTrial['offsetXYeachRing'],respRadius,currAngle,expStop)  #collect responses!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#####
     #print("responses=",responses,";respondedEachToken=",respondedEachToken,"expStop=",expStop) #debugOFF
     core.wait(.1)
     if exportImages:  #maybe catch one frame of response
