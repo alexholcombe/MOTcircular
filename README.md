@@ -13,10 +13,8 @@ How do we handle reversals? Reversals necessitate integration. So, either pre-ge
 
 In the long term, want to set up exchange of objects among rings. Necessary to conduct an identity-tracking experiment. Can also push harder on speed limit that way.
 
-
 Issues
 - How do I recursively change n-dimensional array into a list
 - Still not seeing progress message.
-- Add dialog box, for Arni
 - Initialise numRings lists better
 - reversals. Make sure all recorded. Make function that does reversals

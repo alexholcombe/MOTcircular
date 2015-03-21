@@ -75,7 +75,6 @@ autopilot=False
 if autopilot:  subject='auto'
 feedback=True
 exportImages= False #quits after one trial / output image
-slitView = False  #visual barrier
 screenshot= False; screenshotDone = False;showRefreshMisses=False;allowGUI = False;waitBlank = False
 trackAllIdenticalColors = True#with tracking, can either use same colors as other task (e.g. 6 blobs but only 3 colors so have to track one of 2) or set all blobs identical color
 Reversal =True
@@ -308,27 +307,6 @@ respText = visual.TextStim(myWin,pos=(0, -.8),colorSpace='rgb',color = (1,1,1),a
 NextText = visual.TextStim(myWin,pos=(0, 0),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
 NextRemindText = visual.TextStim(myWin,pos=(.3, -.4),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
 NextRemindCountText = visual.TextStim(myWin,pos=(-.1, -.4),colorSpace='rgb',color= (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
-# mask setting..................
-maskOrbitSize = 2*(radii[numRings-1] +ballStdDev)#perhaps draw a big rectangle with a custom transparency layer (mask) in the shape of a thick ring
-maskSz=512
-myMask = np.ones([maskSz,maskSz]) #let everything through
-blockingWidth = int( (ballStdDev+radii[0])/maskOrbitSize * maskSz )
-#show the center so can see fixation point
-centralShowDiam = round( fixSize/maskOrbitSize * maskSz )
-for w in range(  int(maskSz/2-centralShowDiam), int(maskSz/2+centralShowDiam)  ):
-    for h in range(  int(maskSz/2-centralShowDiam), int(maskSz/2+centralShowDiam)  ):
-        myMask[h,w] = -1 #show (don't block)
-#show a horizontal strip
-blockingHeight = int(              (ballStdDev/2)/maskOrbitSize *maskSz       )
-stripTop = int( maskSz /2. - blockingHeight/2 )
-stripBtm = stripTop + blockingHeight
-horizCoords = range( 0, blockingWidth )  #left side of rings
-horizCoords = horizCoords + range(maskSz-1, maskSz-blockingWidth-1, -1) #right side of rings (to make it easier to fixate on center)
-for w in horizCoords:
-    for h in range( stripTop, stripBtm, 1):
-        myMask[h,w] = -1 #show (don't block)
-maskOrbit = visual.PatchStim(myWin,tex='none',colorSpace='rgb',color=(1,1,0),mask=myMask,size=maskOrbitSize,autoLog=autoLogging)  #depth=  , negative depth is closer
-#end slit computation
 
 stimList = []
 # temporalfrequency limit test
@@ -366,7 +344,7 @@ for numObjs in numObjsInRing: #set up experiment design
                                             offsetXYeachRing *= -1
                                   offsetXYeachRing = list(offsetXYeachRing) #so that when print, prints on one line
                                   for direction in [-1.0,1.0]:  
-                                        stimList.append( {'numObjectsInRing':numObjs,'speed':speed, 'direction':direction,'slitView':slitView,'numTargets':nt,'whichIsTarget':whichIsTarget,
+                                        stimList.append( {'numObjectsInRing':numObjs,'speed':speed, 'direction':direction,'numTargets':nt,'whichIsTarget':whichIsTarget,
                                           'ringToQuery':ringToQuery,'condition':condition,'leftOrRight':leftOrRight,'offsetXYeachRing':offsetXYeachRing} )
 #set up record of proportion correct in various conditions
 trialSpeeds = list() #purely to allow report at end of how many trials got right at each speed
@@ -487,7 +465,6 @@ def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngl
                 gaussian.draw()
           if blindspotFill:
               blindspotStim.draw()
-          if thisTrial['slitView']: maskOrbit.draw()
           return angleIni,currAngle,isReversed,reversalNo   
 # #######End of function definition that displays the stimuli!!!! #####################################
 
@@ -652,7 +629,7 @@ while nDone <= trials.nTotal and expStop==False:
          currAngle.append(0);
          moveDirection.append(-999);
          RAI.append(list());
-         isReversed.append(1)
+         isReversed.append(1) #always takes values of -1 or 1
          reversalNo.append(0)
          moveDirection[ringNum] = np.random.random_integers(0,1) *2 -1 #randomise initial direction
          if ringNum==0: #set up disc colors, vestige of Current Biology paper
@@ -660,9 +637,6 @@ while nDone <= trials.nTotal and expStop==False:
             #colors_ind.append(np.random.permutation(total_colors)[0:nb_colors]) #random subset of colors in random order
             colorRings.append(colors_all[colors_ind[ringNum]])
          else: 
-            '''colors_indnext= setdiff1d(xrange(total_colors), colors_ind[Ini-1])
-            np.random.shuffle(colors_indnext)
-            colors_ind.append(colors_indnext)'''
             colors_ind.append([0,0,0,0])
             colorRings.append(colors_all[colors_ind[ringNum]])
     colorsInInnerRingOrder=colorsInOuterRingOrder=colors_all[[0, 0, 0]]
@@ -680,7 +654,6 @@ while nDone <= trials.nTotal and expStop==False:
     myMouse.setVisible(False)      
     fixatnPeriodFrames = int(   (np.random.rand(1)/2.+0.8)   *hz)  #random interval between 800ms and 1.3s (changed when Fahed ran outer ring ident)
     for i in range(fixatnPeriodFrames):
-        if thisTrial['slitView']: maskOrbit.draw()  
         fixation.draw(); myWin.flip() #clearBuffer=True)  
     trialClock.reset()
     t0=trialClock.getTime(); t=trialClock.getTime()-t0     
@@ -846,8 +819,6 @@ while nDone <= trials.nTotal and expStop==False:
                     waitingForKeypress=False
         myWin.clearBuffer()
         thisTrial = trials.next()
-    if thisTrial['slitView']:  #need to give preview so sudden appearance doesn't evoke saccade
-        maskOrbit.draw()  
     core.wait(.1); time.sleep(.1)
     #end trials loop  ###########################################################
 if expStop == True:
