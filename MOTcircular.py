@@ -202,8 +202,8 @@ def openMyStimWindow(): #make it a function because have to do it several times,
         core.quit()
     return myWin
 myWin = openMyStimWindow()
-myWin.setRecordFrameIntervals(False)
 myMouse = event.Mouse(visible = 'true',win=myWin)
+myWin.setRecordFrameIntervals(False)
 
 trialsPerCondition = 1 #default value
 
@@ -237,65 +237,58 @@ else: #checkRefreshEtc
     myWinRes = myWin.size
     myWin.allowGUI =True
 print(refreshMsg1) #debugON
+
 myWin.close() #have to close window to show dialog box
-#
-#dlgLabelsOrdered = list()
-#myDlg = gui.Dlg(title="RSVP experiment", pos=(200,400))
-#if not autopilot:
-#    myDlg.addField('Subject name (default="Hubert"):', 'Hubert', tip='or subject code')
-#    dlgLabelsOrdered.append('subject')
-#
-#myDlg.addField('Trials per condition (default=' + str(trialsPerCondition) + '):', trialsPerCondition, tip=str(trialsPerCondition))
-#dlgLabelsOrdered.append('trialsPerCondition')
-#pctCompletedBreak = 50
-#
-#myDlg.addText(refreshMsg1, color='Black')
-#if refreshRateWrong:
-#    myDlg.addText(refreshMsg2, color='Red')
-#if refreshRateWrong:
-#    logging.error(refreshMsg1+refreshMsg2)
-#else: logging.info(refreshMsg1+refreshMsg2)
-#
-#if checkRefreshEtc and (not demo) and (myWinRes != [widthPix,heightPix]).any():
-#    msgWrongResolution = 'Screen apparently NOT the desired resolution of '+ str(widthPix)+'x'+str(heightPix)+ ' pixels!!'
-#    myDlg.addText(msgWrongResolution, color='Red')
-#    logging.error(msgWrongResolution)
-#    print(msgWrongResolution)
-#myDlg.addText('Note: to abort press ESC at a trials response screen', color=[-1.,1.,-1.]) # color='DimGrey') color names stopped working along the way, for unknown reason
-#myDlg.show()
-#
-#if myDlg.OK: #unpack information from dialogue box
-#   thisInfo = myDlg.data #this will be a list of data returned from each field added in order
-#   if not autopilot:
-#       name=thisInfo[dlgLabelsOrdered.index('subject')]
-#       if len(name) > 0: #if entered something
-#         subject = name #change subject default name to what user entered
-#       trialsPerCondition = int( thisInfo[ dlgLabelsOrdered.index('trialsPerCondition') ] ) #convert string to integer
-#       print('trialsPerCondition=',trialsPerCondition)
-#       logging.info('trialsPerCondition =',trialsPerCondition)
-#else: 
-#   print('User cancelled from dialog box.')
-#   logging.flush()
-#   core.quit()
-#   
+dlgLabelsOrdered = list() #new dialog box
+myDlg = gui.Dlg(title="object tracking experiment", pos=(200,400))
+if not autopilot:
+    myDlg.addField('Subject name (default="Hubert"):', 'Hubert', tip='or subject code')
+    dlgLabelsOrdered.append('subject')
+myDlg.addField('Trials per condition (default=' + str(trialsPerCondition) + '):', trialsPerCondition, tip=str(trialsPerCondition))
+dlgLabelsOrdered.append('trialsPerCondition')
+pctCompletedBreak = 50
+myDlg.addText(refreshMsg1, color='Black')
+if refreshRateWrong:
+    myDlg.addText(refreshMsg2, color='Red')
+if refreshRateWrong:
+    logging.error(refreshMsg1+refreshMsg2)
+else: logging.info(refreshMsg1+refreshMsg2)
+if checkRefreshEtc and (not demo) and (myWinRes != [widthPix,heightPix]).any():
+    msgWrongResolution = 'Screen apparently NOT the desired resolution of '+ str(widthPix)+'x'+str(heightPix)+ ' pixels!!'
+    myDlg.addText(msgWrongResolution, color='Red')
+    logging.error(msgWrongResolution)
+    print(msgWrongResolution)
+myDlg.addText('Note: to abort press ESC at a trials response screen', color=[-1.,1.,-1.]) # color='DimGrey') color names stopped working along the way, for unknown reason
+myDlg.show()
+if myDlg.OK: #unpack information from dialogue box
+   thisInfo = myDlg.data #this will be a list of data returned from each field added in order
+   if not autopilot:
+       name=thisInfo[dlgLabelsOrdered.index('subject')]
+       if len(name) > 0: #if entered something
+         subject = name #change subject default name to what user entered
+       trialsPerCondition = int( thisInfo[ dlgLabelsOrdered.index('trialsPerCondition') ] ) #convert string to integer
+       print('trialsPerCondition=',trialsPerCondition)
+       logging.info('trialsPerCondition =',trialsPerCondition)
+else: 
+   print('User cancelled from dialog box.')
+   logging.flush()
+   core.quit()
+   
 longerThanRefreshTolerance = 0.2
 longFrameLimit = round(1000./hz*(1.0+longerThanRefreshTolerance),3) # round(1000/hz*1.5,2)
 print('longFrameLimit=',longFrameLimit,' Recording trials where one or more interframe interval exceeded this figure ', file=logF)
 print('longFrameLimit=',longFrameLimit,' Recording trials where one or more interframe interval exceeded this figure ')
 
 myWin = openMyStimWindow()
-#myWin = visual.Window(monitor=mon,size=(widthPix,heightPix),allowGUI=allowGUI,units=units,color=bgColor,colorSpace='rgb',fullscr=fullscr,screen=scrn,waitBlanking=waitBlank) #Holcombe lab monitor
-
+myMouse = event.Mouse(visible = 'true',win=myWin)
 runInfo = psychopy.info.RunTimeInfo(
-        # if you specify author and version here, it overrides the automatic detection of __author__ and __version__ in your script
-        #author='<your name goes here, plus whatever you like, e.g., your lab or contact info>',
-        #version="<your experiment version info>",
         win=myWin,    ## a psychopy.visual.Window() instance; None = default temp window used; False = no win, no win.flips()
         refreshTest='grating', ## None, True, or 'grating' (eye-candy to avoid a blank screen)
         verbose=True, ## True means report on everything 
         userProcsDetailed=True  ## if verbose and userProcsDetailed, return (command, process-ID) of the user's processes
         )
-print('second window opening runInfo='); print('median ms=',runInfo["windowRefreshTimeMedian_ms"])
+print('second window opening runInfo mean ms=',runInfo["windowRefreshTimeAvg_ms"],file=logF)
+print('second window opening runInfo mean ms=',runInfo["windowRefreshTimeAvg_ms"])
 
 gaussian = visual.PatchStim(myWin, tex='none',mask='gauss',colorSpace='rgb',size=ballStdDev,autoLog=autoLogging)
 gaussian2 = visual.PatchStim(myWin, tex='none',mask='gauss',colorSpace='rgb',size=ballStdDev,autoLog=autoLogging)
