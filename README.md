@@ -16,5 +16,4 @@ In the long term, want to set up exchange of objects among rings. Necessary to c
 Issues
 - How do I recursively change n-dimensional array into a list
 - Still not seeing progress message.
-- Initialise numRings lists better
 - reversals. Make sure all recorded. Make function that does reversals

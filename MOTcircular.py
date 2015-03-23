@@ -418,7 +418,7 @@ def angleChangeThisFrame(thisTrial, moveDirection, numRing, thisFrameN, lastFram
     anglemove = moveDirection[numRing]*thisTrial['direction']*thisTrial['speed']*2*pi*(thisFrameN-lastFrameN)/hz
     return anglemove
 
-def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngle,blobToCueEachRing,isReversed,reversalNo,ShowTrackCueFrames): 
+def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngle,blobToCueEachRing,isReversed,reversalNumEachRing,ShowTrackCueFrames): 
 #defining a function to draw each frame of stim. So can call second time for tracking task response phase
           global cueRing,ringRadial,ringRadialR, currentlyCuedBlob #makes python treat it as a local variable
           global angleIni, correctAnswers
@@ -444,10 +444,10 @@ def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngl
                 angleMove = angleChangeThisFrame(thisTrial, moveDirection, noRing, n, n-1)
                 if nobject==0:
                     if Reversal:
-                        if reversalNo[noRing] <= len(RAI[noRing]):   #When reversals times assigned, e.g. RAI. They are accumulated WHILE thisReversalDur<trialDurTotal:  line 558
-                            if n > hz * RAI[noRing][ int(reversalNo[noRing]) ]:
+                        if reversalNumEachRing[noRing] <= len(RAI[noRing]):   #When reversals times assigned, e.g. RAI. They are accumulated WHILE thisReversalDur<trialDurTotal:  line 558
+                            if n > hz * RAI[noRing][ int(reversalNumEachRing[noRing]) ]:
                                 isReversed[noRing] = -1*isReversed[noRing]
-                                reversalNo[noRing] +=1
+                                reversalNumEachRing[noRing] +=1
                     currAngle[noRing]=currAngle[noRing]+angleMove*(isReversed[noRing])
                 angleObject0 = angleIni[noRing] + currAngle[noRing]
                 angleThisObject = angleObject0 + (2*pi)/numObjects*nobject
@@ -465,7 +465,7 @@ def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngl
                 gaussian.draw()
           if blindspotFill:
               blindspotStim.draw()
-          return angleIni,currAngle,isReversed,reversalNo   
+          return angleIni,currAngle,isReversed,reversalNumEachRing   
 # #######End of function definition that displays the stimuli!!!! #####################################
 
 showClickableRegions = True
@@ -617,7 +617,13 @@ trialDurTotal=0;
 ts = list();
 while nDone <= trials.nTotal and expStop==False:
     acceleratePsychopy(slowFast=1)
-    angleIni=list();currAngle=list();moveDirection=list();RAI=list();isReversed=list();reversalNo=list();colors_ind=list();colorRings=list();preDrawStimToGreasePipeline = list()
+    RAI=list();colors_ind=list();colorRings=list();preDrawStimToGreasePipeline = list()
+    isReversed= list([1]) * numRings #always takes values of -1 or 1
+    reversalNumEachRing = list([0]) * numRings
+    angleIni = list( np.random.uniform(0,2*pi,size=[numRings]) )
+    currAngle = list([0]) * numRings
+    moveDirection = list( np.random.random_integers(0,1,size=[numRings]) *2 -1 ) #randomise initial direction
+    #RAI = list([])*numRings   #doesn't work
     trackingVariableInterval=np.random.uniform(0,.8) #random interval taked onto tracking to make total duration variable so cant predict final position
     trialDurFrames= int( (trialDur+trackingExtraTime+trackingVariableInterval)*hz )
     trialDurTotal=trialDur+trackingExtraTime+trackingVariableInterval;
@@ -625,13 +631,7 @@ while nDone <= trials.nTotal and expStop==False:
     numDistracters = numRings*thisTrial['numObjectsInRing'] - thisTrial['numTargets']
     xyDistracters = np.zeros( [numDistracters, 2] )
     for ringNum in range(numRings): # initialise  parameters
-         angleIni.append(np.random.uniform(0,2*pi))   # angleIni.append(0); print('WARNING: angleIni not randomised') 
-         currAngle.append(0);
-         moveDirection.append(-999);
          RAI.append(list());
-         isReversed.append(1) #always takes values of -1 or 1
-         reversalNo.append(0)
-         moveDirection[ringNum] = np.random.random_integers(0,1) *2 -1 #randomise initial direction
          if ringNum==0: #set up disc colors, vestige of Current Biology paper
             colors_ind.append([0,0,0,0])
             #colors_ind.append(np.random.permutation(total_colors)[0:nb_colors]) #random subset of colors in random order
@@ -660,8 +660,8 @@ while nDone <= trials.nTotal and expStop==False:
     for L in range(len(ts)):ts.remove(ts[0]) # clear all ts array
     stimClock.reset()
     for n in range(trialDurFrames): #this is the loop for this trial's stimulus!
-            (angleIni,currAngle,isReversed,reversalNo) = \
-                            oneFrameOfStim(thisTrial,n,stimClock,useClock,thisTrial['offsetXYeachRing'],currAngle,blobsToPreCue,isReversed,reversalNo,ShowTrackCueFrames) #da big function
+            (angleIni,currAngle,isReversed,reversalNumEachRing) = \
+                            oneFrameOfStim(thisTrial,n,stimClock,useClock,thisTrial['offsetXYeachRing'],currAngle,blobsToPreCue,isReversed,reversalNumEachRing,ShowTrackCueFrames) #da big function
             if exportImages:
                 myWin.getMovieFrame(buffer='back') #for later saving
                 framesSaved +=1
