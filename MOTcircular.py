@@ -6,7 +6,7 @@ from psychopy import sound, monitors, logging
 import numpy as np
 import itertools #to calculate all subsets
 from copy import deepcopy
-from math import atan, pi, cos, sin, sqrt
+from math import atan, pi, cos, sin, sqrt, ceil
 import time, colorsys, sys, platform, os, StringIO, gc
 #BEGIN helper functions from primes.py
 def gcd(a,b): 
@@ -77,7 +77,6 @@ feedback=True
 exportImages= False #quits after one trial / output image
 screenshot= False; screenshotDone = False;showRefreshMisses=False;allowGUI = False;waitBlank = False
 trackAllIdenticalColors = True#with tracking, can either use same colors as other task (e.g. 6 blobs but only 3 colors so have to track one of 2) or set all blobs identical color
-Reversal =True
 
 timeAndDateStr = time.strftime("%d%b%Y_%H-%M", time.localtime()) 
 respTypes=['order']; respType=respTypes[0]
@@ -103,7 +102,6 @@ if demo or exportImages:
   logging.console.setLevel(logging.ERROR)  #only show this level  messages and higher
 logging.console.setLevel(logging.WARNING) #DEBUG means set the console to receive nearly all messges, INFO is for everything else, INFO, EXP, DATA, WARNING and ERROR 
 
-RANum=8 #Number of reversal tims to log to datafile for each ring
 numRings=1
 radii=[6] #[2.5,8,12] #[4,8,12] 
 offsets = np.array([[0,0],[-5,0],[-10,0]])
@@ -126,21 +124,40 @@ autopilot = infoFirst['Autopilot']
 checkRefreshEtc = infoFirst['Check refresh etc']
 fullscr = infoFirst['Fullscreen (timing errors if not)']
 refreshRate = infoFirst['Screen refresh rate']
-    
-trialDur = 3.3 #1.9 #3 4.8;
+
+#trialDur does not include trackingExtraTime, during which the cue is on. Not really part of the trial.
+trialDur = 3.3 #1.9 #3 4.8;  
 if demo:trialDur = 5;hz = 60.; 
 tokenChosenEachRing= [-999]*numRings
-rampUpDur=.3; rampDownDur=.7; trackingExtraTime=.7; #giving the person time to attend to the cue (secs)
-toTrackCueDur = rampUpDur+rampDownDur+trackingExtraTime
+rampUpDur=.3; rampDownDur=.7
+trackingExtraTime=.7; #giving the person time to attend to the cue (secs). This gets added to trialDur
+trackVariableIntervMax = 0.8
+def maxTrialDur():
+    return( trialDur+trackingExtraTime+trackVariableIntervMax)
+badTimingCushion = 0.1 #Creating 100ms more of reversals than should need. Because if miss frames and using clock time instead of frames, might go longer
+def maxPossibleReversals():  #need answer to know how many blank fields to print to file
+    return int( ceil(      (maxTrialDur() - trackingExtraTime)  / timeTillReversalMin          ) )
+def getReversalTimes():
+    reversalTimesEachRing = [  [] for i in range(numRings)  ]
+    for r in range(numRings): # set random reversal times
+        thisReversalDur = trackingExtraTime
+        while thisReversalDur< trialDurTotal+badTimingCushion:  
+            thisReversalDur +=  np.random.uniform(timeTillReversalMin,timeTillReversalMax) #10000; print('WARNING thisReversalDur off') 
+            reversalTimesEachRing[r].append(thisReversalDur)
+    return reversalTimesEachRing
+    
+toTrackCueDur = rampUpDur+rampDownDur+trackingExtraTime  #giving the person time to attend to the cue (secs)
 trialDurFrames=int(trialDur*hz)+int( trackingExtraTime*hz )
-rampUpFrames = hz*rampUpDur;   rampDownFrames = hz*rampDownDur;  ShowTrackCueFrames = int( hz*toTrackCueDur )
+rampUpFrames = hz*rampUpDur;   rampDownFrames = hz*rampDownDur;
+ShowTrackCueFrames = int( hz*toTrackCueDur )
 rampDownStart = trialDurFrames-rampDownFrames
 ballStdDev = 1.8
 mouseChoiceArea = ballStdDev*0.8 # origin =1.3
 units='deg' #'cm'
 if showRefreshMisses:fixSize = 2.6  #make fixation bigger so flicker more conspicuous
 else: fixSize = 0.3
-timeTillReversalMin = 0.5; timeTillReversalMax = 1.3 #2.9
+timeTillReversalMin = 10# 0.5; 
+timeTillReversalMax = 20# 1.3 #2.9
 
 #start definition of colors 
 hues=np.arange(16)/16.
@@ -310,8 +327,8 @@ NextRemindCountText = visual.TextStim(myWin,pos=(-.1, -.4),colorSpace='rgb',colo
 
 stimList = []
 # temporalfrequency limit test
-numObjsInRing = [2]
-speedsEachNumObjs = [ [ 1.9, 2.1, 2.3, 2.35 ] ] # [ [1.65, 1.8, 1.9, 2.0] ]     #dont want to go faster than 2 because of blur problem
+numObjsInRing = [1]# [2]
+speedsEachNumObjs =  [ [ 1,1,1,1,1 ] ] # [ [ 1.9, 2.1, 2.3, 2.35 ] ] # [ [1.65, 1.8, 1.9, 2.0] ]     #dont want to go faster than 2 because of blur problem
 numTargets = np.array([1])  # np.array([1,2,3])
 leastCommonMultipleSubsets = calcCondsPerNumTargets(numRings,numTargets)
 leastCommonMultipleTargetNums = LCM( numTargets )  #have to use this to choose whichToQuery. For explanation see newTrajectoryEventuallyForIdentityTracking.oo3
@@ -415,8 +432,11 @@ def xyThisFrameThisAngle(numRing, angle, thisFrameN, speed):
     return x,y
 
 def angleChangeThisFrame(thisTrial, moveDirection, numRing, thisFrameN, lastFrameN):
-    anglemove = moveDirection[numRing]*thisTrial['direction']*thisTrial['speed']*2*pi*(thisFrameN-lastFrameN)/hz
-    return anglemove
+    angleMove = moveDirection[numRing]*thisTrial['direction']*thisTrial['speed']*2*pi*(thisFrameN-lastFrameN)/hz
+    print('moveDirection[0]=',moveDirection[0],"thisTrial['direction']=",thisTrial['direction'],"thisTrial['speed']=",thisTrial['speed'],"thisFrameN-lastFrameN=",thisFrameN-lastFrameN,
+                'angleMove(deg)=',angleMove/pi*180.0, ' multiplied by hz =', angleMove/pi*180.0*60, sep=' ')
+    #debugON
+    return angleMove
 
 def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngle,blobToCueEachRing,isReversed,reversalNumEachRing,ShowTrackCueFrames): 
 #defining a function to draw each frame of stim. So can call second time for tracking task response phase
@@ -436,19 +456,18 @@ def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngl
           contrast = 1
           fixation.draw()
           if n%2>=1: fixation.draw()#flicker fixation on and off at framerate to see when skip frame
-          else:fixationBlank.draw()         
+          else:fixationBlank.draw()
     
           for noRing in range(numRings):
             for nobject in range(numObjects):
                 nColor =nobject % nb_colors
                 angleMove = angleChangeThisFrame(thisTrial, moveDirection, noRing, n, n-1)
                 if nobject==0:
-                    if Reversal:
-                        if reversalNumEachRing[noRing] <= len(RAI[noRing]):   #When reversals times assigned, e.g. RAI. They are accumulated WHILE thisReversalDur<trialDurTotal:  line 558
-                            if n > hz * RAI[noRing][ int(reversalNumEachRing[noRing]) ]:
+                        if reversalNumEachRing[noRing] <= len(reversalTimesEachRing[noRing]): #haven't exceeded  reversals assigned
+                            if n > hz * reversalTimesEachRing[noRing][ int(reversalNumEachRing[noRing]) ]: #have now exceeded time for this next reversal
                                 isReversed[noRing] = -1*isReversed[noRing]
                                 reversalNumEachRing[noRing] +=1
-                    currAngle[noRing]=currAngle[noRing]+angleMove*(isReversed[noRing])
+                currAngle[noRing]=currAngle[noRing]+angleMove*(isReversed[noRing])
                 angleObject0 = angleIni[noRing] + currAngle[noRing]
                 angleThisObject = angleObject0 + (2*pi)/numObjects*nobject
                 x,y = xyThisFrameThisAngle(noRing,angleThisObject,n,thisTrial['speed'])
@@ -595,7 +614,7 @@ def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,
     #if [] in responses: responses.remove([]) #this is for case of tracking with click response, when only want one response but draw both rings. One of responses to optionset will then be blank. Need to get rid of it
     return responses,responsesAutopilot,respondedEachToken, expStop
     ####### #End of function definition that collects responses!!!! #################################################
-
+    
 print('Starting experiment of',trials.nTotal,'trials. Current trial is trial 0.')
 #print header for data file
 print('trialnum\tsubject\tnumObjects\tspeed\tdirection\tcondition\leftOrRight\toffsetXYeachRing\tangleIni', end='\t', file=dataFile)
@@ -605,8 +624,9 @@ for i in range(numRings):
 print('ringToQuery',end='\t',file=dataFile)
 for i in range(numRings):dataFile.write('Direction'+str(i)+'\t')
 for i in range(numRings):dataFile.write('respAdj'+str(i)+'\t')
-for i in range(numRings):
-    for j in range(RANum):dataFile.write('RAV'+str(i)+'_'+str(j)+'\t')  #reversal times for each ring
+for r in range(numRings):
+    for j in range(maxPossibleReversals()):
+        dataFile.write('rev'+str(r)+'_'+str(j)+'\t')  #reversal times for each ring
 print('timingBlips', file=dataFile)
 #end of header
 trialClock = core.Clock()
@@ -617,21 +637,19 @@ trialDurTotal=0;
 ts = list();
 while nDone <= trials.nTotal and expStop==False:
     acceleratePsychopy(slowFast=1)
-    RAI=list();colors_ind=list();colorRings=list();preDrawStimToGreasePipeline = list()
+    colors_ind=list();colorRings=list();preDrawStimToGreasePipeline = list()
     isReversed= list([1]) * numRings #always takes values of -1 or 1
     reversalNumEachRing = list([0]) * numRings
     angleIni = list( np.random.uniform(0,2*pi,size=[numRings]) )
     currAngle = list([0]) * numRings
     moveDirection = list( np.random.random_integers(0,1,size=[numRings]) *2 -1 ) #randomise initial direction
-    #RAI = list([])*numRings   #doesn't work
-    trackingVariableInterval=np.random.uniform(0,.8) #random interval taked onto tracking to make total duration variable so cant predict final position
-    trialDurFrames= int( (trialDur+trackingExtraTime+trackingVariableInterval)*hz )
-    trialDurTotal=trialDur+trackingExtraTime+trackingVariableInterval;
+    trackVariableIntervDur=np.random.uniform(0,trackVariableIntervMax) #random interval tacked onto tracking to make total duration variable so cant predict final position
+    trialDurTotal = maxTrialDur() - trackVariableIntervDur
+    trialDurFrames= int( trialDurTotal*hz )
     xyTargets = np.zeros( [thisTrial['numTargets'], 2] ) #need this for eventual case where targets can change what ring they are in
     numDistracters = numRings*thisTrial['numObjectsInRing'] - thisTrial['numTargets']
     xyDistracters = np.zeros( [numDistracters, 2] )
     for ringNum in range(numRings): # initialise  parameters
-         RAI.append(list());
          if ringNum==0: #set up disc colors, vestige of Current Biology paper
             colors_ind.append([0,0,0,0])
             #colors_ind.append(np.random.permutation(total_colors)[0:nb_colors]) #random subset of colors in random order
@@ -641,12 +659,9 @@ while nDone <= trials.nTotal and expStop==False:
             colorRings.append(colors_all[colors_ind[ringNum]])
     colorsInInnerRingOrder=colorsInOuterRingOrder=colors_all[[0, 0, 0]]
     stimColorIdxsOrder=[[0,0],[0,0],[0,0]]#this is used for drawing blobs during stimulus
-    for r in range(numRings): # set random reversal times
-        thisReversalDur = trackingExtraTime
-        while thisReversalDur< trialDurTotal+.1:  #Creating 100ms more than need, in theory. Because if miss frames and using clock time instead of frames, might go longer
-            thisReversalDur +=  np.random.uniform(timeTillReversalMin,timeTillReversalMax) #10000; print('WARNING thisReversalDur off') 
-            RAI[r].append(thisReversalDur)
- 
+
+    reversalTimesEachRing = getReversalTimes()
+    print('reversalTimesEachRing=',reversalTimesEachRing,' maxPossibleReversals=',maxPossibleReversals())
     numObjects = thisTrial['numObjectsInRing']
     centerInMiddleOfSegment =360./numObjects/2.0
     blobsToPreCue=thisTrial['whichIsTarget']
@@ -766,9 +781,10 @@ while nDone <= trials.nTotal and expStop==False:
     for i in range(numRings):dataFile.write(str(round(moveDirection[i],4))+'\t') 
     for i in range(numRings):dataFile.write(str(round(respAdj[i],4))+'\t') 
     for k in range(numRings):
-        for i in range(len(RAI[k])):dataFile.write(str(round(RAI[k][i],4))+'\t') 
-        if int(len(RAI[k]))<int(RANum+1):
-            for j in range(RANum-len(RAI[k])):dataFile.write('-999\t') 
+        for i in range(len(reversalTimesEachRing[k])):
+            print(str(round(reversalTimesEachRing[k][i],4))+'\t', end='', file=dataFile)
+        for j in range(i,maxPossibleReversals()):
+            print('-999\t',file=dataFile)
     print(numCasesInterframeLong, file=dataFile)
     numTrialsOrderCorrect += (orderCorrect >0)  #so count -1 as 0
     numAllCorrectlyIdentified += (numColorsCorrectlyIdentified==3)
