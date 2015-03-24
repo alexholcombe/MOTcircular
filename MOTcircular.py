@@ -75,7 +75,7 @@ autopilot=False
 if autopilot:  subject='auto'
 feedback=True
 exportImages= False #quits after one trial / output image
-screenshot= False; screenshotDone = False;showRefreshMisses=False;allowGUI = False;waitBlank = False
+screenshot= False; screenshotDone = False;allowGUI = False;waitBlank = False
 trackAllIdenticalColors = True#with tracking, can either use same colors as other task (e.g. 6 blobs but only 3 colors so have to track one of 2) or set all blobs identical color
 
 timeAndDateStr = time.strftime("%d%b%Y_%H-%M", time.localtime()) 
@@ -135,8 +135,6 @@ rampDownStart = trialDurFrames-rampDownFrames
 ballStdDev = 1.8
 mouseChoiceArea = ballStdDev*0.8 # origin =1.3
 units='deg' #'cm'
-if showRefreshMisses:fixSize = 2.6  #make fixation bigger so flicker more conspicuous
-else: fixSize = 0.3
 timeTillReversalMin = 0.5 #0.5; 
 timeTillReversalMax = 1.5# 1.3 #2.9
 colors_all = np.array([[1,-1,-1],[1,-1,-1]])
@@ -287,8 +285,19 @@ blindspotFill = 0 #a way for people to know if they move their eyes
 if blindspotFill:
     blindspotStim = visual.PatchStim(myWin, tex='none',mask='circle',size=4.8,colorSpace='rgb',color = (-1,1,-1),autoLog=autoLogging) #to outline chosen options
     blindspotStim.setPos([13.1,-2.7]) #AOH, size=4.8; pos=[13.1,-2.7] #DL: [13.3,-0.8]
-fixation = visual.PatchStim(myWin,tex='none',colorSpace='rgb',color=(1,1,1),mask='circle',size=fixSize,autoLog=autoLogging)
-fixationBlank= visual.PatchStim(myWin,tex='none',colorSpace='rgb',color=(-1,-1,-1),mask='circle',size=fixSize,autoLog=autoLogging)   
+fixatnNoise = True
+fixSizePix = 20 #make fixation big so flicker more conspicuous
+if fixatnNoise:
+    fixatnNoiseTexture = np.round( np.random.rand(fixSizePix/4,fixSizePix/4) ,0 )   *2.0-1 #Can counterphase flicker  noise texture to create salient flicker if you break fixation
+    fixation= visual.PatchStim(myWin, tex=fixatnNoiseTexture, size=(fixSizePix,fixSizePix), units='pix', mask='circle', interpolate=False, autoLog=autoLogging)
+    fixationBlank= visual.PatchStim(myWin, tex=-1*fixatnNoiseTexture, colorSpace='rgb',mask='circle',size=fixSizePix,units='pix',autoLog=autoLogging)
+    print('fixatnNoiseTexture =',fixatnNoiseTexture)
+    print('-1*fixatnNoiseTexture=',-1*fixatnNoiseTexture)
+else:
+    fixation = visual.PatchStim(myWin,tex='none',colorSpace='rgb',color=(.9,.9,.9),mask='circle',units='pix',size=fixSizePix,autoLog=autoLogging)
+    fixationBlank= visual.PatchStim(myWin,tex='none',colorSpace='rgb',color=(-1,-1,-1),mask='circle',units='pix',size=fixSizePix,autoLog=autoLogging)
+fixationPoint = visual.PatchStim(myWin,colorSpace='rgb',color=(1,1,1),mask='circle',units='pix',size=2,autoLog=autoLogging) #put a point in the center
+
 respText = visual.TextStim(myWin,pos=(0, -.8),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
 NextText = visual.TextStim(myWin,pos=(0, 0),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
 NextRemindText = visual.TextStim(myWin,pos=(.3, -.4),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
@@ -301,7 +310,7 @@ speedsEachNumObjs =  [ [1.65, 1.8, 1.9, 2.0] ]     #dont want to go faster than 
 numTargets = np.array([1])  # np.array([1,2,3])
 leastCommonMultipleSubsets = calcCondsPerNumTargets(numRings,numTargets)
 leastCommonMultipleTargetNums = LCM( numTargets )  #have to use this to choose whichToQuery. For explanation see newTrajectoryEventuallyForIdentityTracking.oo3
-print('leastCommonMultipleSubsets=',leastCommonMultipleSubsets)
+#print('leastCommonMultipleSubsets=',leastCommonMultipleSubsets)
                 
 for numObjs in numObjsInRing: #set up experiment design
     idx = numObjsInRing.index(numObjs)
@@ -310,18 +319,18 @@ for numObjs in numObjsInRing: #set up experiment design
         ringNums = np.arange(numRings)
         for nt in numTargets: #  3 choose 2, 3 choose 1, have to have as many conditions as the maximum
           subsetsThis = list(itertools.combinations(ringNums,nt)) #all subsets of length nt from the universe of ringNums
-          numSubsetsThis = len( subsetsThis );   print('numSubsetsThis=',numSubsetsThis)
+          numSubsetsThis = len( subsetsThis );   #print('numSubsetsThis=',numSubsetsThis)
           repsNeeded = leastCommonMultipleSubsets / numSubsetsThis #that's the number of repetitions needed to make up for number of subsets of rings
           for r in xrange(repsNeeded):  #for nt with largest number of subsets, need no repetitions
                   for s in subsetsThis:
                       whichIsTarget = np.ones(numRings)*-999 #-999 is  value meaning no target in that ring. 1 will mean target in ring
                       for ring in s:
                          whichIsTarget[ring] = np.random.random_integers(0, numObjs-1, size=1) #1
-                      print('numTargets=',nt,' whichIsTarget=',whichIsTarget,' and that is one of ',numSubsetsThis,' possibilities and we are doing ',repsNeeded,'repetitions')
+                      #print('numTargets=',nt,' whichIsTarget=',whichIsTarget,' and that is one of ',numSubsetsThis,' possibilities and we are doing ',repsNeeded,'repetitions')
                       for whichToQuery in xrange( leastCommonMultipleTargetNums ):  #for each subset, have to query one. This is dealed out to  the current subset by using modulus. It's assumed that this will result in equal total number of queried rings
                               whichSubsetEntry = whichToQuery % nt  #e.g. if nt=2 and whichToQuery can be 0,1,or2 then modulus result is 0,1,0. This implies that whichToQuery won't be totally counterbalanced with which subset, which is bad because
                                               #might give more resources to one that's queried more often. Therefore for whichToQuery need to use least common multiple.
-                              ringToQuery = s[whichSubsetEntry];  print('ringToQuery=',ringToQuery,'subset=',s)
+                              ringToQuery = s[whichSubsetEntry];  #print('ringToQuery=',ringToQuery,'subset=',s)
                               for condition in [0,1,2]: #centered, slightly off-center, or fully off-center
                                for leftOrRight in [0,1]:
                                   offsetXYeachRing = np.array([ offsets[condition] ]) #because other experiments involve multiple rings, it's a 2-d array
@@ -419,10 +428,12 @@ def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngl
           elif rampDownFrames>0 and n > rampDownStart:
                 contrast = cos(pi* (n-rampDownStart)/rampDownFrames ) /2.+.5 #starting from peak of cos, and scale into 0->1 range
           else: contrast = 1
-          fixation.draw()
-          if n%2>=1: fixation.draw()#flicker fixation on and off at framerate to see when skip frame
-          else:fixationBlank.draw()
-    
+          if n%2:
+            fixation.draw()#flicker fixation on and off at framerate to see when skip frame
+          else:
+            fixationBlank.draw()
+          fixationPoint.draw()
+          
           for noRing in range(numRings):
             angleMove = angleChangeThisFrame(thisTrial, moveDirection, noRing, n, n-1)
             currAngle[noRing] = currAngle[noRing]+angleMove*(isReversed[noRing])
@@ -622,9 +633,12 @@ while nDone <= trials.nTotal and expStop==False:
     blobsToPreCue=thisTrial['whichIsTarget']
     core.wait(.1)
     myMouse.setVisible(False)      
-    fixatnPeriodFrames = int(   (np.random.rand(1)/2.+0.8)   *hz)  #random interval between 800ms and 1.3s (changed when Fahed ran outer ring ident)
+    fixatnPeriodFrames = int(   (np.random.rand(1)/2.+0.8)   *hz)  #random interval between x and x+800ms
     for i in range(fixatnPeriodFrames):
-        fixation.draw(); myWin.flip() #clearBuffer=True)  
+        if i%2:
+            fixation.draw()
+        else: fixationBlank.draw()
+        myWin.flip() #clearBuffer=True)  
     trialClock.reset()
     t0=trialClock.getTime(); t=trialClock.getTime()-t0     
     for L in range(len(ts)):ts.remove(ts[0]) # clear all ts array
