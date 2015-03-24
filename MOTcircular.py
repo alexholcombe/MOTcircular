@@ -83,33 +83,14 @@ respTypes=['order']; respType=respTypes[0]
 bindRadiallyRingToIdentify=1 #0 is inner, 1 is outer
 trackPostcueOrClick = 1 #postcue means say yes/no postcued was a target, click means click on which you think was/were the targets
 
-if os.path.isdir('.'+os.sep+'dataRaw'):
-    dataDir='dataRaw'
-else:
-    print('"dataRaw" directory does not exist, so saving data in present working directory')
-    dataDir='.'
-expname = ''
-fileName = dataDir+'/'+subject+ '_' + expname+timeAndDateStr
-if not demo and not exportImages:
-    dataFile = open(fileName+'.txt', 'w')  # sys.stdout  #StringIO.StringIO() 
-    saveCodeCmd = 'cp \'' + sys.argv[0] + '\' '+ fileName + '.py'
-    os.system(saveCodeCmd)  #save a copy of the code as it was when that subject was run
-    logF = logging.LogFile(fileName+'.log', 
-        filemode='w',#if you set this to 'a' it will append instead of overwriting
-        level=logging.INFO)#errors, data and warnings will be sent to this logfile
-if demo or exportImages: 
-  dataFile = sys.stdout
-  logging.console.setLevel(logging.ERROR)  #only show this level  messages and higher
-logging.console.setLevel(logging.WARNING) #DEBUG means set the console to receive nearly all messges, INFO is for everything else, INFO, EXP, DATA, WARNING and ERROR 
-
 numRings=1
 radii=[6] #[2.5,8,12] #[4,8,12] 
 offsets = np.array([[0,0],[-5,0],[-10,0]])
 
 respRadius=radii[0] #deg
-hz= 60.0 #160 *1.0;  #set to the framerate of the monitor
+hz= 160 *1.0;  #set to the framerate of the monitor
 useClock = True #as opposed to using frame count, which assumes no frames are ever missed
-fullscr=0; scrn=0
+fullscr=1; scrn=0
 # create a dialog from dictionary 
 infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':True, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': hz }
 OK = gui.DlgFromDict(dictionary=infoFirst, 
@@ -126,7 +107,7 @@ fullscr = infoFirst['Fullscreen (timing errors if not)']
 refreshRate = infoFirst['Screen refresh rate']
 
 #trialDur does not include trackingExtraTime, during which the cue is on. Not really part of the trial.
-trialDur = 3.3 #1.9 #3 4.8;  
+trialDur = 3.3  #20-.7
 if demo:trialDur = 5;hz = 60.; 
 tokenChosenEachRing= [-999]*numRings
 rampUpDur=.3; rampDownDur=.7
@@ -156,8 +137,8 @@ mouseChoiceArea = ballStdDev*0.8 # origin =1.3
 units='deg' #'cm'
 if showRefreshMisses:fixSize = 2.6  #make fixation bigger so flicker more conspicuous
 else: fixSize = 0.3
-timeTillReversalMin = 10# 0.5; 
-timeTillReversalMax = 20# 1.3 #2.9
+timeTillReversalMin = 100 #0.5; 
+timeTillReversalMax = 200# 1.3 #2.9
 
 #start definition of colors 
 hues=np.arange(16)/16.
@@ -237,8 +218,6 @@ else: #checkRefreshEtc
             verbose=True, ## True means report on everything 
             userProcsDetailed=True  ## if verbose and userProcsDetailed, return (command, process-ID) of the user's processes
             )
-    #print(runInfo)
-    logging.info(runInfo)
     print('Finished runInfo- which assesses the refresh and processes of this computer')
     refreshMsg1 = 'Median frames per second ='+ str( np.round(1000./runInfo["windowRefreshTimeMedian_ms"],1) )
     refreshRateTolerancePct = 3
@@ -266,13 +245,10 @@ pctCompletedBreak = 50
 myDlg.addText(refreshMsg1, color='Black')
 if refreshRateWrong:
     myDlg.addText(refreshMsg2, color='Red')
-if refreshRateWrong:
-    logging.error(refreshMsg1+refreshMsg2)
-else: logging.info(refreshMsg1+refreshMsg2)
+msgWrongResolution = ''
 if checkRefreshEtc and (not demo) and (myWinRes != [widthPix,heightPix]).any():
     msgWrongResolution = 'Screen apparently NOT the desired resolution of '+ str(widthPix)+'x'+str(heightPix)+ ' pixels!!'
     myDlg.addText(msgWrongResolution, color='Red')
-    logging.error(msgWrongResolution)
     print(msgWrongResolution)
 myDlg.addText('Note: to abort press ESC at a trials response screen', color=[-1.,1.,-1.]) # color='DimGrey') color names stopped working along the way, for unknown reason
 myDlg.show()
@@ -289,11 +265,35 @@ else:
    print('User cancelled from dialog box.')
    logging.flush()
    core.quit()
-   
+
+if os.path.isdir('.'+os.sep+'dataRaw'):
+    dataDir='dataRaw'
+else:
+    print('"dataRaw" directory does not exist, so saving data in present working directory')
+    dataDir='.'
+expname = ''
+fileName = dataDir+'/'+subject+ '_' + expname+timeAndDateStr
+if not demo and not exportImages:
+    dataFile = open(fileName+'.txt', 'w')  # sys.stdout  #StringIO.StringIO() 
+    saveCodeCmd = 'cp \'' + sys.argv[0] + '\' '+ fileName + '.py'
+    os.system(saveCodeCmd)  #save a copy of the code as it was when that subject was run
+    logF = logging.LogFile(fileName+'.log', 
+        filemode='w',#if you set this to 'a' it will append instead of overwriting
+        level=logging.INFO)#errors, data and warnings will be sent to this logfile
+if demo or exportImages: 
+  dataFile = sys.stdout
+  logging.console.setLevel(logging.ERROR)  #only show this level  messages and higher
+logging.console.setLevel(logging.WARNING) #DEBUG means set the console to receive nearly all messges, INFO is for everything else, INFO, EXP, DATA, WARNING and ERROR 
+logging.info(runInfo)
+if refreshRateWrong:
+    logging.error(refreshMsg1+refreshMsg2)
+else: logging.info(refreshMsg1+refreshMsg2)
 longerThanRefreshTolerance = 0.2
 longFrameLimit = round(1000./hz*(1.0+longerThanRefreshTolerance),3) # round(1000/hz*1.5,2)
 print('longFrameLimit=',longFrameLimit,' Recording trials where one or more interframe interval exceeded this figure ', file=logF)
 print('longFrameLimit=',longFrameLimit,' Recording trials where one or more interframe interval exceeded this figure ')
+if msgWrongResolution != '':
+    logging.error(msgWrongResolution)
 
 myWin = openMyStimWindow()
 myMouse = event.Mouse(visible = 'true',win=myWin)
@@ -327,8 +327,8 @@ NextRemindCountText = visual.TextStim(myWin,pos=(-.1, -.4),colorSpace='rgb',colo
 
 stimList = []
 # temporalfrequency limit test
-numObjsInRing = [1]# [2]
-speedsEachNumObjs =  [ [ 1,1,1,1,1 ] ] # [ [ 1.9, 2.1, 2.3, 2.35 ] ] # [ [1.65, 1.8, 1.9, 2.0] ]     #dont want to go faster than 2 because of blur problem
+numObjsInRing = [2]
+speedsEachNumObjs =[ [1.1 ] ] # [ [1.65, 1.8, 1.9, 2.0] ]     #dont want to go faster than 2 because of blur problem
 numTargets = np.array([1])  # np.array([1,2,3])
 leastCommonMultipleSubsets = calcCondsPerNumTargets(numRings,numTargets)
 leastCommonMultipleTargetNums = LCM( numTargets )  #have to use this to choose whichToQuery. For explanation see newTrajectoryEventuallyForIdentityTracking.oo3
@@ -433,15 +433,15 @@ def xyThisFrameThisAngle(numRing, angle, thisFrameN, speed):
 
 def angleChangeThisFrame(thisTrial, moveDirection, numRing, thisFrameN, lastFrameN):
     angleMove = moveDirection[numRing]*thisTrial['direction']*thisTrial['speed']*2*pi*(thisFrameN-lastFrameN)/hz
-    print('moveDirection[0]=',moveDirection[0],"thisTrial['direction']=",thisTrial['direction'],"thisTrial['speed']=",thisTrial['speed'],"thisFrameN-lastFrameN=",thisFrameN-lastFrameN,
-                'angleMove(deg)=',angleMove/pi*180.0, ' multiplied by hz =', angleMove/pi*180.0*60, sep=' ')
+    #print('moveDirection[0]=',moveDirection[0],"thisTrial['direction']=",thisTrial['direction'],"thisTrial['speed']=",thisTrial['speed'],"thisFrameN-lastFrameN=",thisFrameN-lastFrameN,
+    #            'angleMove(deg)=',angleMove/pi*180.0, ' multiplied by hz =', angleMove/pi*180.0*60, sep=' ')
     #debugON
     return angleMove
 
 def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngle,blobToCueEachRing,isReversed,reversalNumEachRing,ShowTrackCueFrames): 
 #defining a function to draw each frame of stim. So can call second time for tracking task response phase
           global cueRing,ringRadial,ringRadialR, currentlyCuedBlob #makes python treat it as a local variable
-          global angleIni, correctAnswers
+          global angleIniEachRing, correctAnswers
           if useClock: #Don't count on not missing frames. Use actual time.
             t = clock.getTime()
             n = round(t*hz)
@@ -468,7 +468,7 @@ def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngl
                                 isReversed[noRing] = -1*isReversed[noRing]
                                 reversalNumEachRing[noRing] +=1
                 currAngle[noRing]=currAngle[noRing]+angleMove*(isReversed[noRing])
-                angleObject0 = angleIni[noRing] + currAngle[noRing]
+                angleObject0 = angleIniEachRing[noRing] + currAngle[noRing]
                 angleThisObject = angleObject0 + (2*pi)/numObjects*nobject
                 x,y = xyThisFrameThisAngle(noRing,angleThisObject,n,thisTrial['speed'])
                 x = x + offsetXYeachRing[noRing][0]
@@ -484,7 +484,7 @@ def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngl
                 gaussian.draw()
           if blindspotFill:
               blindspotStim.draw()
-          return angleIni,currAngle,isReversed,reversalNumEachRing   
+          return angleIniEachRing,currAngle,isReversed,reversalNumEachRing   
 # #######End of function definition that displays the stimuli!!!! #####################################
 
 showClickableRegions = True
@@ -529,7 +529,7 @@ def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,
                         
                for optionSet in range(optionSets):  #draw this group (ring) of options
                   for ncheck in range( numOptionsEachSet[optionSet] ):  #draw each available to click on in this ring
-                        angle =  (angleIni[optionSet]+currAngle[optionSet]) + ncheck*1.0/numOptionsEachSet[optionSet] *2.*pi
+                        angle =  (angleIniEachRing[optionSet]+currAngle[optionSet]) + ncheck*1.0/numOptionsEachSet[optionSet] *2.*pi
                         stretchOutwardRingsFactor = 1
                         x,y = xyThisFrameThisAngle(optionSet,angle,n,thisTrial['speed'])
                         x = x+ offsetXYeachRing[optionSet][0]
@@ -557,7 +557,7 @@ def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,
                     mouseY = mouseY #* degpercm #mouse x location relative to center, converted to degrees
                     for optionSet in range(optionSets):
                       for ncheck in range( numOptionsEachSet[optionSet] ): 
-                            angle =  (angleIni[optionSet]+currAngle[optionSet]) + ncheck*1.0/numOptionsEachSet[optionSet] *2.*pi #radians
+                            angle =  (angleIniEachRing[optionSet]+currAngle[optionSet]) + ncheck*1.0/numOptionsEachSet[optionSet] *2.*pi #radians
                             x,y = xyThisFrameThisAngle(optionSet,angle,n,thisTrial['speed'])
                             x = x+ offsetXYeachRing[optionSet][0]
                             y = y+ offsetXYeachRing[optionSet][1]
@@ -617,7 +617,9 @@ def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,
     
 print('Starting experiment of',trials.nTotal,'trials. Current trial is trial 0.')
 #print header for data file
-print('trialnum\tsubject\tnumObjects\tspeed\tdirection\tcondition\leftOrRight\toffsetXYeachRing\tangleIni', end='\t', file=dataFile)
+print('trialnum\tsubject\tnumObjects\tspeed\tdirection\tcondition\tleftOrRight', end='\t')
+for r in range(numRings):
+    print('offsetXYring',r, sep='', end='\t')
 print('orderCorrect\ttrialDurTotal\tnumTargets', end= '\t', file=dataFile) 
 for i in range(numRings):
     print('whichIsTarget',i,  sep='', end='\t', file=dataFile)
@@ -640,7 +642,7 @@ while nDone <= trials.nTotal and expStop==False:
     colors_ind=list();colorRings=list();preDrawStimToGreasePipeline = list()
     isReversed= list([1]) * numRings #always takes values of -1 or 1
     reversalNumEachRing = list([0]) * numRings
-    angleIni = list( np.random.uniform(0,2*pi,size=[numRings]) )
+    angleIniEachRing = list( np.random.uniform(0,2*pi,size=[numRings]) )
     currAngle = list([0]) * numRings
     moveDirection = list( np.random.random_integers(0,1,size=[numRings]) *2 -1 ) #randomise initial direction
     trackVariableIntervDur=np.random.uniform(0,trackVariableIntervMax) #random interval tacked onto tracking to make total duration variable so cant predict final position
@@ -661,7 +663,7 @@ while nDone <= trials.nTotal and expStop==False:
     stimColorIdxsOrder=[[0,0],[0,0],[0,0]]#this is used for drawing blobs during stimulus
 
     reversalTimesEachRing = getReversalTimes()
-    print('reversalTimesEachRing=',reversalTimesEachRing,' maxPossibleReversals=',maxPossibleReversals())
+    print('reversalTimesEachRing=',np.around(np.array(reversalTimesEachRing),2),' maxPossibleReversals=',maxPossibleReversals()) #debugON
     numObjects = thisTrial['numObjectsInRing']
     centerInMiddleOfSegment =360./numObjects/2.0
     blobsToPreCue=thisTrial['whichIsTarget']
@@ -774,7 +776,9 @@ while nDone <= trials.nTotal and expStop==False:
 
     #header trialnum\tsubject\tnumObjects\tspeed\tdirection\tcondition\leftOrRight\toffsetXYeachRing\tangleIni
     print(nDone,subject,thisTrial['numObjectsInRing'],thisTrial['speed'],thisTrial['direction'],sep='\t', end='\t', file=dataFile)
-    print(thisTrial['condition'],thisTrial['leftOrRight'],thisTrial['offsetXYeachRing'],angleIni,sep='\t',end='\t',file=dataFile)
+    print(thisTrial['condition'],thisTrial['leftOrRight'],sep='\t',end='\t',file=dataFile)
+    for r in range(numRings):
+        print( list( thisTrial['offsetXYeachRing'][r] ), end='\t',file=dataFile )
     print(orderCorrect,'\t',trialDurTotal,'\t',thisTrial['numTargets'],'\t', end=' ', file=dataFile) #override newline end
     for i in range(numRings):  print( thisTrial['whichIsTarget'][i], end='\t', file=dataFile  )
     print( thisTrial['ringToQuery'],end='\t',file=dataFile )
