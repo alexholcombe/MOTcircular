@@ -68,7 +68,7 @@ def acceleratePsychopy(slowFast):
             gc.enable()
         core.rush(False)
 
-subject='AH'#'test'
+subject='test'#'test'
 autoLogging = False
 demo = False
 autopilot=False
@@ -110,8 +110,8 @@ refreshRate = infoFirst['Screen refresh rate']
 trialDur = 3.3
 if demo:trialDur = 5;hz = 60.; 
 tokenChosenEachRing= [-999]*numRings
-rampUpDur=.3; rampDownDur=.7
-trackingExtraTime=.7; #giving the person time to attend to the cue (secs). This gets added to trialDur
+rampUpDur=0; rampDownDur=0
+trackingExtraTime=1.0; #giving the person time to attend to the cue (secs). This gets added to trialDur
 trackVariableIntervMax = 0.8
 def maxTrialDur():
     return( trialDur+trackingExtraTime+trackVariableIntervMax)
@@ -139,8 +139,8 @@ if showRefreshMisses:fixSize = 2.6  #make fixation bigger so flicker more conspi
 else: fixSize = 0.3
 timeTillReversalMin = 0.5 #0.5; 
 timeTillReversalMax = 1.5# 1.3 #2.9
-colors_all = np.array([[1,-1,-1],[1,1,1]])
-
+colors_all = np.array([[1,-1,-1],[1,-1,-1]])
+cueColor = np.array([1,1,1])
 #monitor parameters
 widthPix = 800 #1440  #monitor width in pixels
 heightPix =600  #900 #monitor height in pixels
@@ -201,13 +201,12 @@ else: #checkRefreshEtc
         refreshMsg1 += ', which is close enough to desired val of ' + str( round(refreshRate,1) )
     myWinRes = myWin.size
     myWin.allowGUI =True
-print(refreshMsg1) #debugON
 
 myWin.close() #have to close window to show dialog box
 dlgLabelsOrdered = list() #new dialog box
 myDlg = gui.Dlg(title="object tracking experiment", pos=(200,400))
 if not autopilot:
-    myDlg.addField('Subject name (default="Hubert"):', 'Hubert', tip='or subject code')
+    myDlg.addField('Subject name (default=' + subject +'):', subject, tip='or subject code')
     dlgLabelsOrdered.append('subject')
 myDlg.addField('Trials per condition (default=' + str(trialsPerCondition) + '):', trialsPerCondition, tip=str(trialsPerCondition))
 dlgLabelsOrdered.append('trialsPerCondition')
@@ -403,9 +402,6 @@ def xyThisFrameThisAngle(numRing, angle, thisFrameN, speed):
 
 def angleChangeThisFrame(thisTrial, moveDirection, numRing, thisFrameN, lastFrameN):
     angleMove = moveDirection[numRing]*thisTrial['direction']*thisTrial['speed']*2*pi*(thisFrameN-lastFrameN)/hz
-    #print('moveDirection[0]=',moveDirection[0],"thisTrial['direction']=",thisTrial['direction'],"thisTrial['speed']=",thisTrial['speed'],"thisFrameN-lastFrameN=",thisFrameN-lastFrameN,
-    #            'angleMove(deg)=',angleMove/pi*180.0, ' multiplied by hz =', angleMove/pi*180.0*60, sep=' ')
-    #debugON
     return angleMove
 
 def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngle,blobToCueEachRing,isReversed,reversalNumEachRing,ShowTrackCueFrames): 
@@ -420,10 +416,9 @@ def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngl
           
           if n<rampUpFrames:
                 contrast = cos( -pi+ pi* n/rampUpFrames  ) /2. +.5 #starting from -pi trough of cos, and scale into 0->1 range
-          elif n> rampDownStart:
+          elif rampDownFrames>0 and n > rampDownStart:
                 contrast = cos(pi* (n-rampDownStart)/rampDownFrames ) /2.+.5 #starting from peak of cos, and scale into 0->1 range
           else: contrast = 1
-          contrast = 1
           fixation.draw()
           if n%2>=1: fixation.draw()#flicker fixation on and off at framerate to see when skip frame
           else:fixationBlank.draw()
@@ -444,9 +439,9 @@ def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngl
                 y = y + offsetXYeachRing[noRing][1]
                 if n< ShowTrackCueFrames and nobject==blobToCueEachRing[noRing]: #cue in white  
                     weightToTrueColor = n*1.0/ShowTrackCueFrames #compute weighted average to ramp from white to correct color
-                    blobColor = (1-weightToTrueColor)*np.array([1,1,1])  +  weightToTrueColor*colors_all[nobject]
-                    blobColor = blobColor*contrast #also might want to change contrast, if everybody's contrast changing in contrast ramp
-                    #print('blobColor=',blobColor)
+                    blobColor = (1.0-weightToTrueColor)*cueColor +  weightToTrueColor*colors_all[nobject]
+                    blobColor *= contrast #also might want to change contrast, if everybody's contrast changing in contrast ramp
+                    #print('weightToTrueColor=',weightToTrueColor,' n=',n, '  blobColor=',blobColor)
                 else: blobColor = colors_all[0]*contrast
                 #referenceCircle.setPos(offsetXYeachRing[noRing]);  referenceCircle.draw() #debug
                 gaussian.setColor( blobColor, log=autoLogging )
@@ -621,7 +616,7 @@ while nDone <= trials.nTotal and expStop==False:
     xyDistracters = np.zeros( [numDistracters, 2] )
 
     reversalTimesEachRing = getReversalTimes()
-    print('reversalTimesEachRing=',np.around(np.array(reversalTimesEachRing),2),' maxPossibleReversals=',maxPossibleReversals()) #debugON
+    #print('reversalTimesEachRing=',np.around(np.array(reversalTimesEachRing),2),' maxPossibleReversals=',maxPossibleReversals()) #debugOFF
     numObjects = thisTrial['numObjectsInRing']
     centerInMiddleOfSegment =360./numObjects/2.0
     blobsToPreCue=thisTrial['whichIsTarget']
@@ -745,8 +740,8 @@ while nDone <= trials.nTotal and expStop==False:
     for k in range(numRings):
         for i in range(len(reversalTimesEachRing[k])):
             print(round(reversalTimesEachRing[k][i],4),'\t', end='', file=dataFile)
-        for j in range(i,maxPossibleReversals()):
-            print('-999\t',file=dataFile)
+        for j in range(i+1,maxPossibleReversals()):
+            print('-999\t', end='', file=dataFile)
     print(numCasesInterframeLong, file=dataFile)
     numTrialsOrderCorrect += (orderCorrect >0)  #so count -1 as 0
     numAllCorrectlyIdentified += (numColorsCorrectlyIdentified==3)
