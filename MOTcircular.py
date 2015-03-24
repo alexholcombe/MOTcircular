@@ -7,7 +7,7 @@ import numpy as np
 import itertools #to calculate all subsets
 from copy import deepcopy
 from math import atan, pi, cos, sin, sqrt, ceil
-import time, colorsys, sys, platform, os, StringIO, gc
+import time, sys, platform, os, StringIO, gc
 #BEGIN helper functions from primes.py
 def gcd(a,b): 
    """Return greatest common divisor using Euclid's Algorithm."""
@@ -107,7 +107,7 @@ fullscr = infoFirst['Fullscreen (timing errors if not)']
 refreshRate = infoFirst['Screen refresh rate']
 
 #trialDur does not include trackingExtraTime, during which the cue is on. Not really part of the trial.
-trialDur = 3.3  #20-.7
+trialDur = 3.3
 if demo:trialDur = 5;hz = 60.; 
 tokenChosenEachRing= [-999]*numRings
 rampUpDur=.3; rampDownDur=.7
@@ -137,39 +137,9 @@ mouseChoiceArea = ballStdDev*0.8 # origin =1.3
 units='deg' #'cm'
 if showRefreshMisses:fixSize = 2.6  #make fixation bigger so flicker more conspicuous
 else: fixSize = 0.3
-timeTillReversalMin = 100 #0.5; 
-timeTillReversalMax = 200# 1.3 #2.9
-
-#start definition of colors 
-hues=np.arange(16)/16.
-saturatns = np.array( [1]*16 )
-vals= np.array( [1]*16 )
-colors=list()
-for i in range(16):
-  if i==5 or i==6 or i==7 or i==8 or i==10 or i==11 :continue
-  else: colors.append( colorsys.hsv_to_rgb(hues[i],saturatns[i],vals[i]) ) #actually colorsys is really lame!
-colors = np.array(colors)  
-
-maxlum = np.array([30.,80.,20.]); #I dunno if these are correct, they were for an old monitor of mine
-gamma=np.array([2.2,2.2,2.2]);
-totLums = np.array(   [0.0]*len(colors) )  #calculate luminance of each color
-lums = np.zeros((len(colors),3))
-for c in range( len(colors) ):
-    for guni in range(3):
-        lums[c][guni] = maxlum[guni] *  pow( colors[c][guni], gamma[guni] )  
-        totLums[c] +=  lums[c][guni] 
-minLum = min(totLums)  #apparently this is the worst-case lum for the hues we started with
-colorsRescaled = colors
-for i in range( len(colors) ):
-  scaleFactor = minLum / totLums[i]
-  desiredLums = lums[i,:] *scaleFactor #this might be fine for when one gun is 0, it preserves pairwise ratios
-  for guni in range(3):
-    colorsRescaled[i,guni] = pow(  desiredLums[guni]/maxlum[guni] , 1./gamma[guni] )
-colorNames=['red','yellow','green','cyan','blue','fuchsia']
-colors_all2 = colorsRescaled
-colors_all = colors_all2  *2-1
-total_colors = 6; #6 #universe of colors that nb_colors color set for this display is drawn from
-nb_colors = 3; #3 #number unique colors in display. Works except answer and options doesn't take it into account. Assumes this value is 3
+timeTillReversalMin = 0.5 #0.5; 
+timeTillReversalMax = 1.5# 1.3 #2.9
+colors_all = np.array([[1,-1,-1],[1,1,1]])
 
 #monitor parameters
 widthPix = 800 #1440  #monitor width in pixels
@@ -328,7 +298,7 @@ NextRemindCountText = visual.TextStim(myWin,pos=(-.1, -.4),colorSpace='rgb',colo
 stimList = []
 # temporalfrequency limit test
 numObjsInRing = [2]
-speedsEachNumObjs =[ [1.1 ] ] # [ [1.65, 1.8, 1.9, 2.0] ]     #dont want to go faster than 2 because of blur problem
+speedsEachNumObjs =  [ [1.65, 1.8, 1.9, 2.0] ]     #dont want to go faster than 2 because of blur problem
 numTargets = np.array([1])  # np.array([1,2,3])
 leastCommonMultipleSubsets = calcCondsPerNumTargets(numRings,numTargets)
 leastCommonMultipleTargetNums = LCM( numTargets )  #have to use this to choose whichToQuery. For explanation see newTrajectoryEventuallyForIdentityTracking.oo3
@@ -383,7 +353,7 @@ logging.info(    'numtrials='+ str(trials.nTotal)+' and each trialDur='+str(tria
 print(' numtrials=', trials.nTotal)
 print('rampUpDur=',rampUpDur, ' rampDownDur=', rampDownDur, ' secs', file=logF);  logging.info( logF.getvalue() ); logF = StringIO.StringIO() 
 logging.info('task='+'track'+'   respType='+respType)
-logging.info( 'colors_all='+str(colors_all)+ '\ncolorNames='+str(colorNames)+ '  trackPostcueOrClick='+str(trackPostcueOrClick)+'  trackAllIdenticalColors='+str(trackAllIdenticalColors) )
+logging.info( 'colors_all='+str(colors_all)+ '  trackPostcueOrClick='+str(trackPostcueOrClick)  )
 logging.info(   'radii=' + str(radii)   )
 logging.flush()
 
@@ -459,25 +429,25 @@ def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngl
           else:fixationBlank.draw()
     
           for noRing in range(numRings):
+            angleMove = angleChangeThisFrame(thisTrial, moveDirection, noRing, n, n-1)
+            currAngle[noRing] = currAngle[noRing]+angleMove*(isReversed[noRing])
+            angleObject0 = angleIniEachRing[noRing] + currAngle[noRing]
             for nobject in range(numObjects):
-                nColor =nobject % nb_colors
-                angleMove = angleChangeThisFrame(thisTrial, moveDirection, noRing, n, n-1)
                 if nobject==0:
                         if reversalNumEachRing[noRing] <= len(reversalTimesEachRing[noRing]): #haven't exceeded  reversals assigned
                             if n > hz * reversalTimesEachRing[noRing][ int(reversalNumEachRing[noRing]) ]: #have now exceeded time for this next reversal
                                 isReversed[noRing] = -1*isReversed[noRing]
                                 reversalNumEachRing[noRing] +=1
-                currAngle[noRing]=currAngle[noRing]+angleMove*(isReversed[noRing])
-                angleObject0 = angleIniEachRing[noRing] + currAngle[noRing]
                 angleThisObject = angleObject0 + (2*pi)/numObjects*nobject
                 x,y = xyThisFrameThisAngle(noRing,angleThisObject,n,thisTrial['speed'])
                 x = x + offsetXYeachRing[noRing][0]
                 y = y + offsetXYeachRing[noRing][1]
                 if n< ShowTrackCueFrames and nobject==blobToCueEachRing[noRing]: #cue in white  
                     weightToTrueColor = n*1.0/ShowTrackCueFrames #compute weighted average to ramp from white to correct color
-                    blobColor = (1-weightToTrueColor)*np.array([1,1,1])  +  weightToTrueColor*colorsInInnerRingOrder[nColor] 
+                    blobColor = (1-weightToTrueColor)*np.array([1,1,1])  +  weightToTrueColor*colors_all[nobject]
                     blobColor = blobColor*contrast #also might want to change contrast, if everybody's contrast changing in contrast ramp
-                else: blobColor = colorsInInnerRingOrder[nColor]*contrast
+                    #print('blobColor=',blobColor)
+                else: blobColor = colors_all[0]*contrast
                 #referenceCircle.setPos(offsetXYeachRing[noRing]);  referenceCircle.draw() #debug
                 gaussian.setColor( blobColor, log=autoLogging )
                 gaussian.setPos([x,y])
@@ -506,7 +476,7 @@ def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,
     for ring in xrange(numRings):
         optionIdexs.append([])
         noArray=list()
-        for k in range(numObjects):noArray.append(colors_ind[0])
+        for k in range(numObjects):noArray.append(colors_all[0])
         baseSeq.append(np.array(noArray))
         for i in range(numObjects):
             optionIdexs[ring].append(baseSeq[ring][i % len(baseSeq[ring])] )
@@ -536,12 +506,10 @@ def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,
                         y = y+ offsetXYeachRing[optionSet][1]
                         #draw colors, and circles around selected items. Colors are drawn in order they're in in optionsIdxs
                         opts=optionIdexs;
-                        c = opts[optionSet][ncheck] #idx of color that this option num corresponds to. Need an extra [0] b/c list of arrays
                         if respondedEachToken[optionSet][ncheck]:  #draw circle around this one to indicate this option has been chosen
                                optionChosenCircle.setColor(array([1,-1,1]), log=autoLogging)
                                optionChosenCircle.setPos([x,y])
                                optionChosenCircle.draw()                
-                        #gaussian.setRGB( colors_all[c] )  #draw blob
                         gaussian.setColor(  colors_all[0], log=autoLogging )  #draw blob
                         gaussian.setPos([x,y]);  
                         gaussian.draw()
@@ -594,11 +562,11 @@ def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,
                for key in event.getKeys():       #check if pressed abort-type key
                       if key in ['escape','q']:
                           expStop = True
-                          respcount = nb_colors
+                          respcount = 1
                       
                lastClickState = mouse1
                if autopilot: 
-                    respcount = nb_colors
+                    respcount = 1
                     for i in xrange(numRings):
                         for j in xrange(numObjects):
                             respondedEachToken[i][j] = 1 #must set to True for tracking task with click responses, because it uses to determine which one was clicked on
@@ -639,7 +607,7 @@ trialDurTotal=0;
 ts = list();
 while nDone <= trials.nTotal and expStop==False:
     acceleratePsychopy(slowFast=1)
-    colors_ind=list();colorRings=list();preDrawStimToGreasePipeline = list()
+    colorRings=list();preDrawStimToGreasePipeline = list()
     isReversed= list([1]) * numRings #always takes values of -1 or 1
     reversalNumEachRing = list([0]) * numRings
     angleIniEachRing = list( np.random.uniform(0,2*pi,size=[numRings]) )
@@ -651,16 +619,6 @@ while nDone <= trials.nTotal and expStop==False:
     xyTargets = np.zeros( [thisTrial['numTargets'], 2] ) #need this for eventual case where targets can change what ring they are in
     numDistracters = numRings*thisTrial['numObjectsInRing'] - thisTrial['numTargets']
     xyDistracters = np.zeros( [numDistracters, 2] )
-    for ringNum in range(numRings): # initialise  parameters
-         if ringNum==0: #set up disc colors, vestige of Current Biology paper
-            colors_ind.append([0,0,0,0])
-            #colors_ind.append(np.random.permutation(total_colors)[0:nb_colors]) #random subset of colors in random order
-            colorRings.append(colors_all[colors_ind[ringNum]])
-         else: 
-            colors_ind.append([0,0,0,0])
-            colorRings.append(colors_all[colors_ind[ringNum]])
-    colorsInInnerRingOrder=colorsInOuterRingOrder=colors_all[[0, 0, 0]]
-    stimColorIdxsOrder=[[0,0],[0,0],[0,0]]#this is used for drawing blobs during stimulus
 
     reversalTimesEachRing = getReversalTimes()
     print('reversalTimesEachRing=',np.around(np.array(reversalTimesEachRing),2),' maxPossibleReversals=',maxPossibleReversals()) #debugON
