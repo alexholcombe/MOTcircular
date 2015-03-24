@@ -617,9 +617,9 @@ def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,
     
 print('Starting experiment of',trials.nTotal,'trials. Current trial is trial 0.')
 #print header for data file
-print('trialnum\tsubject\tnumObjects\tspeed\tdirection\tcondition\tleftOrRight', end='\t')
+print('trialnum\tsubject\tnumObjects\tspeed\tdirection\tcondition\tleftOrRight', end='\t', file=dataFile)
 for r in range(numRings):
-    print('offsetXYring',r, sep='', end='\t')
+    print('offsetXYring',r, sep='', end='\t', file=dataFile)
 print('orderCorrect\ttrialDurTotal\tnumTargets', end= '\t', file=dataFile) 
 for i in range(numRings):
     print('whichIsTarget',i,  sep='', end='\t', file=dataFile)
@@ -786,7 +786,7 @@ while nDone <= trials.nTotal and expStop==False:
     for i in range(numRings):dataFile.write(str(round(respAdj[i],4))+'\t') 
     for k in range(numRings):
         for i in range(len(reversalTimesEachRing[k])):
-            print(str(round(reversalTimesEachRing[k][i],4))+'\t', end='', file=dataFile)
+            print(round(reversalTimesEachRing[k][i],4),'\t', end='', file=dataFile)
         for j in range(i,maxPossibleReversals()):
             print('-999\t',file=dataFile)
     print(numCasesInterframeLong, file=dataFile)
