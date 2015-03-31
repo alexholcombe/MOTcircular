@@ -8,6 +8,9 @@ import itertools #to calculate all subsets
 from copy import deepcopy
 from math import atan, pi, cos, sin, sqrt, ceil
 import time, sys, platform, os, StringIO, gc
+from EyelinkEyetrackerForPsychopySUPA3 import EyeLinkCoreGraphicsPsychopy  
+from EyeLinkForPsychopyInSUPA3 import Tracker_EyeLink 
+
 #BEGIN helper functions from primes.py
 def gcd(a,b): 
    """Return greatest common divisor using Euclid's Algorithm."""
@@ -70,6 +73,7 @@ def acceleratePsychopy(slowFast):
 
 subject='test'#'test'
 autoLogging = False
+eyetracking = True #CF is the best jedi ever!
 demo = False
 autopilot=False
 if autopilot:  subject='auto'
@@ -170,7 +174,7 @@ myWin = openMyStimWindow()
 myMouse = event.Mouse(visible = 'true',win=myWin)
 myWin.setRecordFrameIntervals(False)
 
-trialsPerCondition = 1 #default value
+trialsPerCondition = 2 #default value
 
 refreshMsg2 = ''
 if not checkRefreshEtc:
@@ -204,7 +208,7 @@ myWin.close() #have to close window to show dialog box
 dlgLabelsOrdered = list() #new dialog box
 myDlg = gui.Dlg(title="object tracking experiment", pos=(200,400))
 if not autopilot:
-    myDlg.addField('Subject name (default=' + subject +'):', subject, tip='or subject code')
+    myDlg.addField('Subject name :', subject, tip='or subject code')
     dlgLabelsOrdered.append('subject')
 myDlg.addField('Trials per condition (default=' + str(trialsPerCondition) + '):', trialsPerCondition, tip=str(trialsPerCondition))
 dlgLabelsOrdered.append('trialsPerCondition')
@@ -306,7 +310,7 @@ NextRemindCountText = visual.TextStim(myWin,pos=(-.1, -.4),colorSpace='rgb',colo
 stimList = []
 # temporalfrequency limit test
 numObjsInRing = [2]
-speedsEachNumObjs =  [ [1.65, 1.8, 1.9, 2.0] ]     #dont want to go faster than 2 because of blur problem
+speedsEachNumObjs =  [ [1.5,1.65, 2.1,2.2] ]     #dont want to go faster than 2 because of blur problem
 numTargets = np.array([1])  # np.array([1,2,3])
 leastCommonMultipleSubsets = calcCondsPerNumTargets(numRings,numTargets)
 leastCommonMultipleTargetNums = LCM( numTargets )  #have to use this to choose whichToQuery. For explanation see newTrajectoryEventuallyForIdentityTracking.oo3
@@ -334,7 +338,7 @@ for numObjs in numObjsInRing: #set up experiment design
                               for condition in [0,1,2]: #centered, slightly off-center, or fully off-center
                                for leftOrRight in [0,1]:
                                   offsetXYeachRing = np.array([ offsets[condition] ]) #because other experiments involve multiple rings, it's a 2-d array
-                                  if condition >0:
+                                  if condition >0: #not on center
                                          if leftOrRight: #flip to right
                                             offsetXYeachRing *= -1
                                   offsetXYeachRing = list(offsetXYeachRing) #so that when print, prints on one line
@@ -611,6 +615,13 @@ nDone=0; numTrialsOrderCorrect=0; numAllCorrectlyIdentified=0; blueMistakes=0; e
 thisTrial = trials.next()
 trialDurTotal=0;
 ts = list();
+
+if eyetracking:
+    eyeMoveFile=('EyeTrack_'+subject+'_'+timeAndDateStr+'.EDF')
+    tracker=Tracker_EyeLink(myWin,trialClock,subject,1, 'HV5',(255,255,255),(0,0,0),False,(widthPix,heightPix))
+
+
+
 while nDone <= trials.nTotal and expStop==False:
     acceleratePsychopy(slowFast=1)
     colorRings=list();preDrawStimToGreasePipeline = list()
@@ -633,6 +644,8 @@ while nDone <= trials.nTotal and expStop==False:
     blobsToPreCue=thisTrial['whichIsTarget']
     core.wait(.1)
     myMouse.setVisible(False)      
+    if eyetracking: tracker.startEyeTracking(nDone,True,widthPix,heightPix) # CF is awesome! - start recording with eyetracker
+
     fixatnPeriodFrames = int(   (np.random.rand(1)/2.+0.8)   *hz)  #random interval between x and x+800ms
     for i in range(fixatnPeriodFrames):
         if i%2:
@@ -652,6 +665,8 @@ while nDone <= trials.nTotal and expStop==False:
             myWin.flip(clearBuffer=True)
             t=trialClock.getTime()-t0; ts.append(t);
             if n==trialDurFrames-1: event.clearEvents(eventType='mouse');
+    if eyetracking:tracker.stopEyeTracking() #CF is amazing!
+
     #end of big stimulus loop
     acceleratePsychopy(slowFast=0)
     #check for timing problems
@@ -811,6 +826,8 @@ while nDone <= trials.nTotal and expStop==False:
 if expStop == True:
     print('user aborted experiment on keypress with trials nDone=', nDone, file=logF)
     print('user aborted experiment on keypress with trials nDone=', nDone)
+    if eyetracking: tracker.closeConnectionToEyeTracker(eyeMoveFile)
+
 print('finishing at ',timeAndDateStr, file=logF)
 print('%corr order report= ', round( numTrialsOrderCorrect*1.0/nDone*100., 2)  , '% of ',nDone,' trials', end=' ')
 print('%corr each speed: ', end=' ')

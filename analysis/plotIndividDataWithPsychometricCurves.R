@@ -30,14 +30,16 @@ plotIndividDataAndCurves <- function(df,psychometricCurves) {
   g		
 }
 
+#condition: centered, slightly off-center, or fully off-center
+
 for ( expThis in sort(unique(dat$exp)) ) {  #draw individual Ss' data, for each experiment
   title<-paste('E',expThis,' individual Ss data',sep='')
   quartz(title,width=4,height=7)
   thisExpDat <- subset(dat,exp==expThis)
-  g=ggplot(data= thisExpDat,aes(x=speed,y=correct,color=factor(concentric)))
+  g=ggplot(data= thisExpDat,aes(x=speed,y=correct,color=factor(condition)))
   g=g+stat_summary(fun.y=mean,geom="point", position=position_jitter(w=0.04,h=0),alpha=.95)
-  g=g+facet_grid(ringToQuery ~ subject)+theme_bw()
-  #g<-g+ coord_cartesian( xlim=c(xLims[1],xLims[2]), ylim=yLims ) #have to use coord_cartesian here instead of naked ylim()
+  g=g+facet_grid(leftOrRight ~ subject)+theme_bw()
+  g<-g+ coord_cartesian( xlim=c(1.4,2.3), ylim=yLims ) #have to use coord_cartesian here instead of naked ylim()
   show(g)
   #draw individual psychometric functions, for only one experiment  
   thisPsychometrics <- subset(psychometrics,exp==expThis)
@@ -46,7 +48,7 @@ for ( expThis in sort(unique(dat$exp)) ) {  #draw individual Ss' data, for each 
   g=g+xlab('Speed (rps)')+ylab('Proportion Correct')
   #g=g+theme(panel.grid.minor=element_blank(),panel.grid.major=element_blank())# hide all gridlines.
   #g<- g+ theme(axis.title.y=element_text(size=12,angle=90),axis.text.y=element_text(size=10),axis.title.x=element_text(size=12),axis.text.x=element_text(size=10))
-  g<-g+ scale_x_continuous(breaks=c(0.5,1.0,1.5,2.0,2.5),labels=c("0.5","","1.5","","2.5"))
+  g<-g+ scale_x_continuous(breaks=c(1.5,2.0,2.5),labels=c("1.5","","2.5"))
   #g<-g+ scale_x_continuous(breaks=speeds)
   show(g)
   ggsave( paste('figs/individPlotsE',expThis,'.png',sep='')  )
