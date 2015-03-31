@@ -8,8 +8,8 @@ import itertools #to calculate all subsets
 from copy import deepcopy
 from math import atan, pi, cos, sin, sqrt, ceil
 import time, sys, platform, os, StringIO, gc
-from EyelinkEyetrackerForPsychopySUPA3 import EyeLinkCoreGraphicsPsychopy  
-from EyeLinkForPsychopyInSUPA3 import Tracker_EyeLink 
+from EyelinkEyetrackerForPsychopySUPA3 import EyeLinkCoreGraphicsPsychopy, Tracker_EyeLink #Chris Fajou integration
+eyetracking = False
 
 #BEGIN helper functions from primes.py
 def gcd(a,b): 
@@ -73,7 +73,6 @@ def acceleratePsychopy(slowFast):
 
 subject='test'#'test'
 autoLogging = False
-eyetracking = True #CF is the best jedi ever!
 demo = False
 autopilot=False
 if autopilot:  subject='auto'
@@ -255,7 +254,6 @@ if demo or exportImages:
   dataFile = sys.stdout
   logging.console.setLevel(logging.ERROR)  #only show this level  messages and higher
 logging.console.setLevel(logging.WARNING) #DEBUG means set the console to receive nearly all messges, INFO is for everything else, INFO, EXP, DATA, WARNING and ERROR 
-logging.info(runInfo)
 if refreshRateWrong:
     logging.error(refreshMsg1+refreshMsg2)
 else: logging.info(refreshMsg1+refreshMsg2)
@@ -276,6 +274,7 @@ runInfo = psychopy.info.RunTimeInfo(
         )
 print('second window opening runInfo mean ms=',runInfo["windowRefreshTimeAvg_ms"],file=logF)
 print('second window opening runInfo mean ms=',runInfo["windowRefreshTimeAvg_ms"])
+logging.info(runInfo)
 
 gaussian = visual.PatchStim(myWin, tex='none',mask='gauss',colorSpace='rgb',size=ballStdDev,autoLog=autoLogging)
 gaussian2 = visual.PatchStim(myWin, tex='none',mask='gauss',colorSpace='rgb',size=ballStdDev,autoLog=autoLogging)
