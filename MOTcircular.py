@@ -91,21 +91,23 @@ radii=[6] #[2.5,8,12] #[4,8,12]
 offsets = np.array([[0,0],[-5,0],[-10,0]])
 
 respRadius=radii[0] #deg
-hz= 160 *1.0;  #set to the framerate of the monitor
+hz= 60 *1.0;  #160 #set to the framerate of the monitor
 useClock = True #as opposed to using frame count, which assumes no frames are ever missed
 fullscr=1; scrn=0
 # create a dialog from dictionary 
-infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':True, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': hz }
+infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':False, 'Screen to use':scrn, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': hz }
 OK = gui.DlgFromDict(dictionary=infoFirst, 
     title='MOT', 
-    order=['Autopilot','Check refresh etc',  'Screen refresh rate', 'Fullscreen (timing errors if not)'], 
-    tip={'Check refresh etc': 'To confirm refresh rate and that can keep up, at least when drawing a grating'},
-    #fixed=['Check refresh etc'])#this attribute can't be changed by the user
+    order=['Autopilot','Check refresh etc', 'Screen to use', 'Screen refresh rate', 'Fullscreen (timing errors if not)'], 
+    tip={'Check refresh etc': 'To confirm refresh rate and that can keep up, at least when drawing a grating',
+            'Screen to use': '0 means primary screen, 1 means second screen'},
     )
 if not OK.OK:
     print('User cancelled from dialog box'); core.quit()
 autopilot = infoFirst['Autopilot']
 checkRefreshEtc = infoFirst['Check refresh etc']
+scrn = infoFirst['Screen to use']
+print('scrn = ',scrn, ' from dialog box')
 fullscr = infoFirst['Fullscreen (timing errors if not)']
 refreshRate = infoFirst['Screen refresh rate']
 
@@ -291,11 +293,11 @@ if blindspotFill:
 fixatnNoise = True
 fixSizePix = 20 #make fixation big so flicker more conspicuous
 if fixatnNoise:
-    fixatnNoiseTexture = np.round( np.random.rand(fixSizePix/4,fixSizePix/4) ,0 )   *2.0-1 #Can counterphase flicker  noise texture to create salient flicker if you break fixation
+    checkSizeOfFixatnTexture = fixSizePix/4
+    nearestPowerOfTwo = round( sqrt(checkSizeOfFixatnTexture) )**2 #Because textures (created on next line) must be a power of 2
+    fixatnNoiseTexture = np.round( np.random.rand(nearestPowerOfTwo,nearestPowerOfTwo) ,0 )   *2.0-1 #Can counterphase flicker  noise texture to create salient flicker if you break fixation
     fixation= visual.PatchStim(myWin, tex=fixatnNoiseTexture, size=(fixSizePix,fixSizePix), units='pix', mask='circle', interpolate=False, autoLog=autoLogging)
     fixationBlank= visual.PatchStim(myWin, tex=-1*fixatnNoiseTexture, colorSpace='rgb',mask='circle',size=fixSizePix,units='pix',autoLog=autoLogging)
-    print('fixatnNoiseTexture =',fixatnNoiseTexture)
-    print('-1*fixatnNoiseTexture=',-1*fixatnNoiseTexture)
 else:
     fixation = visual.PatchStim(myWin,tex='none',colorSpace='rgb',color=(.9,.9,.9),mask='circle',units='pix',size=fixSizePix,autoLog=autoLogging)
     fixationBlank= visual.PatchStim(myWin,tex='none',colorSpace='rgb',color=(-1,-1,-1),mask='circle',units='pix',size=fixSizePix,autoLog=autoLogging)
@@ -309,7 +311,7 @@ NextRemindCountText = visual.TextStim(myWin,pos=(-.1, -.4),colorSpace='rgb',colo
 stimList = []
 # temporalfrequency limit test
 numObjsInRing = [2]
-speedsEachNumObjs =  [ [1.5,1.65, 2.1,2.2] ]     #dont want to go faster than 2 because of blur problem
+speedsEachNumObjs =  [ [1.65, 2.1,2.2] ]     #dont want to go faster than 2 because of blur problem
 numTargets = np.array([1])  # np.array([1,2,3])
 leastCommonMultipleSubsets = calcCondsPerNumTargets(numRings,numTargets)
 leastCommonMultipleTargetNums = LCM( numTargets )  #have to use this to choose whichToQuery. For explanation see newTrajectoryEventuallyForIdentityTracking.oo3
@@ -444,7 +446,16 @@ def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngl
             for nobject in range(numObjects):
                 if nobject==0:
                         if reversalNumEachRing[noRing] <= len(reversalTimesEachRing[noRing]): #haven't exceeded  reversals assigned
-                            if n > hz * reversalTimesEachRing[noRing][ int(reversalNumEachRing[noRing]) ]: #have now exceeded time for this next reversal
+                            reversalNum = int(reversalNumEachRing[noRing])
+                            if len( reversalTimesEachRing[noRing] ) <= reversalNum:
+                                msg = 'You failed to allocate enough reversal times, reached ' +str(reversalNum)+ ' reversals at '+ str(reversalTimesEachRing[noRing][reversalNum-1]) + \
+                                          'and still going, current time ='+str(n/hz)+' asking for time of next one, will assume no more reversals'
+                                logging.error(msg)
+                                print(msg)
+                                nextReversalTime = 9999 #didn't allocate enough, will just not reverse any more
+                            else: #allocated enough reversals
+                                nextReversalTime = reversalTimesEachRing[noRing][ reversalNum ]
+                            if n > hz * nextReversalTime: #have now exceeded time for this next reversal
                                 isReversed[noRing] = -1*isReversed[noRing]
                                 reversalNumEachRing[noRing] +=1
                 angleThisObject = angleObject0 + (2*pi)/numObjects*nobject
@@ -466,10 +477,21 @@ def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngl
           return angleIniEachRing,currAngle,isReversed,reversalNumEachRing   
 # #######End of function definition that displays the stimuli!!!! #####################################
 
+def collectResponseKH( ): #Kristjansson&Holcombe cuing experiment
+    #draw the possible stimuli
+    #eyeball left, eyeball right, eyeball down, eyeball up
+    ys = np.linspace(-.6,.6,4)
+    offsetsNSEW = np.array([ [0,1], [0,-1], [1,0], [-1,0]])
+    x = 0
+    for i in len(ys): #draw each option for how the iris in the eyeball was offset
+        ringKH.setPos([x,ys[i]])
+        ringKH.draw()
+        iris.setPos( np.array([x,y]) + offsetsNSEW[i])
+        iris.draw()
+        
 showClickableRegions = True
 def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,respRadius,currAngle,expStop ):
-    optionSets=numRings;    
-    
+    optionSets=numRings
    #Draw response cues
     numTimesRespSoundPlayed=0
     if numTimesRespSoundPlayed<1: #2
