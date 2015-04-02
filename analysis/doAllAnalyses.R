@@ -12,6 +12,14 @@ offCenter = dat
 iv= 'speed'
 #need to add offsetXYeachRing to factors analysed
 source('analyzeMakeReadyForPlot.R') #returns fitParms, psychometrics, and function calcPctCorrThisSpeed
+dat$condName='nothing'
+dat$condName[ dat$offsetXYring0=='[-10, 0]' ] = "far"
+dat$condName[ dat$offsetXYring0=='[10, 0]' ] = "far"
+dat$condName[ dat$offsetXYring0=='[-5, 0]' ] = "near"
+dat$condName[ dat$offsetXYring0=='[5, 0]' ] = "near"
+dat$condName[ dat$offsetXYring0=='[0, 0]' ] = "centered"
+dat$condName[ dat$offsetXYring0=='[0, 0]' ] = "centered"
+table(dat$condition,dat$condName)
 source('plotIndividDataWithPsychometricCurves.R')
 
 source("extractThreshesAndPlot.R") #provides threshes, thresh plots

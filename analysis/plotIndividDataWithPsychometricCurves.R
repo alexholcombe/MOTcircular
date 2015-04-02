@@ -36,7 +36,7 @@ for ( expThis in sort(unique(dat$exp)) ) {  #draw individual Ss' data, for each 
   title<-paste('E',expThis,' individual Ss data',sep='')
   quartz(title,width=4,height=7)
   thisExpDat <- subset(dat,exp==expThis)
-  g=ggplot(data= thisExpDat,aes(x=speed,y=correct,color=factor(condition)))
+  g=ggplot(data= thisExpDat,aes(x=speed,y=correct,color=factor(condName)))
   g=g+stat_summary(fun.y=mean,geom="point", position=position_jitter(w=0.01,h=0.01),alpha=.95)
   g=g+facet_grid(leftOrRight ~ subject)+theme_bw()
   g<-g+ coord_cartesian( xlim=c(1.4,2.3), ylim=yLims ) #have to use coord_cartesian here instead of naked ylim()

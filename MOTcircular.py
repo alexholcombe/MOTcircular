@@ -91,9 +91,9 @@ radii=[6] #[2.5,8,12] #[4,8,12]
 offsets = np.array([[0,0],[-5,0],[-10,0]])
 
 respRadius=radii[0] #deg
-hz= 60 *1.0;  #160 #set to the framerate of the monitor
+hz= 160 *1.0;  #160 #set to the framerate of the monitor
 useClock = True #as opposed to using frame count, which assumes no frames are ever missed
-fullscr=1; scrn=0
+fullscr=1; scrn=1
 # create a dialog from dictionary 
 infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':False, 'Screen to use':scrn, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': hz }
 OK = gui.DlgFromDict(dictionary=infoFirst, 
@@ -311,7 +311,7 @@ NextRemindCountText = visual.TextStim(myWin,pos=(-.1, -.4),colorSpace='rgb',colo
 stimList = []
 # temporalfrequency limit test
 numObjsInRing = [2]
-speedsEachNumObjs =  [ [1.65, 2.1,2.2] ]     #dont want to go faster than 2 because of blur problem
+speedsEachNumObjs =  [ [1.5, 1.65] ]     #dont want to go faster than 2 because of blur problem
 numTargets = np.array([1])  # np.array([1,2,3])
 leastCommonMultipleSubsets = calcCondsPerNumTargets(numRings,numTargets)
 leastCommonMultipleTargetNums = LCM( numTargets )  #have to use this to choose whichToQuery. For explanation see newTrajectoryEventuallyForIdentityTracking.oo3
