@@ -1,4 +1,8 @@
-#expects iv, dat
+#expects iv, dat, factorsForBreakdown
+if (!exists('factorsForBreakdown'))
+{ cat('Need factorsForBreakdown variable. Tells me how to break down data for fitting. I will add subject') }
+#factorsForBreakdown = c('exp','offsetXYring0','leftOrRight')
+
 source('helpers/psychometricHelpRobust6.R') #load my custom version of binomfit_lims
 
 varyLapseRate = FALSE
@@ -6,7 +10,7 @@ varyLapseRate = FALSE
 if (varyLapseRate) { lapseMinMax= c(0,0.05) }  else  #range of lapseRates to try for best fit
 	{ lapseMinMax = c(0.01,0.01) }
 chanceRate=.5
-factorsForBreakdown = c('exp','condition','leftOrRight')
+
 xLims=c(.04,4);  if (iv=="tf") {xLims=c(.5,8)}
 yLims=c(.3,1.05)
 numPointsForPsychometricCurve=150 #250

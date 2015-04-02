@@ -11,15 +11,23 @@ load(anonDataFilename,verbose=TRUE)  #returns dat
 offCenter = dat
 iv= 'speed'
 #need to add offsetXYeachRing to factors analysed
+factorsForBreakdown = c('exp','offsetXYring0','leftOrRight') #needed by analyzeMakeReadyForPlot to know
+#how specific to break down the data before fitting
 source('analyzeMakeReadyForPlot.R') #returns fitParms, psychometrics, and function calcPctCorrThisSpeed
-dat$condName='nothing'
-dat$condName[ dat$offsetXYring0=='[-10, 0]' ] = "far"
-dat$condName[ dat$offsetXYring0=='[10, 0]' ] = "far"
-dat$condName[ dat$offsetXYring0=='[-5, 0]' ] = "near"
-dat$condName[ dat$offsetXYring0=='[5, 0]' ] = "near"
-dat$condName[ dat$offsetXYring0=='[0, 0]' ] = "centered"
-dat$condName[ dat$offsetXYring0=='[0, 0]' ] = "centered"
+assignCondName <- function(df) {
+  df$condName='nothing'
+  df$condName[ df$offsetXYring0=='[-10, 0]' ] = "far"
+  df$condName[ df$offsetXYring0=='[10, 0]' ] = "far"
+  df$condName[ df$offsetXYring0=='[-5, 0]' ] = "near"
+  df$condName[ df$offsetXYring0=='[5, 0]' ] = "near"
+  df$condName[ df$offsetXYring0=='[0, 0]' ] = "centered"
+  df$condName[ df$offsetXYring0=='[0, 0]' ] = "centered"
+  return (df)
+}
+dat<-assignCondName(dat)
+psychometrics<-assignCondName(psychometrics)
 table(dat$condition,dat$condName)
+table(psychometrics$condName)
 source('plotIndividDataWithPsychometricCurves.R')
 
 source("extractThreshesAndPlot.R") #provides threshes, thresh plots
