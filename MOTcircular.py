@@ -74,7 +74,7 @@ def acceleratePsychopy(slowFast):
 subject='test'#'test'
 autoLogging = False
 demo = False
-autopilot=True
+autopilot=False
 if autopilot:  subject='auto'
 feedback=True
 exportImages= False #quits after one trial / output image
@@ -823,7 +823,7 @@ while trialNum < trials.nTotal and expStop==False:
     trialNum+=1
     waitForKeyPressBetweenTrials = False
     if trialNum< trials.nTotal:
-        if True: # trialNum%( max(trials.nTotal/4,1) ) ==0:  #have to enforce at least 1, otherwise will modulus by 0 when #trials is less than 4
+        if trialNum%( max(trials.nTotal/4,1) ) ==0:  #have to enforce at least 1, otherwise will modulus by 0 when #trials is less than 4
             pctDone = round(    (1.0*trialNum) / (1.0*trials.nTotal)*100,  0  )
             NextRemindPctDoneText.setText( str(pctDone) + '% complete' )
             NextRemindCountText.setText( str(trialNum) + ' of ' + str(trials.nTotal)     )
