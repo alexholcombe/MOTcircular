@@ -74,7 +74,7 @@ def acceleratePsychopy(slowFast):
 subject='test'#'test'
 autoLogging = False
 demo = False
-autopilot=False
+autopilot=True
 if autopilot:  subject='auto'
 feedback=True
 exportImages= False #quits after one trial / output image
@@ -91,9 +91,9 @@ radii=[6] #[2.5,8,12] #[4,8,12]
 offsets = np.array([[0,0],[-5,0],[-10,0]])
 
 respRadius=radii[0] #deg
-hz= 160 *1.0;  #160 #set to the framerate of the monitor
+hz= 60 # 160 *1.0;  #160 #set to the framerate of the monitor
 useClock = True #as opposed to using frame count, which assumes no frames are ever missed
-fullscr=1; scrn=1
+fullscr=0; scrn=0
 # create a dialog from dictionary 
 infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':False, 'Screen to use':scrn, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': hz }
 OK = gui.DlgFromDict(dictionary=infoFirst, 
@@ -305,8 +305,8 @@ fixationPoint = visual.PatchStim(myWin,colorSpace='rgb',color=(1,1,1),mask='circ
 
 respText = visual.TextStim(myWin,pos=(0, -.8),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
 NextText = visual.TextStim(myWin,pos=(0, 0),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
-NextRemindText = visual.TextStim(myWin,pos=(.3, -.4),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
-NextRemindCountText = visual.TextStim(myWin,pos=(-.1, -.4),colorSpace='rgb',color= (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
+NextRemindPctDoneText = visual.TextStim(myWin,pos=(-.1, -.4),colorSpace='rgb',color= (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
+NextRemindCountText = visual.TextStim(myWin,pos=(.1, -.5),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
 
 stimList = []
 # temporalfrequency limit test
@@ -477,18 +477,28 @@ def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngl
           return angleIniEachRing,currAngle,isReversed,reversalNumEachRing   
 # #######End of function definition that displays the stimuli!!!! #####################################
 
-def collectResponseKH( ): #Kristjansson&Holcombe cuing experiment
+def collectResponseKH( expStop): #Kristjansson&Holcombe cuing experiment
     #draw the possible stimuli
     #eyeball left, eyeball right, eyeball down, eyeball up
     ys = np.linspace(-.6,.6,4)
     offsetsNSEW = np.array([ [0,1], [0,-1], [1,0], [-1,0]])
     x = 0
-    for i in len(ys): #draw each option for how the iris in the eyeball was offset
+    for i in len(ys): #draw each option for how the iris in the eyeball might have been offset
         ringKH.setPos([x,ys[i]])
         ringKH.draw()
         iris.setPos( np.array([x,y]) + offsetsNSEW[i])
         iris.draw()
-        
+    respcount =0
+    while respcount <1:
+        for key in event.getKeys():       #check if pressed abort-type key
+              if key in ['escape','q']:
+                  expStop = True
+                  respcount = 1
+              else: #key in [
+                print('key =', key)
+                STOP
+    return responses,responsesAutopilot,respondedEachToken, expStop
+
 showClickableRegions = True
 def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,respRadius,currAngle,expStop ):
     optionSets=numRings
@@ -632,7 +642,7 @@ print('timingBlips', file=dataFile)
 #end of header
 trialClock = core.Clock()
 stimClock = core.Clock()
-nDone=0; numTrialsOrderCorrect=0; numAllCorrectlyIdentified=0; blueMistakes=0; expStop=False; framesSaved=0;
+trialNum=0; numTrialsOrderCorrect=0; numAllCorrectlyIdentified=0; blueMistakes=0; expStop=False; framesSaved=0;
 thisTrial = trials.next()
 trialDurTotal=0;
 ts = list();
@@ -641,9 +651,7 @@ if eyetracking:
     eyeMoveFile=('EyeTrack_'+subject+'_'+timeAndDateStr+'.EDF')
     tracker=Tracker_EyeLink(myWin,trialClock,subject,1, 'HV5',(255,255,255),(0,0,0),False,(widthPix,heightPix))
 
-
-
-while nDone <= trials.nTotal and expStop==False:
+while trialNum < trials.nTotal and expStop==False:
     acceleratePsychopy(slowFast=1)
     colorRings=list();preDrawStimToGreasePipeline = list()
     isReversed= list([1]) * numRings #always takes values of -1 or 1
@@ -665,7 +673,7 @@ while nDone <= trials.nTotal and expStop==False:
     blobsToPreCue=thisTrial['whichIsTarget']
     core.wait(.1)
     myMouse.setVisible(False)      
-    if eyetracking: tracker.startEyeTracking(nDone,True,widthPix,heightPix) # CF is awesome! - start recording with eyetracker
+    if eyetracking: tracker.startEyeTracking(trialNum,True,widthPix,heightPix) # CF is awesome! - start recording with eyetracker
 
     fixatnPeriodFrames = int(   (np.random.rand(1)/2.+0.8)   *hz)  #random interval between x and x+800ms
     for i in range(fixatnPeriodFrames):
@@ -692,7 +700,7 @@ while nDone <= trials.nTotal and expStop==False:
     acceleratePsychopy(slowFast=0)
     #check for timing problems
     interframeIntervs = np.diff(ts)*1000 #difference in time between successive frames, in ms
-    #print >>logF, 'trialnum=',nDone, '   interframe intervs were ',around(interframeIntervs,1)
+    #print >>logF, 'trialnum=',trialNum, '   interframe intervs were ',around(interframeIntervs,1)
     idxsInterframeLong = np.where( interframeIntervs > longFrameLimit ) [0] #frames that exceeded longerThanRefreshTolerance of expected duration
     numCasesInterframeLong = len( idxsInterframeLong )
     if numCasesInterframeLong >0:
@@ -703,13 +711,13 @@ while nDone <= trials.nTotal and expStop==False:
            longFramesStr += ' apparently screen refreshes skipped, interframe durs were:'+\
                     str( np.around(  interframeIntervs[idxsInterframeLong] ,1  ) )+ ' and was these frames: '+ str(idxsInterframeLong)
        if longFramesStr != None:
-                print('trialnum=',nDone,'  ',longFramesStr)
-                print('trialnum=',nDone,'  ',longFramesStr, file=logF)
+                print('trialnum=',trialNum,'  ',longFramesStr)
+                print('trialnum=',trialNum,'  ',longFramesStr, file=logF)
                 if not demo:
                     flankingAlso=list()
                     for idx in idxsInterframeLong: #also print timing of one before and one after long frame
                         if idx-1>=0:  flankingAlso.append(idx-1)
-                        else: flankingAlso.append(NaN)
+                        else: flankingAlso.append(np.NaN)
                         flankingAlso.append(idx)
                         if idx+1<len(interframeIntervs):  flankingAlso.append(idx+1)
                         else: flankingAlso.append(np.NaN)
@@ -778,7 +786,7 @@ while nDone <= trials.nTotal and expStop==False:
     if passThisTrial:orderCorrect = -1    #indicate for data analysis that observer opted out of this trial, because think they moved their eyes
 
     #header trialnum\tsubject\tnumObjects\tspeed\tdirection\tcondition\leftOrRight\toffsetXYeachRing\tangleIni
-    print(nDone,subject,thisTrial['numObjectsInRing'],thisTrial['speed'],thisTrial['direction'],sep='\t', end='\t', file=dataFile)
+    print(trialNum,subject,thisTrial['numObjectsInRing'],thisTrial['speed'],thisTrial['direction'],sep='\t', end='\t', file=dataFile)
     print(thisTrial['condition'],thisTrial['leftOrRight'],sep='\t',end='\t',file=dataFile)
     for r in range(numRings):
         print( list( thisTrial['offsetXYeachRing'][r] ), end='\t',file=dataFile )
@@ -812,14 +820,17 @@ while nDone <= trials.nTotal and expStop==False:
             lowD = sound.Sound('E',octave=3, sampleRate=6000, secs=.8, bits=8)
             lowD.setVolume(0.8)
             lowD.play()
-    nDone+=1
+    trialNum+=1
     waitForKeyPressBetweenTrials = False
-    if nDone< trials.nTotal:
-        if nDone%( max(trials.nTotal/4,1) ) ==0:  #have to enforce at least 1, otherwise will modulus by 0 when #trials is less than 4
-            NextRemindCountText.setText(  round(    (1.0*nDone) / (1.0*trials.nTotal)*100,2    )    )
-            NextRemindText.setText('% complete')
-            NextRemindCountText.draw()
-            NextRemindText.draw()
+    if trialNum< trials.nTotal:
+        if True: # trialNum%( max(trials.nTotal/4,1) ) ==0:  #have to enforce at least 1, otherwise will modulus by 0 when #trials is less than 4
+            pctDone = round(    (1.0*trialNum) / (1.0*trials.nTotal)*100,  0  )
+            NextRemindPctDoneText.setText( str(pctDone) + '% complete' )
+            NextRemindCountText.setText( str(trialNum) + ' of ' + str(trials.nTotal)     )
+            for i in range(5):
+                myWin.flip(clearBuffer=True)
+                NextRemindPctDoneText.draw()
+                NextRemindCountText.draw()
         waitingForKeypress = False
         if waitForKeyPressBetweenTrials:
             waitingForKeypress=True
@@ -845,12 +856,12 @@ while nDone <= trials.nTotal and expStop==False:
     core.wait(.1); time.sleep(.1)
     #end trials loop  ###########################################################
 if expStop == True:
-    print('user aborted experiment on keypress with trials nDone=', nDone, file=logF)
-    print('user aborted experiment on keypress with trials nDone=', nDone)
+    print('user aborted experiment on keypress with trials trialNum=', trialNum, file=logF)
+    print('user aborted experiment on keypress with trials trialNum=', trialNum)
     if eyetracking: tracker.closeConnectionToEyeTracker(eyeMoveFile)
 
 print('finishing at ',timeAndDateStr, file=logF)
-print('%corr order report= ', round( numTrialsOrderCorrect*1.0/nDone*100., 2)  , '% of ',nDone,' trials', end=' ')
+print('%corr order report= ', round( numTrialsOrderCorrect*1.0/trialNum*100., 2)  , '% of ',trialNum,' trials', end=' ')
 print('%corr each speed: ', end=' ')
 print(np.around( numRightWrongEachSpeedOrder[:,1] / ( numRightWrongEachSpeedOrder[:,0] + numRightWrongEachSpeedOrder[:,1]), 2))
 print('\t\t\t\tnum trials each speed =', numRightWrongEachSpeedOrder[:,0] + numRightWrongEachSpeedOrder[:,1])
