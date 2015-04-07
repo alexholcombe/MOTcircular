@@ -12,4 +12,3 @@ Is it about individual object paths or not?
 In the long term, want to set up exchange of objects among rings. Necessary to conduct an identity-tracking experiment. Can also push harder on speed limit that way.
 
 Issues
-- Still not seeing progress message.
