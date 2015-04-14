@@ -858,8 +858,9 @@ while trialNum < trials.nTotal and expStop==False:
 if expStop == True:
     print('user aborted experiment on keypress with trials trialNum=', trialNum, file=logF)
     print('user aborted experiment on keypress with trials trialNum=', trialNum)
-    if eyetracking: tracker.closeConnectionToEyeTracker(eyeMoveFile)
-
+    
+if eyetracking:
+    tracker.closeConnectionToEyeTracker(eyeMoveFile)
 print('finishing at ',timeAndDateStr, file=logF)
 print('%corr order report= ', round( numTrialsOrderCorrect*1.0/trialNum*100., 2)  , '% of ',trialNum,' trials', end=' ')
 print('%corr each speed: ', end=' ')
