@@ -111,9 +111,10 @@ rotX <- function(ch,x)
   chartr(old, new, ch)
 }
 if (anonymiseData) {
-  lines= readLines(paste0(expFoldersPrefix,"anonymisationCode.txt"),warn=FALSE)
-  code = as.numeric(lines[1])
-  dat$subject <- rotX(dat$subject,code) #anonymise subject initials by rotating them by 7 characters
+  keyFile = "anonymisationKey.txt"
+  lines= readLines(paste0(expFoldersPrefix,keyFile),warn=FALSE)
+  key = as.numeric(lines[1]) #the key to encrypt the data with
+  dat$subject <- rotX(dat$subject,key) #anonymise subject initials by rotating them by key characters
 }
 	
 table(d$speedRank,d$numObjects,d$numTargets,d$subject)
