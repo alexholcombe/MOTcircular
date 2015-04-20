@@ -29,19 +29,27 @@ for (expi in 1:length(expFolders)) {
     for (j in 1:length(files)) { #read in sessions of this subject
     	  file = files[j]
       fname = paste(thisSubjectDir,"/",file,sep='')
-      print(paste0("Loading file ",file))
       rawDataLoad=read.table(fname, sep='\t', header=TRUE )
       rawDataLoad$exp <- expFolders[expi]
       rawDataLoad$file <- file
-      #Search for 
+      #Search for eyetracking file
+      fileNameLen = nchar(file)
+      withoutSuffix<-substr(file,1,fileNameLen-4) 
+      eyetrackFileNameShouldBe<- paste0(withoutSuffix,"Eyetracking.txt")
+      row <- grep(eyetrackFiles, eyetrackFileNameShouldBe)
+      eyetrackFileFound = ( length(row) >0 )
+      if (eyetrackFileFound)
+      	msg=" and found Eyetracking file"
+      print(paste0("Loaded file ",file,msg))
       #omit last trial is total trials are odd, probably a repeat
       numTrials<- length(rawDataLoad$trialnum)
       msg=""
+      removeLastTrial = TRUE
       if (numTrials %% 2 ==1) {
       	msg=" Odd number of trials. Was session incomplete, or extra trial at end?"
+      	removeLastTrial = TRUE
       }      
       print(paste0(", contains ",numTrials," trials ",msg))
-      removeLastTrial = TRUE
       if (removeLastTrial) {
       	rawDataLoad<- subset(rawDataLoad, !trialnum %in% c(length(rawDataLoad$trialnum)-1))
       	cat("Removed last trial- assuming it's a repeat")
@@ -112,8 +120,12 @@ rotX <- function(ch,x)
 }
 if (anonymiseData) {
   keyFile = "anonymisationKey.txt"
-  lines= readLines(paste0(expFoldersPrefix,keyFile),warn=FALSE)
-  key = as.numeric(lines[1]) #the key to encrypt the data with
+  if ( !file.exists(keyFile) )
+  {
+  	stop('The file anonymisationKey.txt does not exist!')
+  }
+  linesFromFile= readLines(paste0(expFoldersPrefix,keyFile),warn=FALSE)
+  key = as.numeric(linesFromFile[1]) #the key to encrypt the data with
   dat$subject <- rotX(dat$subject,key) #anonymise subject initials by rotating them by key characters
 }
 	
