@@ -48,62 +48,69 @@ for (expi in 1:length(expFolders)) {
       	eyeTrackInfo = tryCatch( 
       	    read.table(trackFname,header=TRUE), 
       	    error=function(e) { 
-      	    	   msg = paste0('ERROR reading file',trackFname,":",e)
-      	    	   print(msg)
+      	    	   stop( paste0('ERROR reading file',trackFname,":",e) )
            } )
       	#Eyetracker begins trials with 1, whereas python and psychopy convention is 0
       	#So to match the eyetracker file with the psychopy file, subtract one from trial num
       	eyeTrackInfo$trialnum = eyeTrackInfo$Trial-1
       	#Delete the Trial column which confusingly is one greater than trialnum
+      	eyeTrackInfo$Subject <- NULL #has entire filename with date stamp
       	eyeTrackInfo$Trial <- NULL
-      	eyeTrackInfo$subject <- NULL #has entire filename with date stamp
       	rawDataWithEyetrack<- merge(rawDataLoad, eyeTrackInfo, by=c("trialnum"))
-      }
+      	rawDataThis<- rawDataWithEyetrack
+      } else { rawDataThis<- rawDataLoad }
+      
       #omit last trial is total trials are odd, probably a repeat      
       msg=""
-      removeLastTrial = FALSE
+      removeLastTrialIfOdd = TRUE
       if (numTrials %% 2 ==1) {
-      	msg=paste0(" Odd number of trials (",numTrials,"); was session incomplete, or extra trial at end?")
-      	removeLastTrial = TRUE
-      }      
-      if (removeLastTrial) {
-      	rawDataLoad<- subset(rawDataLoad, !trialnum %in% c(length(rawDataLoad$trialnum)-1))
-      	cat("Removed last trial- assuming it's a repeat")
+      	msg=paste0(" Odd number of trials (",numTrials,"); was session incomplete, or extra trial at end?")  
+        if (removeLastTrialIfOdd) {
+      	  rawDataThis <- subset(rawDataThis, !trialnum %in% c(length(rawDataThis $trialnum)-1))
+      	  cat("Removed last trial- assuming it's a repeat")
+        }
       }
-      print(paste0(", now contains ",length(rawDataLoad$trialnum)," trials ",msg))
+      print(paste0(", now contains ",length(rawDataThis$trialnum)," trials ",msg))
       if (expi==1 & i==1 & j==1) { #first file of the first subject
-        rawData<- rawDataLoad
+        rawData<- rawDataThis
       } else {  #not the first file of the first subject, so combine it with previously-loaded data
-        newCols <- setdiff( colnames(rawDataLoad),prevColNames )
-        oldColsNotInNew <- setdiff( prevColNames,colnames(rawDataLoad) )
+        prevColNames<- colnames(rawData)
+        newCols <- setdiff( colnames(rawDataThis),prevColNames )
+        oldColsNotInNew <- setdiff( prevColNames,colnames(rawDataThis) )
         if (length(newCols) >0) {
           print( paste("newCols are",newCols))
-          for (n in length(newCols)) #add newCol to old data.frame with dummy value
+          for (n in 1:length(newCols)) #add newCol to old data.frame with dummy value
             rawData[newCols[n]] <- -999
         }
         if (length(oldColsNotInNew)>0) 
           print( paste("oldColsNotInNew are", oldColsNotInNew, 'thisSubjectDir=',thisSubjectDir) )
         for (n in length(oldColsNotInNew)) #add old col to new data.frame that doesn't have it
-          rawDataLoad[oldColsNotInNew[n]] <- -999	
-        
-        tryCatch( rawData<-rbind(rawData,rawDataLoad), error=function(e)
-        { print ("ERROR merging")
-          colnamesNew <- paste(colnames(rawDataLoad),collapse=",")
-          colnamesOld <- paste(colnames(rawData),collapse=",")
-          writeLines( paste('colnamesNew=',colnamesNew,'\n colnamesOld=', colnamesOld))
-          writeLines( paste('difference is ', setdiff(colnamesNew,colnamesOld)) )
-          QUIT
+          rawDataThis[oldColsNotInNew[n]] <- -999	
+        #Try to merge new data file with already-loaded
+        #colnamesNew <- colnames(rawDataThis)
+        #colnamesOld <- colnames(rawData)
+		#colnamesNewMsg <- paste(colnamesNew,collapse=",")
+        #colnamesOldMsg <- paste(colnamesOld,collapse=",")
+        #writeLines( paste('colnamesNew=',colnamesNewMsg,'\n colnamesOld=', colnamesOldMsg))
+        #writeLines( paste('difference is ', setdiff(colnamesNew,colnamesOld)) )
+        tryCatch( rawData<-rbind(rawData,rawDataThis), error=function(e)
+        {
+	        colnamesNew <- colnames(rawDataThis)
+	        colnamesOld <- colnames(rawData)
+			colnamesNewMsg <- paste(colnamesNew,collapse=",")
+	        colnamesOldMsg <- paste(colnamesOld,collapse=",")
+	        writeLines( paste('colnamesNew=',colnamesNewMsg,'\n colnamesOld=', colnamesOldMsg))
+	        writeLines( paste('difference is ', setdiff(colnamesNew,colnamesOld)) )        	
+            stop("ERROR merging")
         } )
-      }
-      prevColNames<- colnames(rawDataLoad)
-      
+      }      
     }		
   }
 }
 
 rawData = subset(rawData, subject != "auto") #get rid of any autopilot data
 dat <-rawData
-#end data importation 
+#end data importation
 
 #check data counterbalancing
 source("analysis/helpers/checkCounterbalancing.R")
