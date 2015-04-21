@@ -28,7 +28,7 @@ for (expi in 1:length(expFolders)) {
     #allFilesStr <- paste(files,collapse=",") #print(allFilesStr)
     for (j in 1:length(files)) { #read in sessions of this subject
     	  file = files[j]
-      fname = paste(thisSubjectDir,"/",file,sep='')
+      fname = paste0(thisSubjectDir,"/",file)
       rawDataLoad=read.table(fname, sep='\t', header=TRUE )
       rawDataLoad$exp <- expFolders[expi]
       rawDataLoad$file <- file
@@ -36,24 +36,41 @@ for (expi in 1:length(expFolders)) {
       fileNameLen = nchar(file)
       withoutSuffix<-substr(file,1,fileNameLen-4) 
       eyetrackFileNameShouldBe<- paste0(withoutSuffix,"Eyetracking.txt")
-      row <- grep(eyetrackFiles, eyetrackFileNameShouldBe)
+      row <- grep(eyetrackFileNameShouldBe, eyetrackFiles)
       eyetrackFileFound = ( length(row) >0 )
+      msg=""
       if (eyetrackFileFound)
       	msg=" and found Eyetracking file"
       print(paste0("Loaded file ",file,msg))
-      #omit last trial is total trials are odd, probably a repeat
       numTrials<- length(rawDataLoad$trialnum)
+      if (eyetrackFileFound) {
+      	trackFname = paste0(thisSubjectDir,"/", eyetrackFileNameShouldBe)
+      	eyeTrackInfo = tryCatch( 
+      	    read.table(trackFname,header=TRUE), 
+      	    error=function(e) { 
+      	    	   msg = paste0('ERROR reading file',trackFname,":",e)
+      	    	   print(msg)
+           } )
+      	#Eyetracker begins trials with 1, whereas python and psychopy convention is 0
+      	#So to match the eyetracker file with the psychopy file, subtract one from trial num
+      	eyeTrackInfo$trialnum = eyeTrackInfo$Trial-1
+      	#Delete the Trial column which confusingly is one greater than trialnum
+      	eyeTrackInfo$Trial <- NULL
+      	eyeTrackInfo$subject <- NULL #has entire filename with date stamp
+      	rawDataWithEyetrack<- merge(rawDataLoad, eyeTrackInfo, by=c("trialnum"))
+      }
+      #omit last trial is total trials are odd, probably a repeat      
       msg=""
-      removeLastTrial = TRUE
+      removeLastTrial = FALSE
       if (numTrials %% 2 ==1) {
-      	msg=" Odd number of trials. Was session incomplete, or extra trial at end?"
+      	msg=paste0(" Odd number of trials (",numTrials,"); was session incomplete, or extra trial at end?")
       	removeLastTrial = TRUE
       }      
-      print(paste0(", contains ",numTrials," trials ",msg))
       if (removeLastTrial) {
       	rawDataLoad<- subset(rawDataLoad, !trialnum %in% c(length(rawDataLoad$trialnum)-1))
       	cat("Removed last trial- assuming it's a repeat")
       }
+      print(paste0(", now contains ",length(rawDataLoad$trialnum)," trials ",msg))
       if (expi==1 & i==1 & j==1) { #first file of the first subject
         rawData<- rawDataLoad
       } else {  #not the first file of the first subject, so combine it with previously-loaded data

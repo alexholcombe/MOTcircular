@@ -1,4 +1,4 @@
-#expects iv, dat, factorsForBreakdown
+#expects dat, iv, factorsForBreakdown
 if (!exists('factorsForBreakdown'))
 { cat('Need factorsForBreakdown variable. Tells me how to break down data for fitting. I will add subject') }
 #factorsForBreakdown = c('exp','offsetXYring0','leftOrRight')
