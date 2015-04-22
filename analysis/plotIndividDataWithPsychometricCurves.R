@@ -44,8 +44,14 @@ for ( expThis in sort(unique(dat$exp)) ) {  #draw individual Ss' data, for each 
   #draw individual psychometric functions, for only one experiment  
   thisPsychometrics <- subset(psychometrics,exp==expThis)
   g=g+geom_line(data=thisPsychometrics)
-  g=g+ geom_hline(mapping=aes(yintercept=chanceRate),lty=2)  #draw horizontal line for chance performance
+  g=g+geom_hline(mapping=aes(yintercept=chanceRate),lty=2)  #draw horizontal line for chance performance
   g=g+xlab('Speed (rps)')+ylab('Proportion Correct')
+  if (showNumPts) {#add count of data points per graph. http://stackoverflow.com/questions/13239843/annotate-ggplot2-facets-with-number-of-observations-per-facet?rq=1
+    numPts <- ddply(.data=thisExpDat, .(leftOrRight,subject), summarize, 
+                    n=paste("n =", length(correct)))
+    g=g+geom_text(data=numPts, aes(x=2.2, y=.95, label=n), 
+                  colour="black", size=2, inherit.aes=FALSE, parse=FALSE)
+  }  
   #g=g+theme(panel.grid.minor=element_blank(),panel.grid.major=element_blank())# hide all gridlines.
   #g<- g+ theme(axis.title.y=element_text(size=12,angle=90),axis.text.y=element_text(size=10),axis.title.x=element_text(size=12),axis.text.x=element_text(size=10))
   #g<-g+ scale_x_continuous(breaks=c(1.5,2.0,2.5),labels=c("1.5","","2.5"))
