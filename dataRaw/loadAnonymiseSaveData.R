@@ -38,19 +38,19 @@ for (expi in 1:length(expFolders)) {
       eyetrackFileNameShouldBe<- paste0(withoutSuffix,"Eyetracking.txt")
       row <- grep(eyetrackFileNameShouldBe, eyetrackFiles)
       eyetrackFileFound = ( length(row) >0 )
-      msg=""
-      if (eyetrackFileFound)
-      	msg=" and found Eyetracking file"
-      print(paste0("Loaded file ",file,msg))
       numTrials<- length(rawDataLoad$trialnum)
-      if (eyetrackFileFound) {
+      msg=''
+      if (eyetrackFileFound) 
+      {
       	trackFname = paste0(thisSubjectDir,"/", eyetrackFileNameShouldBe)
       	eyeTrackInfo = tryCatch( 
       	    read.table(trackFname,header=TRUE), 
       	    error=function(e) { 
-      	    	   stop( paste0('ERROR reading file',trackFname,":",e) )
+      	    	   stop( paste0('eyeTrackingFile exists: ',trackFname,"but ERROR reading the file :",e) )
            } )
-      	#Eyetracker begins trials with 1, whereas python and psychopy convention is 0
+      	numExcluded<- sum(eyeTrackInfo$Exclusion)
+      	msg=paste0(" and found and loaded Eyetracking file. ", numExcluded/length(eyeTrackInfo$Exclusion),"% trials excluded for breaking fixation")
+    	    #Eyetracker begins trials with 1, whereas python and psychopy convention is 0
       	#So to match the eyetracker file with the psychopy file, subtract one from trial num
       	eyeTrackInfo$trialnum = eyeTrackInfo$Trial-1
       	#Delete the Trial column which confusingly is one greater than trialnum
@@ -58,8 +58,9 @@ for (expi in 1:length(expFolders)) {
       	eyeTrackInfo$Trial <- NULL
       	rawDataWithEyetrack<- merge(rawDataLoad, eyeTrackInfo, by=c("trialnum"))
       	rawDataThis<- rawDataWithEyetrack
-      } else { rawDataThis<- rawDataLoad }
-      
+    	  } else { rawDataThis<- rawDataLoad }
+     print(paste0("Loaded file ",file,msg))
+
       #omit last trial is total trials are odd, probably a repeat      
       msg=""
       removeLastTrialIfOdd = TRUE
@@ -143,12 +144,11 @@ rotX <- function(ch,x)
   chartr(old, new, ch)
 }
 if (anonymiseData) {
-  keyFile = "anonymisationKey.txt"
-  if ( !file.exists(keyFile) )
-  {
-  	stop('The file anonymisationKey.txt does not exist!')
+  keyFile = paste0(expFoldersPrefix,"anonymisationKey.txt")
+  if ( !file.exists(keyFile) ) {
+  	stop(paste0('The file ',keyFile, ' does not exist!'))
   }
-  linesFromFile= readLines(paste0(expFoldersPrefix,keyFile),warn=FALSE)
+  linesFromFile= readLines(keyFile,warn=FALSE)
   key = as.numeric(linesFromFile[1]) #the key to encrypt the data with
   dat$subject <- rotX(dat$subject,key) #anonymise subject initials by rotating them by key characters
 }
