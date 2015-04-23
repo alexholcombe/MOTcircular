@@ -46,6 +46,7 @@ for ( expThis in sort(unique(dat$exp)) ) {  #draw individual Ss' data, for each 
   g=g+geom_line(data=thisPsychometrics)
   g=g+geom_hline(mapping=aes(yintercept=chanceRate),lty=2)  #draw horizontal line for chance performance
   g=g+xlab('Speed (rps)')+ylab('Proportion Correct')
+  showNumPts=TRUE
   if (showNumPts) {#add count of data points per graph. http://stackoverflow.com/questions/13239843/annotate-ggplot2-facets-with-number-of-observations-per-facet?rq=1
     numPts <- ddply(.data=thisExpDat, .(leftOrRight,subject), summarize, 
                     n=paste("n =", length(correct)))

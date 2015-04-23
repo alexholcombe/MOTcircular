@@ -7,9 +7,12 @@ dataDir="../dataAnonymized/"
 expName="offCenter"
 anonDataFilename = paste(dataDir,expName,".Rdata",sep="") 
 load(anonDataFilename,verbose=TRUE)  #returns dat
-datWithFixatnViolations = dat
-datNoFixatnViolatn = dat[ dat$Exclusion==0, ]
-dat<-datNoFixatnViolatn
+excludeFixationViolations = TRUE
+if (excludeFixationViolations) {
+  datWithFixatnViolations = dat
+  datNoFixatnViolatn = dat[ dat$Exclusion!=1, ] #sessions not eyetracked are -999
+  dat<-datNoFixatnViolatn
+}
 offCenter = dat
 iv= 'speed'
 #need to add offsetXYeachRing to factors analysed
