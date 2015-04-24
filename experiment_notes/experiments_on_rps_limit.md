@@ -11,11 +11,11 @@ Is the speed limit the same in the periphery, when not rotating about fixation?
 - Could do it with 1 target, but then have the eye movements problem and worse blurring problem at 120 Hz. Somewhat mitigated by having both orbits present but only one with a target.
 - Have to just use single ring? Although there will always be a confound between crossing hemifields and not. Speed limit could conceivably even have been one of crossing hemifields. Yes, so I'm testing that hypothesis.
 
-3 conditions
+3 conditions (tested >= 3 Ss)
 - One trajectory, centered.  r=6
 - One trajectory, a bit off center. e=5
 - One trajectory, way off center. e=10 or 11
-- Crossed with a second factor which puts the periphery one in each quadrant, yielding 12 conditions. Actually that's a bit too many conditions, so let's only go left and right, not up and down also.
+- Crossed with a second factor which puts the periphery one in each quadrant, yielding 12 conditions. Actually that's too many conditions, so did it only with left and right, not up and down also.
 
 So the centered one won't happen very often because the two others each have two versions, making a total of 5 conditions.
 
@@ -25,7 +25,7 @@ Seem to need more cuingTime because gotta get oneself stably fixating even when 
 
 - Adding modulations to the trajectory has little effect, in other words rotational speed is the determinant.  
 - First, blast the annoying speed limit people with a square trajectory. This finally helps answer those interested in linear speed limit
-- Compare square trajectory to circular and to a big modulation.
+- Compare square trajectory to circular at two eccentricities. Got some data for me with 1 target, but then remembered I'd like to use two targets whenever on center to avoid being blur-limited.
 
 Results
 - Critical issue is speed limit of smaller-radius one when not concentric. Smaller one is always ringToQuery=0. Speed limit for me is lower by about 0.4rps.

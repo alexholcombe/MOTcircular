@@ -87,15 +87,15 @@ bindRadiallyRingToIdentify=1 #0 is inner, 1 is outer
 trackPostcueOrClick = 1 #postcue means say yes/no postcued was a target, click means click on which you think was/were the targets
 
 numRings=1
-radii=[6] #[2.5,8,12] #[4,8,12] 
+radii=[3,9]   #Need to encode as array for those experiments wherein more than one ring presented 
 offsets = np.array([[0,0],[-5,0],[-10,0]])
 
 respRadius=radii[0] #deg
-hz= 60 # 160 *1.0;  #160 #set to the framerate of the monitor
+refreshRate= 160 *1.0;  #160 #set to the framerate of the monitor
 useClock = True #as opposed to using frame count, which assumes no frames are ever missed
-fullscr=0; scrn=0
+fullscr=1; scrn=0
 # create a dialog from dictionary 
-infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':False, 'Screen to use':scrn, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': hz }
+infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':True, 'Screen to use':scrn, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': refreshRate }
 OK = gui.DlgFromDict(dictionary=infoFirst, 
     title='MOT', 
     order=['Autopilot','Check refresh etc', 'Screen to use', 'Screen refresh rate', 'Fullscreen (timing errors if not)'], 
@@ -113,7 +113,7 @@ refreshRate = infoFirst['Screen refresh rate']
 
 #trialDur does not include trackingExtraTime, during which the cue is on. Not really part of the trial.
 trialDur = 3.3
-if demo:trialDur = 5;hz = 60.; 
+if demo:trialDur = 5;refreshRate = 60.; 
 tokenChosenEachRing= [-999]*numRings
 rampUpDur=0; rampDownDur=0
 trackingExtraTime=1.0; #giving the person time to attend to the cue (secs). This gets added to trialDur
@@ -133,9 +133,9 @@ def getReversalTimes():
     return reversalTimesEachRing
     
 toTrackCueDur = rampUpDur+rampDownDur+trackingExtraTime  #giving the person time to attend to the cue (secs)
-trialDurFrames=int(trialDur*hz)+int( trackingExtraTime*hz )
-rampUpFrames = hz*rampUpDur;   rampDownFrames = hz*rampDownDur;
-ShowTrackCueFrames = int( hz*toTrackCueDur )
+trialDurFrames=int(trialDur*refreshRate)+int( trackingExtraTime*refreshRate )
+rampUpFrames = refreshRate*rampUpDur;   rampDownFrames = refreshRate*rampDownDur;
+ShowTrackCueFrames = int( refreshRate*toTrackCueDur )
 rampDownStart = trialDurFrames-rampDownFrames
 ballStdDev = 1.8
 mouseChoiceArea = ballStdDev*0.8 # origin =1.3
@@ -260,7 +260,7 @@ if refreshRateWrong:
     logging.error(refreshMsg1+refreshMsg2)
 else: logging.info(refreshMsg1+refreshMsg2)
 longerThanRefreshTolerance = 0.2
-longFrameLimit = round(1000./hz*(1.0+longerThanRefreshTolerance),3) # round(1000/hz*1.5,2)
+longFrameLimit = round(1000./refreshRate*(1.0+longerThanRefreshTolerance),3) # round(1000/refreshRate*1.5,2)
 print('longFrameLimit=',longFrameLimit,' Recording trials where one or more interframe interval exceeded this figure ', file=logF)
 print('longFrameLimit=',longFrameLimit,' Recording trials where one or more interframe interval exceeded this figure ')
 if msgWrongResolution != '':
@@ -311,7 +311,7 @@ NextRemindCountText = visual.TextStim(myWin,pos=(.1, -.5),colorSpace='rgb',color
 stimList = []
 # temporalfrequency limit test
 numObjsInRing = [2]
-speedsEachNumObjs =  [ [1.5, 1.65] ]     #dont want to go faster than 2 because of blur problem
+speedsEachNumObjs =  [ [ 2.1,2.2,2.3] ]     #dont want to go faster than 2 because of blur problem
 numTargets = np.array([1])  # np.array([1,2,3])
 leastCommonMultipleSubsets = calcCondsPerNumTargets(numRings,numTargets)
 leastCommonMultipleTargetNums = LCM( numTargets )  #have to use this to choose whichToQuery. For explanation see newTrajectoryEventuallyForIdentityTracking.oo3
@@ -322,7 +322,7 @@ for numObjs in numObjsInRing: #set up experiment design
     speeds= speedsEachNumObjs[  idx   ]
     for speed in speeds:
         ringNums = np.arange(numRings)
-        for nt in numTargets: #  3 choose 2, 3 choose 1, have to have as many conditions as the maximum
+        for nt in numTargets: #  If 3 concentric rings involved, have to consider 3 choose 2, 3 choose 1, have to have as many conditions as the maximum
           subsetsThis = list(itertools.combinations(ringNums,nt)) #all subsets of length nt from the universe of ringNums
           numSubsetsThis = len( subsetsThis );   #print('numSubsetsThis=',numSubsetsThis)
           repsNeeded = leastCommonMultipleSubsets / numSubsetsThis #that's the number of repetitions needed to make up for number of subsets of rings
@@ -333,19 +333,14 @@ for numObjs in numObjsInRing: #set up experiment design
                          whichIsTarget[ring] = np.random.random_integers(0, numObjs-1, size=1) #1
                       #print('numTargets=',nt,' whichIsTarget=',whichIsTarget,' and that is one of ',numSubsetsThis,' possibilities and we are doing ',repsNeeded,'repetitions')
                       for whichToQuery in xrange( leastCommonMultipleTargetNums ):  #for each subset, have to query one. This is dealed out to  the current subset by using modulus. It's assumed that this will result in equal total number of queried rings
-                              whichSubsetEntry = whichToQuery % nt  #e.g. if nt=2 and whichToQuery can be 0,1,or2 then modulus result is 0,1,0. This implies that whichToQuery won't be totally counterbalanced with which subset, which is bad because
-                                              #might give more resources to one that's queried more often. Therefore for whichToQuery need to use least common multiple.
-                              ringToQuery = s[whichSubsetEntry];  #print('ringToQuery=',ringToQuery,'subset=',s)
-                              for condition in [0,1,2]: #centered, slightly off-center, or fully off-center
-                               for leftOrRight in [0,1]:
-                                  offsetXYeachRing = np.array([ offsets[condition] ]) #because other experiments involve multiple rings, it's a 2-d array
-                                  if condition >0: #not on center
-                                         if leftOrRight: #flip to right
-                                            offsetXYeachRing *= -1
-                                  offsetXYeachRing = list(offsetXYeachRing) #so that when print, prints on one line
+                          whichSubsetEntry = whichToQuery % nt  #e.g. if nt=2 and whichToQuery can be 0,1,or2 then modulus result is 0,1,0. This implies that whichToQuery won't be totally counterbalanced with which subset, which is bad because
+                                          #might give more resources to one that's queried more often. Therefore for whichToQuery need to use least common multiple.
+                          ringToQuery = s[whichSubsetEntry];  #print('ringToQuery=',ringToQuery,'subset=',s)
+                          for basicShape in ['circle','square']:
+                            for radius in radii:
                                   for direction in [-1.0,1.0]:  
-                                        stimList.append( {'numObjectsInRing':numObjs,'speed':speed, 'direction':direction,'numTargets':nt,'whichIsTarget':whichIsTarget,
-                                          'ringToQuery':ringToQuery,'condition':condition,'leftOrRight':leftOrRight,'offsetXYeachRing':offsetXYeachRing} )
+                                        stimList.append( {'basicShape':basicShape, 'radius':radius, 'numObjectsInRing':numObjs,'speed':speed, 'direction':direction,
+                                            'numTargets':nt,'whichIsTarget':whichIsTarget,'ringToQuery':ringToQuery} )
 #set up record of proportion correct in various conditions
 trialSpeeds = list() #purely to allow report at end of how many trials got right at each speed
 for s in stimList: trialSpeeds.append( s['speed'] )
@@ -361,7 +356,7 @@ trials = data.TrialHandler(stimList,trialsPerCondition) #constant stimuli method
 timeAndDateStr = time.strftime("%d%b%Y_%H-%M", time.localtime()) 
 logging.info(  str('starting exp with name: "'+'TemporalFrequencyLimit'+'" at '+timeAndDateStr)   )
 logF = StringIO.StringIO()  #kludge so I dont have to change all the print >>logF statements
-logging.info(    'numtrials='+ str(trials.nTotal)+' and each trialDur='+str(trialDur)+' hz='+str(hz)      )
+logging.info(    'numtrials='+ str(trials.nTotal)+' and each trialDur='+str(trialDur)+' refreshRate='+str(refreshRate)      )
 
 print(' numtrials=', trials.nTotal)
 print('rampUpDur=',rampUpDur, ' rampDownDur=', rampDownDur, ' secs', file=logF);  logging.info( logF.getvalue() ); logF = StringIO.StringIO() 
@@ -379,11 +374,11 @@ def RFcontourCalcModulation(angle,freq,phase):
 
 ampTemporalRadiusModulation = 0.0 # 1.0/3.0
 ampModulatnEachRingTemporalPhase = np.random.rand(numRings) * 2*np.pi
-def xyThisFrameThisAngle(numRing, angle, thisFrameN, speed):
+def xyThisFrameThisAngle(basicShape, radiiThisTrial, numRing, angle, thisFrameN, speed):
     #period of oscillation should be in sec
     periodOfRadiusModulation = 1.0/speed#so if speed=2 rps, radius modulation period = 0.5 s
-    r = radii[numRing]
-    timeSeconds = thisFrameN / hz
+    r = radiiThisTrial[numRing]
+    timeSeconds = thisFrameN / refreshRate
     modulatnPhaseRadians = timeSeconds/periodOfRadiusModulation * 2*pi + ampModulatnEachRingTemporalPhase[numRing]
     def waveForm(phase,type):
         if type=='sin':
@@ -393,7 +388,7 @@ def xyThisFrameThisAngle(numRing, angle, thisFrameN, speed):
             if ans==0: ans = -1+ 2*round( np.random.rand(1)[0] ) #exception case is when 0, gives 0, so randomly change that to -1 or 1
             return ans
         else: print('Error! unexpected type in radiusThisFrameThisAngle')
-    basicShape = 'circle'
+        
     if basicShape == 'circle':
         rThis =  r + waveForm(modulatnPhaseRadians,'sin') * r * ampTemporalRadiusModulation
         rThis += r * RFcontourAmp * RFcontourCalcModulation(angle,RFcontourFreq,RFcontourPhase)
@@ -412,10 +407,11 @@ def xyThisFrameThisAngle(numRing, angle, thisFrameN, speed):
             x = r * triangleWave(pi,angle)
             y = r * triangleWave(pi, (angle-pi/2)%(2*pi ))
             #This will always describe a diamond. To change the shape would have to use vector rotation formula
+    else: print('Unexpected basicShape ',basicShape)
     return x,y
 
 def angleChangeThisFrame(thisTrial, moveDirection, numRing, thisFrameN, lastFrameN):
-    angleMove = moveDirection[numRing]*thisTrial['direction']*thisTrial['speed']*2*pi*(thisFrameN-lastFrameN)/hz
+    angleMove = moveDirection[numRing]*thisTrial['direction']*thisTrial['speed']*2*pi*(thisFrameN-lastFrameN)/refreshRate
     return angleMove
 
 def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngle,blobToCueEachRing,isReversed,reversalNumEachRing,ShowTrackCueFrames): 
@@ -424,7 +420,7 @@ def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngl
           global angleIniEachRing, correctAnswers
           if useClock: #Don't count on not missing frames. Use actual time.
             t = clock.getTime()
-            n = round(t*hz)
+            n = round(t*refreshRate)
           else:
             n = currFrame
           
@@ -439,36 +435,36 @@ def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngl
             fixationBlank.draw()
           fixationPoint.draw()
           
-          for noRing in range(numRings):
-            angleMove = angleChangeThisFrame(thisTrial, moveDirection, noRing, n, n-1)
-            currAngle[noRing] = currAngle[noRing]+angleMove*(isReversed[noRing])
-            angleObject0 = angleIniEachRing[noRing] + currAngle[noRing]
+          for numRing in range(numRings):
+            angleMove = angleChangeThisFrame(thisTrial, moveDirection, numRing, n, n-1)
+            currAngle[numRing] = currAngle[numRing]+angleMove*(isReversed[numRing])
+            angleObject0 = angleIniEachRing[numRing] + currAngle[numRing]
             for nobject in range(numObjects):
                 if nobject==0:
-                        if reversalNumEachRing[noRing] <= len(reversalTimesEachRing[noRing]): #haven't exceeded  reversals assigned
-                            reversalNum = int(reversalNumEachRing[noRing])
-                            if len( reversalTimesEachRing[noRing] ) <= reversalNum:
-                                msg = 'You failed to allocate enough reversal times, reached ' +str(reversalNum)+ ' reversals at '+ str(reversalTimesEachRing[noRing][reversalNum-1]) + \
-                                          'and still going, current time ='+str(n/hz)+' asking for time of next one, will assume no more reversals'
+                        if reversalNumEachRing[numRing] <= len(reversalTimesEachRing[numRing]): #haven't exceeded  reversals assigned
+                            reversalNum = int(reversalNumEachRing[numRing])
+                            if len( reversalTimesEachRing[numRing] ) <= reversalNum:
+                                msg = 'You failed to allocate enough reversal times, reached ' +str(reversalNum)+ ' reversals at '+ str(reversalTimesEachRing[numRing][reversalNum-1]) + \
+                                          'and still going, current time ='+str(n/refreshRate)+' asking for time of next one, will assume no more reversals'
                                 logging.error(msg)
                                 print(msg)
                                 nextReversalTime = 9999 #didn't allocate enough, will just not reverse any more
                             else: #allocated enough reversals
-                                nextReversalTime = reversalTimesEachRing[noRing][ reversalNum ]
-                            if n > hz * nextReversalTime: #have now exceeded time for this next reversal
-                                isReversed[noRing] = -1*isReversed[noRing]
-                                reversalNumEachRing[noRing] +=1
+                                nextReversalTime = reversalTimesEachRing[numRing][ reversalNum ]
+                            if n > refreshRate * nextReversalTime: #have now exceeded time for this next reversal
+                                isReversed[numRing] = -1*isReversed[numRing]
+                                reversalNumEachRing[numRing] +=1
                 angleThisObject = angleObject0 + (2*pi)/numObjects*nobject
-                x,y = xyThisFrameThisAngle(noRing,angleThisObject,n,thisTrial['speed'])
-                x = x + offsetXYeachRing[noRing][0]
-                y = y + offsetXYeachRing[noRing][1]
-                if n< ShowTrackCueFrames and nobject==blobToCueEachRing[noRing]: #cue in white  
+                x,y = xyThisFrameThisAngle(thisTrial['basicShape'],[thisTrial['radius']],numRing,angleThisObject,n,thisTrial['speed'])
+                x += offsetXYeachRing[numRing][0]
+                y += offsetXYeachRing[numRing][1]
+                if n< ShowTrackCueFrames and nobject==blobToCueEachRing[numRing]: #cue in white  
                     weightToTrueColor = n*1.0/ShowTrackCueFrames #compute weighted average to ramp from white to correct color
                     blobColor = (1.0-weightToTrueColor)*cueColor +  weightToTrueColor*colors_all[nobject]
                     blobColor *= contrast #also might want to change contrast, if everybody's contrast changing in contrast ramp
                     #print('weightToTrueColor=',weightToTrueColor,' n=',n, '  blobColor=',blobColor)
                 else: blobColor = colors_all[0]*contrast
-                #referenceCircle.setPos(offsetXYeachRing[noRing]);  referenceCircle.draw() #debug
+                #referenceCircle.setPos(offsetXYeachRing[numRing]);  referenceCircle.draw() #debug
                 gaussian.setColor( blobColor, log=autoLogging )
                 gaussian.setPos([x,y])
                 gaussian.draw()
@@ -542,7 +538,7 @@ def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,
                   for ncheck in range( numOptionsEachSet[optionSet] ):  #draw each available to click on in this ring
                         angle =  (angleIniEachRing[optionSet]+currAngle[optionSet]) + ncheck*1.0/numOptionsEachSet[optionSet] *2.*pi
                         stretchOutwardRingsFactor = 1
-                        x,y = xyThisFrameThisAngle(optionSet,angle,n,thisTrial['speed'])
+                        x,y = xyThisFrameThisAngle(thisTrial['basicShape'],[thisTrial['radius']],optionSet,angle,n,thisTrial['speed'])
                         x = x+ offsetXYeachRing[optionSet][0]
                         y = y+ offsetXYeachRing[optionSet][1]
                         #draw colors, and circles around selected items. Colors are drawn in order they're in in optionsIdxs
@@ -567,7 +563,7 @@ def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,
                     for optionSet in range(optionSets):
                       for ncheck in range( numOptionsEachSet[optionSet] ): 
                             angle =  (angleIniEachRing[optionSet]+currAngle[optionSet]) + ncheck*1.0/numOptionsEachSet[optionSet] *2.*pi #radians
-                            x,y = xyThisFrameThisAngle(optionSet,angle,n,thisTrial['speed'])
+                            x,y = xyThisFrameThisAngle(thisTrial['basicShape'],[thisTrial['radius']],optionSet,angle,n,thisTrial['speed'])
                             x = x+ offsetXYeachRing[optionSet][0]
                             y = y+ offsetXYeachRing[optionSet][1]
                             #check whether mouse click was close to any of the colors
@@ -626,9 +622,7 @@ def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,
     
 print('Starting experiment of',trials.nTotal,'trials. Current trial is trial 0.')
 #print header for data file
-print('trialnum\tsubject\tnumObjects\tspeed\tdirection\tcondition\tleftOrRight', end='\t', file=dataFile)
-for r in range(numRings):
-    print('offsetXYring',r, sep='', end='\t', file=dataFile)
+print('trialnum\tsubject\tbasicShape\tradius\tnumObjects\tspeed\tdirection', end='\t', file=dataFile)
 print('orderCorrect\ttrialDurTotal\tnumTargets', end= '\t', file=dataFile) 
 for i in range(numRings):
     print('whichIsTarget',i,  sep='', end='\t', file=dataFile)
@@ -661,7 +655,7 @@ while trialNum < trials.nTotal and expStop==False:
     moveDirection = list( np.random.random_integers(0,1,size=[numRings]) *2 -1 ) #randomise initial direction
     trackVariableIntervDur=np.random.uniform(0,trackVariableIntervMax) #random interval tacked onto tracking to make total duration variable so cant predict final position
     trialDurTotal = maxTrialDur() - trackVariableIntervDur
-    trialDurFrames= int( trialDurTotal*hz )
+    trialDurFrames= int( trialDurTotal*refreshRate )
     xyTargets = np.zeros( [thisTrial['numTargets'], 2] ) #need this for eventual case where targets can change what ring they are in
     numDistracters = numRings*thisTrial['numObjectsInRing'] - thisTrial['numTargets']
     xyDistracters = np.zeros( [numDistracters, 2] )
@@ -675,7 +669,7 @@ while trialNum < trials.nTotal and expStop==False:
     myMouse.setVisible(False)      
     if eyetracking: tracker.startEyeTracking(trialNum,True,widthPix,heightPix) # CF is awesome! - start recording with eyetracker
 
-    fixatnPeriodFrames = int(   (np.random.rand(1)/2.+0.8)   *hz)  #random interval between x and x+800ms
+    fixatnPeriodFrames = int(   (np.random.rand(1)/2.+0.8)   *refreshRate)  #random interval between x and x+800ms
     for i in range(fixatnPeriodFrames):
         if i%2:
             fixation.draw()
@@ -686,8 +680,9 @@ while trialNum < trials.nTotal and expStop==False:
     for L in range(len(ts)):ts.remove(ts[0]) # clear all ts array
     stimClock.reset()
     for n in range(trialDurFrames): #this is the loop for this trial's stimulus!
+            offsetXYeachRing=[[0,0]]
             (angleIni,currAngle,isReversed,reversalNumEachRing) = \
-                            oneFrameOfStim(thisTrial,n,stimClock,useClock,thisTrial['offsetXYeachRing'],currAngle,blobsToPreCue,isReversed,reversalNumEachRing,ShowTrackCueFrames) #da big function
+                            oneFrameOfStim(thisTrial,n,stimClock,useClock,offsetXYeachRing,currAngle,blobsToPreCue,isReversed,reversalNumEachRing,ShowTrackCueFrames) #da big function
             if exportImages:
                 myWin.getMovieFrame(buffer='back') #for later saving
                 framesSaved +=1
@@ -744,7 +739,7 @@ while trialNum < trials.nTotal and expStop==False:
      # ####### response set up answer
     responses = list();  responsesAutopilot = list()
     responses,responsesAutopilot,respondedEachToken,expStop = \
-            collectResponses(thisTrial,n,responses,responsesAutopilot,thisTrial['offsetXYeachRing'],respRadius,currAngle,expStop)  #collect responses!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#####
+            collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,respRadius,currAngle,expStop)  #collect responses!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#####
     #print("responses=",responses,";respondedEachToken=",respondedEachToken,"expStop=",expStop) #debugOFF
     core.wait(.1)
     if exportImages:  #maybe catch one frame of response
@@ -785,11 +780,8 @@ while trialNum < trials.nTotal and expStop==False:
         #end if statement for if not expStop
     if passThisTrial:orderCorrect = -1    #indicate for data analysis that observer opted out of this trial, because think they moved their eyes
 
-    #header trialnum\tsubject\tnumObjects\tspeed\tdirection\tcondition\leftOrRight\toffsetXYeachRing\tangleIni
-    print(trialNum,subject,thisTrial['numObjectsInRing'],thisTrial['speed'],thisTrial['direction'],sep='\t', end='\t', file=dataFile)
-    print(thisTrial['condition'],thisTrial['leftOrRight'],sep='\t',end='\t',file=dataFile)
-    for r in range(numRings):
-        print( list( thisTrial['offsetXYeachRing'][r] ), end='\t',file=dataFile )
+    #header print('trialnum\tsubject\tbasicShape\tradius\tnumObjects\tspeed\tdirection\tangleIni
+    print(trialNum,subject,thisTrial['basicShape'],thisTrial['radius'],thisTrial['numObjectsInRing'],thisTrial['speed'],thisTrial['direction'],sep='\t', end='\t', file=dataFile)
     print(orderCorrect,'\t',trialDurTotal,'\t',thisTrial['numTargets'],'\t', end=' ', file=dataFile) #override newline end
     for i in range(numRings):  print( thisTrial['whichIsTarget'][i], end='\t', file=dataFile  )
     print( thisTrial['ringToQuery'],end='\t',file=dataFile )

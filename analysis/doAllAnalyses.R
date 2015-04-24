@@ -7,7 +7,7 @@ dataDir="../dataAnonymized/"
 expName="offCenter"
 anonDataFilename = paste(dataDir,expName,".Rdata",sep="") 
 load(anonDataFilename,verbose=TRUE)  #returns dat
-excludeFixationViolations = TRUE #TRUE
+excludeFixationViolations = FALSE #TRUE
 datWithFixatnViolations = dat
 if (excludeFixationViolations) {
   datNoFixatnViolatn = dat[ dat$Exclusion!=1, ] #sessions not eyetracked are -999
@@ -32,7 +32,11 @@ assignCondName <- function(df) {
 dat<-assignCondName(dat)
 psychometrics<-assignCondName(psychometrics)
 table(dat$condition,dat$condName)
-table(psychometrics$condName)
+table(psychometrics$condName) #print proportion trials excluded each condition
+if (!excludeFixationViolations) {
+  eyeTracked<- dat[dat$Exclusion!=-999,]
+  ddply(eyeTracked,.(subject,condName),summarize, pctExcluded = mean(Exclusion))
+}
 source('plotIndividDataWithPsychometricCurves.R')
 
 source("extractThreshesAndPlot.R") #provides threshes, thresh plots
