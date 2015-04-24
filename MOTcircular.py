@@ -86,8 +86,8 @@ respTypes=['order']; respType=respTypes[0]
 bindRadiallyRingToIdentify=1 #0 is inner, 1 is outer
 trackPostcueOrClick = 1 #postcue means say yes/no postcued was a target, click means click on which you think was/were the targets
 
-numRings=1
-radii=[3,9]   #Need to encode as array for those experiments wherein more than one ring presented 
+numRings=2
+radii=[2.5,9.5]   #Need to encode as array for those experiments wherein more than one ring presented 
 offsets = np.array([[0,0],[-5,0],[-10,0]])
 
 respRadius=radii[0] #deg
@@ -311,8 +311,8 @@ NextRemindCountText = visual.TextStim(myWin,pos=(.1, -.5),colorSpace='rgb',color
 stimList = []
 # temporalfrequency limit test
 numObjsInRing = [2]
-speedsEachNumObjs =  [ [ 2.1,2.2,2.3] ]     #dont want to go faster than 2 because of blur problem
-numTargets = np.array([1])  # np.array([1,2,3])
+speedsEachNumObjs =  [ [1.3, 1.5, 1.7] ]     #dont want to go faster than 2 because of blur problem
+numTargets = np.array([2])  # np.array([1,2,3])
 leastCommonMultipleSubsets = calcCondsPerNumTargets(numRings,numTargets)
 leastCommonMultipleTargetNums = LCM( numTargets )  #have to use this to choose whichToQuery. For explanation see newTrajectoryEventuallyForIdentityTracking.oo3
 #print('leastCommonMultipleSubsets=',leastCommonMultipleSubsets)
@@ -337,9 +337,8 @@ for numObjs in numObjsInRing: #set up experiment design
                                           #might give more resources to one that's queried more often. Therefore for whichToQuery need to use least common multiple.
                           ringToQuery = s[whichSubsetEntry];  #print('ringToQuery=',ringToQuery,'subset=',s)
                           for basicShape in ['circle','square']:
-                            for radius in radii:
                                   for direction in [-1.0,1.0]:  
-                                        stimList.append( {'basicShape':basicShape, 'radius':radius, 'numObjectsInRing':numObjs,'speed':speed, 'direction':direction,
+                                        stimList.append( {'basicShape':basicShape, 'numObjectsInRing':numObjs,'speed':speed, 'direction':direction,
                                             'numTargets':nt,'whichIsTarget':whichIsTarget,'ringToQuery':ringToQuery} )
 #set up record of proportion correct in various conditions
 trialSpeeds = list() #purely to allow report at end of how many trials got right at each speed
@@ -455,7 +454,7 @@ def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngl
                                 isReversed[numRing] = -1*isReversed[numRing]
                                 reversalNumEachRing[numRing] +=1
                 angleThisObject = angleObject0 + (2*pi)/numObjects*nobject
-                x,y = xyThisFrameThisAngle(thisTrial['basicShape'],[thisTrial['radius']],numRing,angleThisObject,n,thisTrial['speed'])
+                x,y = xyThisFrameThisAngle(thisTrial['basicShape'],radii, numRing,angleThisObject,n,thisTrial['speed'])
                 x += offsetXYeachRing[numRing][0]
                 y += offsetXYeachRing[numRing][1]
                 if n< ShowTrackCueFrames and nobject==blobToCueEachRing[numRing]: #cue in white  
@@ -538,7 +537,7 @@ def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,
                   for ncheck in range( numOptionsEachSet[optionSet] ):  #draw each available to click on in this ring
                         angle =  (angleIniEachRing[optionSet]+currAngle[optionSet]) + ncheck*1.0/numOptionsEachSet[optionSet] *2.*pi
                         stretchOutwardRingsFactor = 1
-                        x,y = xyThisFrameThisAngle(thisTrial['basicShape'],[thisTrial['radius']],optionSet,angle,n,thisTrial['speed'])
+                        x,y = xyThisFrameThisAngle(thisTrial['basicShape'],radii,optionSet,angle,n,thisTrial['speed'])
                         x = x+ offsetXYeachRing[optionSet][0]
                         y = y+ offsetXYeachRing[optionSet][1]
                         #draw colors, and circles around selected items. Colors are drawn in order they're in in optionsIdxs
@@ -563,7 +562,7 @@ def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,
                     for optionSet in range(optionSets):
                       for ncheck in range( numOptionsEachSet[optionSet] ): 
                             angle =  (angleIniEachRing[optionSet]+currAngle[optionSet]) + ncheck*1.0/numOptionsEachSet[optionSet] *2.*pi #radians
-                            x,y = xyThisFrameThisAngle(thisTrial['basicShape'],[thisTrial['radius']],optionSet,angle,n,thisTrial['speed'])
+                            x,y = xyThisFrameThisAngle(thisTrial['basicShape'],radii,optionSet,angle,n,thisTrial['speed'])
                             x = x+ offsetXYeachRing[optionSet][0]
                             y = y+ offsetXYeachRing[optionSet][1]
                             #check whether mouse click was close to any of the colors
@@ -622,7 +621,7 @@ def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,
     
 print('Starting experiment of',trials.nTotal,'trials. Current trial is trial 0.')
 #print header for data file
-print('trialnum\tsubject\tbasicShape\tradius\tnumObjects\tspeed\tdirection', end='\t', file=dataFile)
+print('trialnum\tsubject\tbasicShape\tnumObjects\tspeed\tdirection', end='\t', file=dataFile)
 print('orderCorrect\ttrialDurTotal\tnumTargets', end= '\t', file=dataFile) 
 for i in range(numRings):
     print('whichIsTarget',i,  sep='', end='\t', file=dataFile)
@@ -680,7 +679,7 @@ while trialNum < trials.nTotal and expStop==False:
     for L in range(len(ts)):ts.remove(ts[0]) # clear all ts array
     stimClock.reset()
     for n in range(trialDurFrames): #this is the loop for this trial's stimulus!
-            offsetXYeachRing=[[0,0]]
+            offsetXYeachRing=[[0,0],[0,0]]
             (angleIni,currAngle,isReversed,reversalNumEachRing) = \
                             oneFrameOfStim(thisTrial,n,stimClock,useClock,offsetXYeachRing,currAngle,blobsToPreCue,isReversed,reversalNumEachRing,ShowTrackCueFrames) #da big function
             if exportImages:
@@ -733,7 +732,12 @@ while trialNum < trials.nTotal and expStop==False:
     visuallyPostCue = True
     ringQuerySoundFileNames = [ 'innerring.wav', 'middlering.wav', 'outerring.wav' ]
     soundDir = 'sounds'
-    soundPathAndFile= os.path.join(soundDir, ringQuerySoundFileNames[ thisTrial['ringToQuery'] ])
+    if numRings==3:
+        soundFileNum = thisTrial['ringToQuery']
+    else: #eg if numRings==2:
+        soundFileNum = thisTrial['ringToQuery']*2 #outer, not middle for ring==1
+        
+    soundPathAndFile= os.path.join(soundDir, ringQuerySoundFileNames[ soundFileNum ])
     respSound = sound.Sound(soundPathAndFile, secs=.2)
     postCueNumBlobsAway=-999 #doesn't apply to click tracking and non-tracking task
      # ####### response set up answer
@@ -780,8 +784,8 @@ while trialNum < trials.nTotal and expStop==False:
         #end if statement for if not expStop
     if passThisTrial:orderCorrect = -1    #indicate for data analysis that observer opted out of this trial, because think they moved their eyes
 
-    #header print('trialnum\tsubject\tbasicShape\tradius\tnumObjects\tspeed\tdirection\tangleIni
-    print(trialNum,subject,thisTrial['basicShape'],thisTrial['radius'],thisTrial['numObjectsInRing'],thisTrial['speed'],thisTrial['direction'],sep='\t', end='\t', file=dataFile)
+    #header print('trialnum\tsubject\tbasicShape\tnumObjects\tspeed\tdirection\tangleIni
+    print(trialNum,subject,thisTrial['basicShape'],thisTrial['numObjectsInRing'],thisTrial['speed'],thisTrial['direction'],sep='\t', end='\t', file=dataFile)
     print(orderCorrect,'\t',trialDurTotal,'\t',thisTrial['numTargets'],'\t', end=' ', file=dataFile) #override newline end
     for i in range(numRings):  print( thisTrial['whichIsTarget'][i], end='\t', file=dataFile  )
     print( thisTrial['ringToQuery'],end='\t',file=dataFile )
