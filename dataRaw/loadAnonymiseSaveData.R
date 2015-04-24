@@ -49,7 +49,7 @@ for (expi in 1:length(expFolders)) {
       	    	   stop( paste0('eyeTrackingFile exists: ',trackFname,"but ERROR reading the file :",e) )
            } )
       	numExcluded<- sum(eyeTrackInfo$Exclusion)
-      	msg=paste0(" and found and loaded Eyetracking file. ", numExcluded/length(eyeTrackInfo$Exclusion),"% trials excluded for breaking fixation")
+      	msg=paste0(" and found and loaded Eyetracking file. ", round(100*numExcluded/length(eyeTrackInfo$Exclusion),1),"% trials broke fixation")
     	    #Eyetracker begins trials with 1, whereas python and psychopy convention is 0
       	#So to match the eyetracker file with the psychopy file, subtract one from trial num
       	eyeTrackInfo$trialnum = eyeTrackInfo$Trial-1

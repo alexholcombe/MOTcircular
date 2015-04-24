@@ -7,9 +7,9 @@ dataDir="../dataAnonymized/"
 expName="offCenter"
 anonDataFilename = paste(dataDir,expName,".Rdata",sep="") 
 load(anonDataFilename,verbose=TRUE)  #returns dat
-excludeFixationViolations = TRUE
+excludeFixationViolations = TRUE #TRUE
+datWithFixatnViolations = dat
 if (excludeFixationViolations) {
-  datWithFixatnViolations = dat
   datNoFixatnViolatn = dat[ dat$Exclusion!=1, ] #sessions not eyetracked are -999
   dat<-datNoFixatnViolatn
 }
