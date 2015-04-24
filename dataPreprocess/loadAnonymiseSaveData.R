@@ -1,9 +1,9 @@
-#expecting current working directory to be top level of this git-indexed project
+#expecting current working directory to be top level of this git-indexed project, and this file to be in top level - dataPreprocess/
 setwd("/Users/alexh/Documents/attention_tempresltn/multiple object tracking/newTraj/newTraj_repo")
 expFoldersPrefix= "dataRaw/"
-expname = "offCenter"
-expFolders <- c(expname)
+expFolders <- c("offCenter","circleOrSquare_twoTargets")
 expFoldersPostfix = "" #"/rawdata"
+destinationName = "offCenterAndShape"
 destinatnDir<-"dataAnonymized/" #where the anonymized data will be exported to
 anonymiseData <- TRUE
 
@@ -29,7 +29,11 @@ for (expi in 1:length(expFolders)) {
     for (j in 1:length(files)) { #read in sessions of this subject
     	  file = files[j]
       fname = paste0(thisSubjectDir,"/",file)
-      rawDataLoad=read.table(fname, sep='\t', header=TRUE )
+	  rawDataLoad=tryCatch( 
+      	    		read.table(fname,sep='\t',header=TRUE), 
+      	    		error=function(e) { 
+      	    	   			stop( paste0("ERROR reading the file ",fname," :",e) )
+          		 } )
       rawDataLoad$exp <- expFolders[expi]
       rawDataLoad$file <- file
       #Search for eyetracking file
@@ -144,7 +148,7 @@ rotX <- function(ch,x)
   chartr(old, new, ch)
 }
 if (anonymiseData) {
-  keyFile = paste0(expFoldersPrefix,"anonymisationKey.txt")
+  keyFile = paste0('dataPreprocess/',"anonymisationKey.txt")
   if ( !file.exists(keyFile) ) {
   	stop(paste0('The file ',keyFile, ' does not exist!'))
   }
@@ -156,7 +160,7 @@ if (anonymiseData) {
 table(d$speedRank,d$numObjects,d$numTargets,d$subject)
 
 #Save anonymised data for loading by doAllAnalyses.R
-fname=paste(destinatnDir,expname,sep="")
+fname=paste(destinatnDir,destinationName,sep="")
 save(dat, file = paste(fname,".RData",sep=""))
 write.csv(dat, file = paste(fname,".csv",sep=""))
 print(paste("saved data in ",fname,".RData and ",fname,".csv",sep=""))

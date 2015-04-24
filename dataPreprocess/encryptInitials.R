@@ -1,3 +1,4 @@
+#Not completed and not being used yet
 #http://crypto.stackexchange.com/questions/25144/super-simple-encryption-of-short-strings
 #pseudorandom permutation of 2- or 3-letter initials -> 3-letter pseudonymic initials
 #The space is 26*26*27. There's 27 for the last initial because it has 27 possibilities including non-existence
