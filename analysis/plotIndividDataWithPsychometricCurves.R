@@ -34,7 +34,7 @@ plotIndividDataAndCurves <- function(df,psychometricCurves) {
 
 for ( expThis in sort(unique(dat$exp)) ) {  #draw individual Ss' data, for each experiment
   title<-paste('E',expThis,' individual Ss data',sep='')
-  quartz(title,width=4,height=7)
+  quartz(title,width=6,height=7)
   thisExpDat <- subset(dat,exp==expThis)
   g=ggplot(data= thisExpDat,aes(x=speed,y=correct,color=factor(condName)))
   g=g+stat_summary(fun.y=mean,geom="point", position=position_jitter(w=0.01,h=0.01),alpha=.95)

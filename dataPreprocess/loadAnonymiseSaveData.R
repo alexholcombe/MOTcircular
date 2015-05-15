@@ -88,25 +88,29 @@ for (expi in 1:length(expFolders)) {
             rawData[newCols[n]] <- -999
         }
         if (length(oldColsNotInNew)>0) 
-          print( paste("oldColsNotInNew are", oldColsNotInNew, 'thisSubjectDir=',thisSubjectDir) )
+          print( paste("oldColsNotInNew are", oldColsNotInNew, '. thisSubjectDir=',thisSubjectDir) )
         for (n in length(oldColsNotInNew)) #add old col to new data.frame that doesn't have it
           rawDataThis[oldColsNotInNew[n]] <- -999	
         #Try to merge new data file with already-loaded
         #colnamesNew <- colnames(rawDataThis)
         #colnamesOld <- colnames(rawData)
-		#colnamesNewMsg <- paste(colnamesNew,collapse=",")
+		    #colnamesNewMsg <- paste(colnamesNew,collapse=",")
         #colnamesOldMsg <- paste(colnamesOld,collapse=",")
         #writeLines( paste('colnamesNew=',colnamesNewMsg,'\n colnamesOld=', colnamesOldMsg))
         #writeLines( paste('difference is ', setdiff(colnamesNew,colnamesOld)) )
         tryCatch( rawData<-rbind(rawData,rawDataThis), error=function(e)
         {
-	        colnamesNew <- colnames(rawDataThis)
-	        colnamesOld <- colnames(rawData)
-			colnamesNewMsg <- paste(colnamesNew,collapse=",")
-	        colnamesOldMsg <- paste(colnamesOld,collapse=",")
-	        writeLines( paste('colnamesNew=',colnamesNewMsg,'\n colnamesOld=', colnamesOldMsg))
-	        writeLines( paste('difference is ', setdiff(colnamesNew,colnamesOld)) )        	
-            stop("ERROR merging")
+	        colnamesNewFile <- colnames(rawDataThis)
+	        colnamesOldFiles <- colnames(rawData)
+			    #colnamesNewFileMsg <- paste(colnamesNewFile,collapse=",")
+	        #colnamesOldFilesMsg <- paste(colnamesOldFiles,collapse=",")
+	        #writeLines( paste('colnamesNew=',colnamesNewMsg,'\n colnamesOld=', colnamesOldMsg))
+	        #c( 'New cols: ', setdiff(colnamesNewFile,colnamesOldFiles) )
+	        newCols <- setdiff(colnamesNewFile,colnamesOld)
+	        oldColsNotInNew<- setdiff(colnamesOldFiles,colnamesNew)
+	        writeLines( paste('New cols: ', paste(newCols,collapse=",") ) ) 
+	        writeLines( paste('Old cols not in new file: ', paste(oldColsNotInNew,collapse=",") ) )        
+            stop(paste0("ERROR merging, error reported as ",e))
         } )
       }      
     }		

@@ -4,7 +4,7 @@ setwd(
 "/Users/alexh/Documents/attention_tempresltn/multiple object tracking/newTraj/newTraj_repo/analysis"
 )
 dataDir="../dataAnonymized/"
-expName="offCenter"
+expName="offCenterAndShape"
 anonDataFilename = paste(dataDir,expName,".Rdata",sep="") 
 load(anonDataFilename,verbose=TRUE)  #returns dat
 excludeFixationViolations = FALSE #TRUE
