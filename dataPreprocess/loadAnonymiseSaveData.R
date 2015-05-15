@@ -83,35 +83,52 @@ for (expi in 1:length(expFolders)) {
         newCols <- setdiff( colnames(rawDataThis),prevColNames )
         oldColsNotInNew <- setdiff( prevColNames,colnames(rawDataThis) )
         if (length(newCols) >0) {
-          print( paste("newCols are",newCols))
-          for (n in 1:length(newCols)) #add newCol to old data.frame with dummy value
-            rawData[newCols[n]] <- -999
+          cat( "newCols are:")
+          print( paste(newCols,collapse=','))
+          for (n in 1:length(newCols)) {#add newCol to old data.frame with dummy value
+            newCol = newCols[n]
+            if (is.numeric(rawDataThis[newCol])) 
+              rawData[newCol] <- -999 #dummy value
+            else rawData[newCol] <- NA #dummy value            
+          }
         }
-        if (length(oldColsNotInNew)>0) 
-          print( paste("oldColsNotInNew are", oldColsNotInNew, '. thisSubjectDir=',thisSubjectDir) )
-        for (n in length(oldColsNotInNew)) #add old col to new data.frame that doesn't have it
-          rawDataThis[oldColsNotInNew[n]] <- -999	
+        if (length(oldColsNotInNew) >0)
+          for (n in 1:length(oldColsNotInNew)) { #add old col to new data.frame that doesn't have it
+            if (n==1) {
+              cat("Adding to new data the old columns:")
+              print( paste(oldColsNotInNew,collapse=',') )
+            }
+            oldCol = oldColsNotInNew[n]
+            if (is.numeric(rawData[oldCol])) 
+              rawDataThis[oldCol] <- -999 #dummy value
+            else rawDataThis[oldCol]<- NA #dummy value
+          }
         #Try to merge new data file with already-loaded
-        #colnamesNew <- colnames(rawDataThis)
-        #colnamesOld <- colnames(rawData)
+        colnamesNew <- colnames(rawDataThis)
+        colnamesOld <- colnames(rawData)
 		    #colnamesNewMsg <- paste(colnamesNew,collapse=",")
         #colnamesOldMsg <- paste(colnamesOld,collapse=",")
         #writeLines( paste('colnamesNew=',colnamesNewMsg,'\n colnamesOld=', colnamesOldMsg))
-        #writeLines( paste('difference is ', setdiff(colnamesNew,colnamesOld)) )
-        tryCatch( rawData<-rbind(rawData,rawDataThis), error=function(e)
-        {
-	        colnamesNewFile <- colnames(rawDataThis)
-	        colnamesOldFiles <- colnames(rawData)
-			    #colnamesNewFileMsg <- paste(colnamesNewFile,collapse=",")
-	        #colnamesOldFilesMsg <- paste(colnamesOldFiles,collapse=",")
-	        #writeLines( paste('colnamesNew=',colnamesNewMsg,'\n colnamesOld=', colnamesOldMsg))
-	        #c( 'New cols: ', setdiff(colnamesNewFile,colnamesOldFiles) )
-	        newCols <- setdiff(colnamesNewFile,colnamesOld)
-	        oldColsNotInNew<- setdiff(colnamesOldFiles,colnamesNew)
-	        writeLines( paste('New cols: ', paste(newCols,collapse=",") ) ) 
-	        writeLines( paste('Old cols not in new file: ', paste(oldColsNotInNew,collapse=",") ) )        
-            stop(paste0("ERROR merging, error reported as ",e))
-        } )
+		    if ( length(setdiff(colnamesNew,colnamesOld)) >0 )
+          writeLines( paste('New columns not in old are ', setdiff(colnamesNew,colnamesOld)) )
+        tryCatch( rawData<-rbind(rawData,rawDataThis), #if fail to bind new with old,
+                  error=function(e) { #Give feedback about how the error happened
+                    cat(paste0("Tried to merge but error:",e))
+                    colnamesNewFile <- colnames(rawDataThis)
+                    colnamesOldFiles <- colnames(rawData)
+                    #colnamesNewFileMsg <- paste(colnamesNewFile,collapse=",")
+                    #colnamesOldFilesMsg <- paste(colnamesOldFiles,collapse=",")
+                    #writeLines( paste('colnamesNew=',colnamesNewMsg,'\n colnamesOld=', colnamesOldMsg))
+                    #c( 'New cols: ', setdiff(colnamesNewFile,colnamesOldFiles) )
+                    newCols <- setdiff(colnamesNewFile,colnamesOld)
+                    oldColsNotInNew<- setdiff(colnamesOldFiles,colnamesNew)
+                    if (length(newCols)>0) {
+                      writeLines( paste('New cols not in old: ', paste(newCols,collapse=",") ) ) 
+                    }
+                    writeLines( paste('Old cols not in new file: ', paste(oldColsNotInNew,collapse=",") ) )        
+                    stop(paste0("ERROR merging, error reported as ",e))
+                  } 
+        )
       }      
     }		
   }
