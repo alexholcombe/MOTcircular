@@ -39,7 +39,7 @@ for ( expThis in sort(unique(dat$exp)) ) {  #draw individual Ss' data, for each 
   g=ggplot(data= thisExpDat,aes(x=speed,y=correct,color=factor(condName)))
   g=g+stat_summary(fun.y=mean,geom="point", position=position_jitter(w=0.01,h=0.01),alpha=.95)
   g=g+facet_grid(leftOrRight ~ subject)+theme_bw()
-  g<-g+ coord_cartesian( xlim=c(1.4,2.45), ylim=yLims ) #have to use coord_cartesian here instead of naked ylim()
+  #g<-g+ coord_cartesian( xlim=c(1.0,2.45), ylim=yLims ) #have to use coord_cartesian here instead of naked ylim()
   show(g)
   #draw individual psychometric functions, for only one experiment  
   thisPsychometrics <- subset(psychometrics,exp==expThis)

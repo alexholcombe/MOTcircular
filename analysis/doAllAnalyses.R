@@ -13,12 +13,8 @@ if (excludeFixationViolations) {
   datNoFixatnViolatn = dat[ dat$Exclusion!=1, ] #sessions not eyetracked are -999
   dat<-datNoFixatnViolatn
 }
-offCenter = dat
 iv= 'speed'
 #need to add offsetXYeachRing to factors analysed
-factorsForBreakdown = c('exp','offsetXYring0','leftOrRight') #needed by analyzeMakeReadyForPlot to know
-#how specific to break down the data before fitting
-source('analyzeMakeReadyForPlot.R') #returns fitParms, psychometrics, and function calcPctCorrThisSpeed
 assignCondName <- function(df) {
   df$condName='nothing'
   whichSquareExp = df$exp=='circleOrSquare_twoTargets'
@@ -32,14 +28,18 @@ assignCondName <- function(df) {
   return (df)
 }
 dat<-assignCondName(dat)
+table(dat$exp,dat$condName)
+factorsForBreakdown = c('exp','condName','leftOrRight') #needed by analyzeMakeReadyForPlot to know
+#how specific to break down the data before fitting
+source('analyzeMakeReadyForPlot.R') #returns fitParms, psychometrics, and function calcPctCorrThisSpeed
+table(psychometrics$condName)
 psychometrics<-assignCondName(psychometrics)
-table(dat$condition,dat$condName)
+source('plotIndividDataWithPsychometricCurves.R')
 table(psychometrics$condName) #print proportion trials excluded each condition
 if (!excludeFixationViolations) {
   eyeTracked<- dat[dat$Exclusion!=-999,]
   ddply(eyeTracked,.(subject,condName),summarize, pctExcluded = mean(Exclusion))
 }
-source('plotIndividDataWithPsychometricCurves.R')
 
 source("extractThreshesAndPlot.R") #provides threshes, thresh plots
 

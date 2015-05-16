@@ -3,7 +3,7 @@ Specific experiments
 
 ## Experiment: Concentric vs. peripheral
 Is the speed limit the same in the periphery, when not rotating about fixation?
-- See [theory](analysis/theory.md) for uncrowded stimulus choice and prediction
+- See [theory](theory.md) for uncrowded stimulus choice and prediction
 - To eyetrack or not to eyetrack? Could include the flicker-revealer and appeal to past recordings of these participants.. Or ask Chris to show me his code, pay someone to go through the trials and find those that must be excluded.
 - Use 2 targets, because less cognitive contamination, with different eccentricities so can have an exactly-comparable condition at fixation.
 - Downside of 2 targets is that when concentric you can occasionally group them. That will make concentric look better than it should.
