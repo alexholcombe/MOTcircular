@@ -21,6 +21,8 @@ factorsForBreakdown = c('exp','offsetXYring0','leftOrRight') #needed by analyzeM
 source('analyzeMakeReadyForPlot.R') #returns fitParms, psychometrics, and function calcPctCorrThisSpeed
 assignCondName <- function(df) {
   df$condName='nothing'
+  whichSquareExp = df$exp=='circleOrSquare_twoTargets'
+  df$condName[ whichSquareExp ] = df$basicShape[whichSquareExp]
   df$condName[ df$offsetXYring0=='[-10, 0]' ] = "far"
   df$condName[ df$offsetXYring0=='[10, 0]' ] = "far"
   df$condName[ df$offsetXYring0=='[-5, 0]' ] = "near"
