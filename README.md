@@ -9,4 +9,6 @@ Issues
 
 ## Subsidiary experiments
 
-[a relative link](experiment_notes/rps_limit/centered_vs_peripheral.md)
+- [Centered vs. peripheral](experiment_notes/rps_limit/centered_vs_peripheral.md)
+
+- [Square traj, modulations](experiment_notes/rps_limit/square_and_modulations.md)
