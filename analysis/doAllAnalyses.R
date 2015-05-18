@@ -29,12 +29,30 @@ assignCondName <- function(df) {
 }
 dat<-assignCondName(dat)
 table(dat$exp,dat$condName)
-factorsForBreakdown = c('exp','condName','leftOrRight') #needed by analyzeMakeReadyForPlot to know
+
+factorsEachExpForBreakdown<- list(  list('exp','condName','leftOrRight'),
+                                    list('exp','condName','ringToQuery') ) 
+factorsEachExpForBreakdown<- list(  list(colorF='exp',colF='condName',rowF='leftOrRight'),
+                                    list(colorF='exp',colF='condName',rowF='ringToQuery') ) 
+factorsEachExpForBreakdown[[1]][1]
 #how specific to break down the data before fitting
 source('analyzeMakeReadyForPlot.R') #returns fitParms, psychometrics, and function calcPctCorrThisSpeed
 table(psychometrics$condName)
-psychometrics<-assignCondName(psychometrics)
 source('plotIndividDataWithPsychometricCurves.R')
+expThis = "offCenter" #"circleOrSquare_twoTargets"
+datThis<-subset(dat,exp==expThis)
+psychoThis<-subset(psychometrics,exp==expThis)
+plotIndividDataAndCurves(expThis,datThis,psychoThis,'condName','subject','leftOrRight') 
+colorF='condName'
+print( table(datThis$colorF,datThis$colF,datThis$rowF) ) #debug
+
+
+
+for ( expThis in sort(unique(dat$exp)) ) {  #draw individual Ss' data, for each experiment
+  factorsThisExp = factorsForBreakdown[exp]
+  plotIndividDataAndCurves(toString(expThis),df,psychometricCurves,colorF,colF,rowF) 
+  
+  
 table(psychometrics$condName) #print proportion trials excluded each condition
 if (!excludeFixationViolations) {
   eyeTracked<- dat[dat$Exclusion!=-999,]

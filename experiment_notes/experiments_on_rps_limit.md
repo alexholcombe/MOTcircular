@@ -26,6 +26,7 @@ Seem to need more cuingTime because gotta get oneself stably fixating even when 
 - Adding modulations to the trajectory has little effect, in other words rotational speed is the determinant.  
 - First, blast the annoying speed limit people with a square trajectory. This finally helps answer those interested in linear speed limit
 - Compare square trajectory to circular at two eccentricities. Got some data for me with 1 target, but then remembered I'd like to use two targets whenever on center to avoid being blur-limited.
+- BREAKDOWN BY ringToQuery
 
 Results
 - Critical issue is speed limit of smaller-radius one when not concentric. Smaller one is always ringToQuery=0. Speed limit for me is lower by about 0.4rps.
