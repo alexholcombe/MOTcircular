@@ -7,10 +7,13 @@ if (!("speed" %in% colnames(psychometrics))) { #psychometrics must have been fit
 }
 
 #function, not used, that plots the psychometric functions for a dataset / experiment /criterion,
-plotIndividDataAndCurves <- function(expName,df,psychometricCurves,colorF,colF,rowF) {
+plotIndividDataAndCurves <- function(expName,df,psychometricCurves,factors) {
   #draw individual psychometric functions for individual experiment
   #the F's, like colorF are factors to break down data by (expects psychometric functions to have these factors)
-  #colF and rowF should be '.'
+  #factors is named structure, like list. If no factor, should be ""
+  colorF<-factors$colorF
+  colF<-factors$colF
+  rowF<-factors$rowF
   title<-paste0(expName,' individual Ss data')
   quartz(title,width=6,height=7)
   #print( table(df[colorF],df[colF],df[rowF) ) #debug

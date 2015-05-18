@@ -27,7 +27,9 @@ if (length(factorsForBreakdown)>1)
   facetRows = factorsForBreakdown[2]
 faceting=paste('~',facetCols,sep='')
 factorsPlusSubject<-factorsForBreakdown
-factorsPlusSubject[ length(factorsForBreakdown)+1 ]<- "subject"
+if (!"subject" %in% factorsForBreakdown) {
+  factorsPlusSubject[ length(factorsForBreakdown)+1 ]<- "subject"
+}
 
 #fit psychometric functions to data ########################################
 initialMethod<-"brglm.fit"  # "glmCustomlink" #  
