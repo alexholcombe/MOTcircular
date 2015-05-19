@@ -9,6 +9,7 @@ Circular speed the limiting factor?
 
 Results
 - Critical issue is speed limit of smaller-radius one when not concentric. Smaller one is always ringToQuery=0. Speed limit for me is lower by about 0.4rps.
+- Need to run 3 more participants
 
 
 ## Experiment: Modulate radius

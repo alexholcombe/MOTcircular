@@ -1,5 +1,10 @@
 #expecting current working directory to be top level of this git-indexed project, and this file to be in top level - dataPreprocess/
+#Eyetracking
+#Looks for eyetracking file, expects it in wide format (one row for each trial)     
+#Expects eyetracking file name to be paste0(withoutSuffix,"Eyetracking.txt")
+#Expects in the eyetracking file that there should be a column called Exclusion
 setwd("/Users/alexh/Documents/attention_tempresltn/multiple object tracking/newTraj/newTraj_repo")
+
 expFoldersPrefix= "dataRaw/"
 expFolders <- c("offCenter","circleOrSquare_twoTargets")
 expFoldersPostfix = "" #"/rawdata"

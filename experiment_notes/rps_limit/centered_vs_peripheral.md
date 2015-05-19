@@ -24,5 +24,6 @@ Seem to need more cuingTime because gotta get oneself stably fixating even when 
 - Fajou too fast
 - Need a 4th participant
 
+Then, point made that neurons-per-unit time theory is false.
 
 
