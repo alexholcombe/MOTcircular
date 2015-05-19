@@ -3,7 +3,7 @@ Experiment: Concentric vs. peripheral
 
 Is the speed limit the same in the periphery, when not rotating about fixation?
 - See [theory](theory.md) for uncrowded stimulus choice and prediction
-- To eyetrack or not to eyetrack? Could include the flicker-revealer and appeal to past recordings of these participants.. Or ask Chris to show me his code, pay someone to go through the trials and find those that must be excluded.
+- Eyetracked, thanks to Chris, him and L
 - Used 2 targets at first but not a good idea
 
 - We know the speed limit can't be a blur-limited limit because temporal blurring length is proportional to linear speed, not rps. So in periphery, looks really blurred yet speed limit doesn't go down much. (Ultimately temporal blurring predicts a tf limit but already shown that doesn't hit until 7 Hz, far faster than 2 rps).
@@ -23,6 +23,7 @@ Seem to need more cuingTime because gotta get oneself stably fixating even when 
 ### Results
 - Fajou too fast
 - Need a 4th participant
+- get Honours' friend
 
 Then, point made that neurons-per-unit time theory is false.
 

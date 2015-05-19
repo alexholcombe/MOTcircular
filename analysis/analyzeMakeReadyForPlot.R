@@ -1,7 +1,10 @@
-#expects dat, iv, factorsForBreakdown
-if (!exists('factorsForBreakdown'))
-{ cat('Need factorsForBreakdown variable. Tells me how to break down data for fitting. I will add subject') }
-#factorsForBreakdown = c('exp','offsetXYring0','leftOrRight')
+#expects dat, iv, factorsForBreakdownForAnalysis
+if (!exists('factorsForBreakdownForAnalysis'))
+{ cat('Need factorsForBreakdownForAnalysis variable. Tells me how to break down data for fitting. I will add subject') }
+#factorsForBreakdownForAnalysis = c('exp','offsetXYring0','leftOrRight')
+factorsForBreakdown<- unname(factorsForBreakdownForAnalysis) #get rid of names just in case, because ggplot will use names
+#if it has them
+factorsForBreakdown<-unlist(factorsForBreakdown) #ggplot doesn't like lists
 
 source('helpers/psychometricHelpRobust6.R') #load my custom version of binomfit_lims
 

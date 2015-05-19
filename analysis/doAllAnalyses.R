@@ -8,6 +8,10 @@ expName="offCenterAndShape"
 anonDataFilename = paste(dataDir,expName,".Rdata",sep="") 
 load(anonDataFilename,verbose=TRUE)  #returns dat
 excludeFixationViolations = FALSE #TRUE
+tryQuickpsy = TRUE
+if (tryQuickpsy) {
+  library('quickpsy')
+}
 datWithFixatnViolations = dat
 if (excludeFixationViolations) {
   datNoFixatnViolatn = dat[ dat$Exclusion!=1, ] #sessions not eyetracked are -999
@@ -32,16 +36,22 @@ table(dat$exp,dat$condName)
 
 factorsEachExpForBreakdown<- list(  list('exp','condName','leftOrRight'),
                                     list('exp','condName','ringToQuery') ) 
-factorsEachExpForBreakdown<- list(  list(colorF='exp',colF='condName',rowF='leftOrRight'),
-                                    list(colorF='exp',colF='condName',rowF='ringToQuery') ) 
+factorsEachExpForBreakdown<- list(  list(colorF='condName',colF='subject',rowF='leftOrRight'),
+                                    list(colorF='condName',colF='subject',rowF='ringToQuery') ) 
 factorsEachExpForBreakdown[[1]][1]
 #how specific to break down the data before fitting
+factorsForBreakdownForAnalysis<- factorsEachExpForBreakdown[[1]]
+factorsForBreakdownForAnalysis[ length(factorsForBreakdownForAnalysis)+1 ]<- "exp"
+#fit <- quickpsy(dat, phase, resp, grouping=.(ecc, subject)) 
 source('analyzeMakeReadyForPlot.R') #returns fitParms, psychometrics, and function calcPctCorrThisSpeed
 table(psychometrics$condName)
 source('plotIndividDataWithPsychometricCurves.R')
 expThis = "offCenter" #"circleOrSquare_twoTargets"
 datThis<-subset(dat,exp==expThis)
-psychoThis<-subset(psychometrics,exp==expThis)
+psychoThis<-psychometrics #subset(psychometrics,exp==expThis)
+plotIndividDataAndCurves(expThis,datThis,psychoThis,factorsEachExpForBreakdown[[1]]) 
+
+
 plotIndividDataAndCurves(expThis,datThis,psychoThis,'condName','subject','leftOrRight') 
 colorF='condName'
 print( table(datThis$colorF,datThis$colF,datThis$rowF) ) #debug
