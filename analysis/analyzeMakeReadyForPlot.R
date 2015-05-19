@@ -1,4 +1,4 @@
-#expects dat, iv, factorsForBreakdownForAnalysis
+#expects datAnalyze, iv, factorsForBreakdownForAnalysis
 if (!exists('factorsForBreakdownForAnalysis'))
 { cat('Need factorsForBreakdownForAnalysis variable. Tells me how to break down data for fitting. I will add subject') }
 #factorsForBreakdownForAnalysis = c('exp','offsetXYring0','leftOrRight')
@@ -45,10 +45,10 @@ getFitParmsPrintProgress <- function(df) {  #So I can see which fits yielded a w
   #print( df[1,factorsPlusSubject] ) #one-line commmand, but breaks across lines
   return( getFitParms(df) )
 }
-dat$subject <- factor(dat$subject)
+datAnalyze$subject <- factor(datAnalyze$subject)
 
 #tempDat<- subset(dat,numObjects==2 & numTargets==1 & subject=="AH" ) #Does this well now, using penalized.deviance to compare across lapse rates
-fitParms <- ddply(dat, factorsPlusSubject, getFitParmsPrintProgress)
+fitParms <- ddply(datAnalyze, factorsPlusSubject, getFitParmsPrintProgress)
 #To-do. Change psychometrics myCurve to accommodate rescaling based on method
 #       Stop setting global variables
 #     Figure out way to pass method thgough to binomfit_limsAlex
@@ -73,7 +73,7 @@ calcMeans<-function(df) {
 }  
 factorsPlusSubjectAndIv <- factorsPlusSubject
 factorsPlusSubjectAndIv[ length(factorsPlusSubjectAndIv)+1 ] <- iv
-datMeans<- ddply(dat,factorsPlusSubjectAndIv,calcMeans)
+datMeans<- ddply(datAnalyze,factorsPlusSubjectAndIv,calcMeans)
 
 calcPctCorrThisIvVal <- function(df,iv,val) {
   #Take dataframe with fitted psychometric function, 

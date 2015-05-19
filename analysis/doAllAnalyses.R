@@ -33,35 +33,45 @@ assignCondName <- function(df) {
 }
 dat<-assignCondName(dat)
 table(dat$exp,dat$condName)
-
-factorsEachExpForBreakdown<- list(  list('exp','condName','leftOrRight'),
-                                    list('exp','condName','ringToQuery') ) 
 factorsEachExpForBreakdown<- list(  list(colorF='condName',colF='subject',rowF='leftOrRight'),
                                     list(colorF='condName',colF='subject',rowF='ringToQuery') ) 
-factorsEachExpForBreakdown[[1]][1]
 #how specific to break down the data before fitting
-factorsForBreakdownForAnalysis<- factorsEachExpForBreakdown[[1]]
-factorsForBreakdownForAnalysis[ length(factorsForBreakdownForAnalysis)+1 ]<- "exp"
-#fit <- quickpsy(dat, phase, resp, grouping=.(ecc, subject)) 
+expThis = "offCenter" #"circleOrSquare_twoTargets"
+factorsForBreakdownForAnalysis <- factorsEachExpForBreakdown[[1]]
+datThis<-subset(dat,exp==expThis)
+datAnalyze<-datThis
+#factorsForBreakdownForAnalysis[ length(factorsForBreakdownForAnalysis)+1 ]<- "exp"
 source('analyzeMakeReadyForPlot.R') #returns fitParms, psychometrics, and function calcPctCorrThisSpeed
 table(psychometrics$condName)
 source('plotIndividDataWithPsychometricCurves.R')
-expThis = "offCenter" #"circleOrSquare_twoTargets"
+plotIndividDataAndCurves(expThis,datThis,psychometrics,factorsEachExpForBreakdown[[1]]) 
+if (tryQuickpsy) {
+  datDani<-datThis; datDani$speed = -1*datDani$speed
+  fit <- quickpsy(datDani, speed, correct, grouping=.(condName,subject,ringToQuery), bootstrap='none',
+                  xmin=-4,xmax=-1, guess=0.5) #doesn't work with these data, thresholds very close to zero
+  plot1 <- plotcurves(fit)
+  quartz(); show(plot1)
+}
+
+expThis = "circleOrSquare_twoTargets"
 datThis<-subset(dat,exp==expThis)
-psychoThis<-psychometrics #subset(psychometrics,exp==expThis)
-plotIndividDataAndCurves(expThis,datThis,psychoThis,factorsEachExpForBreakdown[[1]]) 
+factorsForBreakdownForAnalysis <- factorsEachExpForBreakdown[[2]]
+datAnalyze<-datThis
+source('analyzeMakeReadyForPlot.R') #returns fitParms, psychometrics, and function calcPctCorrThisSpeed
+plotIndividDataAndCurves(expThis,datThis,psychometrics,factorsEachExpForBreakdown[[2]],xmin=1,xmax=2.5) 
 
+if (tryQuickpsy) {
+  datDani<-datThis; datDani$speed = -1*datDani$speed
+  fit <- quickpsy(datDani, speed, correct, grouping=.(condName,subject,ringToQuery), bootstrap='none',
+                  xmin=-2.5,xmax=-1, guess=0.5) #doesn't work with these data, thresholds very close to zero
+  plot1 <- plotcurves(fit)
+  quartz(); show(plot1)
+}
 
-plotIndividDataAndCurves(expThis,datThis,psychoThis,'condName','subject','leftOrRight') 
-colorF='condName'
-print( table(datThis$colorF,datThis$colF,datThis$rowF) ) #debug
-
-
-
-for ( expThis in sort(unique(dat$exp)) ) {  #draw individual Ss' data, for each experiment
-  factorsThisExp = factorsForBreakdown[exp]
-  plotIndividDataAndCurves(toString(expThis),df,psychometricCurves,colorF,colF,rowF) 
-  
+# for ( expThis in sort(unique(dat$exp)) ) {  #draw individual Ss' data, for each experiment
+#   factorsThisExp = factorsForBreakdown[exp]
+#   plotIndividDataAndCurves(toString(expThis),df,psychometricCurves,colorF,colF,rowF) 
+#   
   
 table(psychometrics$condName) #print proportion trials excluded each condition
 if (!excludeFixationViolations) {

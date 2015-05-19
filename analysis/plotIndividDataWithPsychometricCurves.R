@@ -7,7 +7,7 @@ if (!("speed" %in% colnames(psychometrics))) { #psychometrics must have been fit
 }
 
 #function, not used, that plots the psychometric functions for a dataset / experiment /criterion,
-plotIndividDataAndCurves <- function(expName,df,psychometricCurves,factors) {
+plotIndividDataAndCurves <- function(expName,df,psychometricCurves,factors,xmin=NULL,xmax=NULL) {
   #draw individual psychometric functions for individual experiment
   #the F's, like colorF are factors to break down data by (expects psychometric functions to have these factors)
   #factors is named structure, like list. If no factor, should be ""
@@ -32,6 +32,14 @@ plotIndividDataAndCurves <- function(expName,df,psychometricCurves,factors) {
   g=g+geom_line(data=psychometricCurves)
   g=g+geom_hline(mapping=aes(yintercept=chanceRate),lty=2)  #draw horizontal line for chance performance
   g=g+xlab('Speed (rps)')+ylab('Proportion Correct')
+  g<<-g
+  xlims= ggplot_build(g)$panel$ranges[[1]]$x.range #http://stackoverflow.com/questions/7705345/how-can-i-extract-plot-axes-ranges-for-a-ggplot2-object
+  if (!is.null(xmin))
+    xlims[1]<-xmin
+  if (!is.null(xmax))
+    xlims[2]<-xmax
+  g<-g+ coord_cartesian( xlim=xlims)#have to use coord_cartesian here instead of naked ylim()  
+  
   showNumPts=TRUE
   if (showNumPts) {#add count of data points per graph. http://stackoverflow.com/questions/13239843/annotate-ggplot2-facets-with-number-of-observations-per-facet?rq=1
     breakDownBy<- c(colF,rowF)
