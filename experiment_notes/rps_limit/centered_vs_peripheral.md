@@ -23,6 +23,8 @@ Seem to need more cuingTime because gotta get oneself stably fixating even when 
 ### Results
 - Fajou too fast
 
+When results finished, point been made that neurons-per-unit time theory is false.
+
 ### To-do
 
 - Still need to figure out screwed-up resolution thing on Alex's computer (new problem). SwitchResX resolutions not showing up, or after selection in SwitchResX, resolution picked up by PsychoPy seems different than what it is.
@@ -30,6 +32,5 @@ Seem to need more cuingTime because gotta get oneself stably fixating even when 
 - get Honours' friend
 
 
-Then, point made that neurons-per-unit time theory is false.
 
 

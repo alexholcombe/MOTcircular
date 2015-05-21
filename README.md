@@ -4,7 +4,7 @@ This program is super-complicated, legacy of many different papers using trackin
 
 In the long term, want to set up exchange of objects among rings. Necessary to conduct an identity-tracking experiment. Can also push harder on speed limit that way.
 
-Issues
+### Issues
 -Improve anonymisation algorithm
 
 ## Subsidiary experiments
