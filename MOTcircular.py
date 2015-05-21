@@ -93,7 +93,7 @@ offsets = np.array([[0,0],[-5,0],[-10,0]])
 respRadius=radii[0] #deg
 refreshRate= 160 *1.0;  #160 #set to the framerate of the monitor
 useClock = True #as opposed to using frame count, which assumes no frames are ever missed
-fullscr=1; scrn=0
+fullscr=1; scrn=1
 # create a dialog from dictionary 
 infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':True, 'Screen to use':scrn, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': refreshRate }
 OK = gui.DlgFromDict(dictionary=infoFirst, 
@@ -151,7 +151,7 @@ monitorwidth = 38.5 #28.5 #monitor width in centimeters
 viewdist = 57.; #cm
 pixelperdegree = widthPix/ (atan(monitorwidth/viewdist) /np.pi*180)
 bgColor = [-1,-1,-1] #black background
-monitorname = 'mitsubishi' #in psychopy Monitors Center
+monitorname = 'testMonitor' # 'mitsubishi' #in psychopy Monitors Center
 if exportImages:
     fullscr=0; scrn=0
     widthPix = 600; heightPix = 450
@@ -165,13 +165,13 @@ if demo:
 
 mon = monitors.Monitor(monitorname,width=monitorwidth, distance=viewdist)#fetch the most recent calib for this monitor
 mon.setSizePix( (widthPix,heightPix) )
-def openMyStimWindow(): #make it a function because have to do it several times, want to be sure is identical each time
-    myWin = visual.Window(monitor=mon,size=(widthPix,heightPix),allowGUI=allowGUI,units=units,color=bgColor,colorSpace='rgb',fullscr=fullscr,screen=scrn,waitBlanking=waitBlank) #Holcombe lab monitor
+def openMyStimWindow(monitorSpec): #make it a function because have to do it several times, want to be sure is identical each time
+    myWin = visual.Window(monitor=monitorSpec,size=(widthPix,heightPix),allowGUI=allowGUI,units=units,color=bgColor,colorSpace='rgb',fullscr=fullscr,screen=scrn,waitBlanking=waitBlank) #Holcombe lab monitor
     if myWin is None:
         print('ERROR: Failed to open window in openMyStimWindow!')
         core.quit()
     return myWin
-myWin = openMyStimWindow()
+myWin = openMyStimWindow(mon)
 myMouse = event.Mouse(visible = 'true',win=myWin)
 myWin.setRecordFrameIntervals(False)
 
@@ -219,7 +219,7 @@ if refreshRateWrong:
     myDlg.addText(refreshMsg2, color='Red')
 msgWrongResolution = ''
 if checkRefreshEtc and (not demo) and (myWinRes != [widthPix,heightPix]).any():
-    msgWrongResolution = 'Screen apparently NOT the desired resolution of '+ str(widthPix)+'x'+str(heightPix)+ ' pixels!!'
+    msgWrongResolution = 'Instead of desired resolution of '+ str(widthPix)+'x'+str(heightPix)+ ' pixels, screen apparently '+ str(myWinRes[0])+ 'x'+ str(myWinRes[1])
     myDlg.addText(msgWrongResolution, color='Red')
     print(msgWrongResolution)
 myDlg.addText('Note: to abort press ESC at a trials response screen', color=[-1.,1.,-1.]) # color='DimGrey') color names stopped working along the way, for unknown reason
@@ -266,7 +266,7 @@ print('longFrameLimit=',longFrameLimit,' Recording trials where one or more inte
 if msgWrongResolution != '':
     logging.error(msgWrongResolution)
 
-myWin = openMyStimWindow()
+myWin = openMyStimWindow(mon)
 myMouse = event.Mouse(visible = 'true',win=myWin)
 runInfo = psychopy.info.RunTimeInfo(
         win=myWin,    ## a psychopy.visual.Window() instance; None = default temp window used; False = no win, no win.flips()
@@ -277,7 +277,9 @@ runInfo = psychopy.info.RunTimeInfo(
 print('second window opening runInfo mean ms=',runInfo["windowRefreshTimeAvg_ms"],file=logF)
 print('second window opening runInfo mean ms=',runInfo["windowRefreshTimeAvg_ms"])
 logging.info(runInfo)
-
+logging.info('gammaGrid='+str(mon.getGammaGrid()))
+logging.info('linearizeMethod='+str(mon.getLinearizeMethod()))
+    
 gaussian = visual.PatchStim(myWin, tex='none',mask='gauss',colorSpace='rgb',size=ballStdDev,autoLog=autoLogging)
 gaussian2 = visual.PatchStim(myWin, tex='none',mask='gauss',colorSpace='rgb',size=ballStdDev,autoLog=autoLogging)
 optionChosenCircle = visual.Circle(myWin, radius=mouseChoiceArea, edges=32, fillColorSpace='rgb',fillColor = (1,0,1),autoLog=autoLogging) #to outline chosen options

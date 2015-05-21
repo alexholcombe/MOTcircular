@@ -47,19 +47,28 @@ source('plotIndividDataWithPsychometricCurves.R')
 plotIndividDataAndCurves(expThis,datThis,psychometrics,factorsEachExpForBreakdown[[1]]) 
 if (tryQuickpsy) {
   datDani<-datThis; datDani$speed = -1*datDani$speed
-  fit <- quickpsy(datDani, speed, correct, grouping=.(condName,subject,ringToQuery), bootstrap='none',
-                  xmin=-4,xmax=-1, guess=0.5) #doesn't work with these data, thresholds very close to zero
+  factors= as.character(factorsEachExpForBreakdown[[1]])
+  factors = c("condName","subject","leftOrRight")
+  fit <- quickpsy(datDani, speed, correct, grouping=c("condName","subject","leftOrRight"), bootstrap='none',
+                  xmin=-4,xmax=-1, guess=0.5) #WORKS
+  fit <- quickpsy(datDani, speed, correct, grouping=factors, bootstrap='none',
+                  xmin=-4,xmax=-1, guess=0.5) #DOESNT WORK. Only uses first element
+  fit <- quickpsy(datDani, speed, correct, grouping=factors, bootstrap='none',
+                  xmin=-4,xmax=-1, guess=0.5) #seems to be no way to use a variable for the grouping
+#  fit <- quickpsy(datDani, speed, correct, grouping=c(factors), bootstrap='none',
+#                  xmin=-4,xmax=-1, guess=0.5) 
+
   plot1 <- plotcurves(fit)
+  plot1<-plot1+coord_cartesian(xlim=c(-4,-1))
   quartz(); show(plot1)
 }
-
-expThis = "circleOrSquare_twoTargets"
+########
+expThis = "circleOrSquare_twoTargets" ###################
 datThis<-subset(dat,exp==expThis)
 factorsForBreakdownForAnalysis <- factorsEachExpForBreakdown[[2]]
 datAnalyze<-datThis
 source('analyzeMakeReadyForPlot.R') #returns fitParms, psychometrics, and function calcPctCorrThisSpeed
 plotIndividDataAndCurves(expThis,datThis,psychometrics,factorsEachExpForBreakdown[[2]],xmin=1,xmax=2.5) 
-
 if (tryQuickpsy) {
   datDani<-datThis; datDani$speed = -1*datDani$speed
   fit <- quickpsy(datDani, speed, correct, grouping=.(condName,subject,ringToQuery), bootstrap='none',
@@ -68,10 +77,6 @@ if (tryQuickpsy) {
   quartz(); show(plot1)
 }
 
-# for ( expThis in sort(unique(dat$exp)) ) {  #draw individual Ss' data, for each experiment
-#   factorsThisExp = factorsForBreakdown[exp]
-#   plotIndividDataAndCurves(toString(expThis),df,psychometricCurves,colorF,colF,rowF) 
-#   
   
 table(psychometrics$condName) #print proportion trials excluded each condition
 if (!excludeFixationViolations) {
