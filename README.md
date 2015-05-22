@@ -9,6 +9,6 @@ In the long term, want to set up exchange of objects among rings. Necessary to c
 
 ## Subsidiary experiments
 
-- [Centered vs. peripheral](experiment_notes/rps_limit/centered_vs_peripheral.md)
+- [Centered vs. peripheral](experiment_specific/rps_limit/centered_vs_peripheral.md)
 
-- [Square traj, modulations](experiment_notes/rps_limit/square_and_modulations.md)
+- [Square traj, modulations](experiment_specific/rps_limit/square_and_modulations.md)

@@ -1,5 +1,6 @@
 from __future__ import print_function
 __author__ = """Alex "O." Holcombe, Wei-Ying Chen""" ## double-quotes will be silently removed, single quotes will be left, eg, O'Connor
+import helpersAOH
 from psychopy import *
 import psychopy.info
 from psychopy import sound, monitors, logging
@@ -9,7 +10,7 @@ from copy import deepcopy
 from math import atan, pi, cos, sin, sqrt, ceil
 import time, sys, platform, os, StringIO, gc
 from EyelinkEyetrackerForPsychopySUPA3 import EyeLinkCoreGraphicsPsychopy, Tracker_EyeLink #Chris Fajou integration
-from helpersAOH import accelerateComputer, openMyStimWindow, calcCondsPerNumTargets, LCM, gcd
+from helpersAOH import accelerateComputer, openMyStimWindow
 eyetracking = False
 
 quitFinder = True
@@ -255,37 +256,16 @@ NextRemindCountText = visual.TextStim(myWin,pos=(.1, -.5),colorSpace='rgb',color
 
 stimList = []
 # temporalfrequency limit test
-numObjsInRing = [2]
-speedsEachNumObjs =  [ [1.3, 1.5, 1.7] ]     #dont want to go faster than 2 because of blur problem
-numTargets = np.array([2])  # np.array([1,2,3])
-leastCommonMultipleSubsets = calcCondsPerNumTargets(numRings,numTargets)
-leastCommonMultipleTargetNums = LCM( numTargets )  #have to use this to choose whichToQuery. For explanation see newTrajectoryEventuallyForIdentityTracking.oo3
-#print('leastCommonMultipleSubsets=',leastCommonMultipleSubsets)
-                
+numObjsInRings = [[1,8]] #First entry in each sub-list is num cues in the cue ring. Second entry is num objects in the objects ring
+speeds =  [ 1.3, 1.5, 1.7 ]     #dont want to go faster than 2 because of blur problem
+#Set up the factorial design (list of all conditions)
 for numObjs in numObjsInRing: #set up experiment design
-    idx = numObjsInRing.index(numObjs)
-    speeds= speedsEachNumObjs[  idx   ]
     for speed in speeds:
-        ringNums = np.arange(numRings)
-        for nt in numTargets: #  If 3 concentric rings involved, have to consider 3 choose 2, 3 choose 1, have to have as many conditions as the maximum
-          subsetsThis = list(itertools.combinations(ringNums,nt)) #all subsets of length nt from the universe of ringNums
-          numSubsetsThis = len( subsetsThis );   #print('numSubsetsThis=',numSubsetsThis)
-          repsNeeded = leastCommonMultipleSubsets / numSubsetsThis #that's the number of repetitions needed to make up for number of subsets of rings
-          for r in xrange(repsNeeded):  #for nt with largest number of subsets, need no repetitions
-                  for s in subsetsThis:
-                      whichIsTarget = np.ones(numRings)*-999 #-999 is  value meaning no target in that ring. 1 will mean target in ring
-                      for ring in s:
-                         whichIsTarget[ring] = np.random.random_integers(0, numObjs-1, size=1) #1
-                      #print('numTargets=',nt,' whichIsTarget=',whichIsTarget,' and that is one of ',numSubsetsThis,' possibilities and we are doing ',repsNeeded,'repetitions')
-                      for whichToQuery in xrange( leastCommonMultipleTargetNums ):  #for each subset, have to query one. This is dealed out to  the current subset by using modulus. It's assumed that this will result in equal total number of queried rings
-                          whichSubsetEntry = whichToQuery % nt  #e.g. if nt=2 and whichToQuery can be 0,1,or2 then modulus result is 0,1,0. This implies that whichToQuery won't be totally counterbalanced with which subset, which is bad because
-                                          #might give more resources to one that's queried more often. Therefore for whichToQuery need to use least common multiple.
-                          ringToQuery = s[whichSubsetEntry];  #print('ringToQuery=',ringToQuery,'subset=',s)
-                          for basicShape in ['circle','square']:
-                                  for direction in [-1.0,1.0]:  
-                                        stimList.append( {'basicShape':basicShape, 'numObjectsInRing':numObjs,'speed':speed, 'direction':direction,
-                                            'numTargets':nt,'whichIsTarget':whichIsTarget,'ringToQuery':ringToQuery} )
+              for direction in [-1.0,1.0]:  
+                    stimList.append( {'numObjectsInRing':numObjs,'speed':speed, 'direction':direction} )
 #set up record of proportion correct in various conditions
+trials = data.TrialHandler(stimList,trialsPerCondition) #constant stimuli method
+
 trialSpeeds = list() #purely to allow report at end of how many trials got right at each speed
 for s in stimList: trialSpeeds.append( s['speed'] )
 uniqSpeeds = set(trialSpeeds) #reduce speedsUsed list to unique members, unordered set
@@ -295,10 +275,8 @@ numRightWrongEachSpeedOrder = np.zeros([ len(uniqSpeeds), 2 ]); #summary results
 numRightWrongEachSpeedIdent = deepcopy(numRightWrongEachSpeedOrder)
 #end setup of record of proportion correct in various conditions
 
-trials = data.TrialHandler(stimList,trialsPerCondition) #constant stimuli method
-
 timeAndDateStr = time.strftime("%d%b%Y_%H-%M", time.localtime()) 
-logging.info(  str('starting exp with name: "'+'TemporalFrequencyLimit'+'" at '+timeAndDateStr)   )
+logging.info(  str('starting exp with name: "'+'MovingCue'+'" at '+timeAndDateStr)   )
 logF = StringIO.StringIO()  #kludge so I dont have to change all the print >>logF statements
 logging.info(    'numtrials='+ str(trials.nTotal)+' and each trialDur='+str(trialDur)+' refreshRate='+str(refreshRate)      )
 
@@ -416,6 +394,28 @@ def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngl
               blindspotStim.draw()
           return angleIniEachRing,currAngle,isReversed,reversalNumEachRing   
 # #######End of function definition that displays the stimuli!!!! #####################################
+
+def collectResponseKH( expStop): #Kristjansson&Holcombe cuing experiment
+    #draw the possible stimuli
+    #eyeball left, eyeball right, eyeball down, eyeball up
+    ys = np.linspace(-.6,.6,4)
+    offsetsNSEW = np.array([ [0,1], [0,-1], [1,0], [-1,0]])
+    x = 0
+    for i in len(ys): #draw each option for how the iris in the eyeball might have been offset
+        ringKH.setPos([x,ys[i]])
+        ringKH.draw()
+        iris.setPos( np.array([x,y]) + offsetsNSEW[i])
+        iris.draw()
+    respcount =0
+    while respcount <1:
+        for key in event.getKeys():       #check if pressed abort-type key
+              if key in ['escape','q']:
+                  expStop = True
+                  respcount = 1
+              else: #key in [
+                print('key =', key)
+                STOP
+    return responses,responsesAutopilot,respondedEachToken, expStop
 
 showClickableRegions = True
 def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,respRadius,currAngle,expStop ):
