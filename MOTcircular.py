@@ -9,41 +9,8 @@ from copy import deepcopy
 from math import atan, pi, cos, sin, sqrt, ceil
 import time, sys, platform, os, StringIO, gc
 from EyelinkEyetrackerForPsychopySUPA3 import EyeLinkCoreGraphicsPsychopy, Tracker_EyeLink #Chris Fajou integration
+from helpersAOH import accelerateComputer, openMyStimWindow, calcCondsPerNumTargets, LCM, gcd
 eyetracking = False
-
-#BEGIN helper functions from primes.py
-def gcd(a,b): 
-   """Return greatest common divisor using Euclid's Algorithm."""
-   while b:
-        a, b = b, a % b
-   return a
-def lcm(a,b):
-   """Return lowest common multiple."""
-   return (a*b)/gcd(a,b)
-def LCM(terms):
-   "Return lcm of a list of numbers."   
-   return reduce(lambda a,b: lcm(a,b), terms)
-#END helper functions from primes.py
-def calcCondsPerNumTargets(numRings,numTargets):
-    #numRings is number of rings, each of which can have up to one target
-    #numTargets is list or array of numTarget conditions, e.g. 1,2,3 means the experiment includes 1, 2, and 3 targets
-    #Each target can be placed randomly in any of the rings.
-    #Want all possibilities to be covered equally often. That means each target number condition has to include all the combinations
-    #     of places that number of targets can go.
-    #So that some targetNum conditinos don't have more trials than others, have to scale up each targetNum condition to the worst case.
-    #Actually it's worse than that. To make them fit evenly, have to use least common multiple
-    #3 rings choose 2 for targets, 3 rings choose 1 for target, have to have as many conditions as the maximum.
-    #To find maximum, determine length of each.
-    ringNums = np.arange(numRings)
-    numPossibilitiesEach = list()
-    for k in numTargets:
-        numPossibilitiesCouldPutKtargets = len( list(itertools.combinations(ringNums,k)) )
-        #print(numPossibilitiesCouldPutKtargets)
-        numPossibilitiesEach.append(  numPossibilitiesCouldPutKtargets  )
-    m = max( numPossibilitiesEach )  #because the worst case (number of targets) requires this many, have to have this many for all. Actually,
-    leastCommonMultiple = LCM( numPossibilitiesEach )  #to have equal number of trials per numtargets, would have to use this figure for each
-    #print('biggest=',m, ' Least common multiple=', leastCommonMultiple)
-    return leastCommonMultiple
 
 quitFinder = True
 if quitFinder:
@@ -52,24 +19,6 @@ if quitFinder:
     os.system(shellCmd)
 process_priority = 'realtime' # 'normal' 'high' or 'realtime'
 disable_gc = True
-def acceleratePsychopy(slowFast):
-    global process_priority, disable_gc
-    if slowFast:
-        if process_priority == 'normal':
-            pass
-        elif process_priority == 'high':
-            core.rush(True)
-        elif process_priority == 'realtime': # Only makes a diff compared to 'high' on Windows.
-            core.rush(True, realtime = True)
-        else:
-            print('Invalid process priority:',process_priority,"Process running at normal.")
-            process_priority = 'normal'
-        if disable_gc:
-            gc.disable()
-    if slowFast==0: #turn off the speed-up
-        if disable_gc:
-            gc.enable()
-        core.rush(False)
 
 subject='test'#'test'
 autoLogging = False
@@ -91,9 +40,9 @@ radii=[2.5,9.5]   #Need to encode as array for those experiments wherein more th
 offsets = np.array([[0,0],[-5,0],[-10,0]])
 
 respRadius=radii[0] #deg
-refreshRate= 160 *1.0;  #160 #set to the framerate of the monitor
+refreshRate= 60 *1.0;  #160 #set to the framerate of the monitor
 useClock = True #as opposed to using frame count, which assumes no frames are ever missed
-fullscr=1; scrn=1
+fullscr=0; scrn=1
 # create a dialog from dictionary 
 infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':True, 'Screen to use':scrn, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': refreshRate }
 OK = gui.DlgFromDict(dictionary=infoFirst, 
@@ -165,13 +114,7 @@ if demo:
 
 mon = monitors.Monitor(monitorname,width=monitorwidth, distance=viewdist)#fetch the most recent calib for this monitor
 mon.setSizePix( (widthPix,heightPix) )
-def openMyStimWindow(monitorSpec): #make it a function because have to do it several times, want to be sure is identical each time
-    myWin = visual.Window(monitor=monitorSpec,size=(widthPix,heightPix),allowGUI=allowGUI,units=units,color=bgColor,colorSpace='rgb',fullscr=fullscr,screen=scrn,waitBlanking=waitBlank) #Holcombe lab monitor
-    if myWin is None:
-        print('ERROR: Failed to open window in openMyStimWindow!')
-        core.quit()
-    return myWin
-myWin = openMyStimWindow(mon)
+myWin = openMyStimWindow(mon,widthPix,heightPix,bgColor,allowGUI,units,fullscr,scrn,waitBlank)
 myMouse = event.Mouse(visible = 'true',win=myWin)
 myWin.setRecordFrameIntervals(False)
 
@@ -266,7 +209,7 @@ print('longFrameLimit=',longFrameLimit,' Recording trials where one or more inte
 if msgWrongResolution != '':
     logging.error(msgWrongResolution)
 
-myWin = openMyStimWindow(mon)
+myWin = openMyStimWindow(mon,widthPix,heightPix,bgColor,allowGUI,units,fullscr,scrn,waitBlank)
 myMouse = event.Mouse(visible = 'true',win=myWin)
 runInfo = psychopy.info.RunTimeInfo(
         win=myWin,    ## a psychopy.visual.Window() instance; None = default temp window used; False = no win, no win.flips()
@@ -647,7 +590,7 @@ if eyetracking:
     tracker=Tracker_EyeLink(myWin,trialClock,subject,1, 'HV5',(255,255,255),(0,0,0),False,(widthPix,heightPix))
 
 while trialNum < trials.nTotal and expStop==False:
-    acceleratePsychopy(slowFast=1)
+    accelerateComputer(1,process_priority, disable_gc) #speed up
     colorRings=list();preDrawStimToGreasePipeline = list()
     isReversed= list([1]) * numRings #always takes values of -1 or 1
     reversalNumEachRing = list([0]) * numRings
@@ -693,7 +636,7 @@ while trialNum < trials.nTotal and expStop==False:
     if eyetracking:tracker.stopEyeTracking() #CF is amazing!
 
     #end of big stimulus loop
-    acceleratePsychopy(slowFast=0)
+    accelerateComputer(0,process_priority, disable_gc) #turn off stuff that sped everything up
     #check for timing problems
     interframeIntervs = np.diff(ts)*1000 #difference in time between successive frames, in ms
     #print >>logF, 'trialnum=',trialNum, '   interframe intervs were ',around(interframeIntervs,1)
