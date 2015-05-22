@@ -266,12 +266,7 @@ for numObjs in numObjsInRing: #set up experiment design
 #set up record of proportion correct in various conditions
 trials = data.TrialHandler(stimList,trialsPerCondition) #constant stimuli method
 
-trialSpeeds = list() #purely to allow report at end of how many trials got right at each speed
-for s in stimList: trialSpeeds.append( s['speed'] )
-uniqSpeeds = set(trialSpeeds) #reduce speedsUsed list to unique members, unordered set
-uniqSpeeds = sorted( list(uniqSpeeds)  )
-uniqSpeeds = np.array( uniqSpeeds ) 
-numRightWrongEachSpeedOrder = np.zeros([ len(uniqSpeeds), 2 ]); #summary results to print out at end
+numRightWrongEachSpeedOrder = np.zeros([ len(speeds), 2 ]); #summary results to print out at end
 numRightWrongEachSpeedIdent = deepcopy(numRightWrongEachSpeedOrder)
 #end setup of record of proportion correct in various conditions
 
@@ -377,7 +372,7 @@ def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngl
                                 isReversed[numRing] = -1*isReversed[numRing]
                                 reversalNumEachRing[numRing] +=1
                 angleThisObject = angleObject0 + (2*pi)/numObjects*nobject
-                x,y = xyThisFrameThisAngle(thisTrial['basicShape'],radii, numRing,angleThisObject,n,thisTrial['speed'])
+                x,y = xyThisFrameThisAngle('circle',radii, numRing,angleThisObject,n,thisTrial['speed'])
                 x += offsetXYeachRing[numRing][0]
                 y += offsetXYeachRing[numRing][1]
                 if n< ShowTrackCueFrames and nobject==blobToCueEachRing[numRing]: #cue in white  
@@ -548,7 +543,6 @@ print('trialnum\tsubject\tbasicShape\tnumObjects\tspeed\tdirection', end='\t', f
 print('orderCorrect\ttrialDurTotal\tnumTargets', end= '\t', file=dataFile) 
 for i in range(numRings):
     print('whichIsTarget',i,  sep='', end='\t', file=dataFile)
-print('ringToQuery',end='\t',file=dataFile)
 for i in range(numRings):dataFile.write('Direction'+str(i)+'\t')
 for i in range(numRings):dataFile.write('respAdj'+str(i)+'\t')
 for r in range(numRings):
