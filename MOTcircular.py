@@ -259,7 +259,7 @@ logging.console.setLevel(logging.WARNING) #DEBUG means set the console to receiv
 if refreshRateWrong:
     logging.error(refreshMsg1+refreshMsg2)
 else: logging.info(refreshMsg1+refreshMsg2)
-longerThanRefreshTolerance = 0.2
+longerThanRefreshTolerance = 0.27
 longFrameLimit = round(1000./refreshRate*(1.0+longerThanRefreshTolerance),3) # round(1000/refreshRate*1.5,2)
 print('longFrameLimit=',longFrameLimit,' Recording trials where one or more interframe interval exceeded this figure ', file=logF)
 print('longFrameLimit=',longFrameLimit,' Recording trials where one or more interframe interval exceeded this figure ')
