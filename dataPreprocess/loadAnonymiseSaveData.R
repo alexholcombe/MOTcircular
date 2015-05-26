@@ -49,7 +49,8 @@ for (expi in 1:length(expFolders)) {
       eyetrackFileFound = ( length(row) >0 )
       numTrials<- length(rawDataLoad$trialnum)
       msg=''
-      if (eyetrackFileFound) 
+      rawDataThis<- rawDataLoad
+      if (eyetrackFileFound) #load it in and merge with rawDataLoad
       {
       	trackFname = paste0(thisSubjectDir,"/", eyetrackFileNameShouldBe)
       	eyeTrackInfo = tryCatch( 
@@ -67,19 +68,21 @@ for (expi in 1:length(expFolders)) {
       	eyeTrackInfo$Trial <- NULL
       	rawDataWithEyetrack<- merge(rawDataLoad, eyeTrackInfo, by=c("trialnum"))
       	rawDataThis<- rawDataWithEyetrack
-    	  } else { rawDataThis<- rawDataLoad }
+    	  }
      print(paste0("Loaded file ",file,msg))
-
-      #omit last trial is total trials are odd, probably a repeat      
+      #omit first trial is total trials are odd, last probably a repeat. And first trial people often discombobulated      
       msg=""
-      removeLastTrialIfOdd = TRUE
+      removeFirstTrialIfOdd = TRUE
       if (numTrials %% 2 ==1) {
       	msg=paste0(" Odd number of trials (",numTrials,"); was session incomplete, or extra trial at end?")  
-        if (removeLastTrialIfOdd) {
-      	  rawDataThis <- subset(rawDataThis, !trialnum %in% c(length(rawDataThis $trialnum)-1))
-      	  cat("Removed last trial- assuming it's a repeat")
+        if (removeFirstTrialIfOdd) {
+      	  rawDataThis <- subset(rawDataThis, !trialnum %in% c(0))
+      	  cat("Removed first trial- assuming it's a repeat")
         }
       }
+	  if (rawDataThis$file[1] == "WN_26May2015_13-44.txt") { #Will's first session and needed practice,
+	 	rawDataThis <- subset(rawDataThis, trialnum > 7) #so omit first several trials
+	  } 
       print(paste0(", now contains ",length(rawDataThis$trialnum)," trials ",msg))
       if (expi==1 & i==1 & j==1) { #first file of the first subject
         rawData<- rawDataThis

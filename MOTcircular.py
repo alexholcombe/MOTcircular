@@ -589,7 +589,8 @@ while trialNum < trials.nTotal and expStop==False:
     blobsToPreCue=thisTrial['whichIsTarget']
     core.wait(.1)
     myMouse.setVisible(False)      
-    if eyetracking: tracker.startEyeTracking(trialNum,True,widthPix,heightPix) # CF is awesome! - start recording with eyetracker
+    if eyetracking: 
+        tracker.startEyeTracking(trialNum,calibTrial=True,widthPix=widthPix,heightPix=heightPix) # tell eyetracker to start recording. Does this also somehow allow it to draw on the screen for the calibration?
 
     fixatnPeriodFrames = int(   (np.random.rand(1)/2.+0.8)   *refreshRate)  #random interval between x and x+800ms
     for i in range(fixatnPeriodFrames):
@@ -611,7 +612,8 @@ while trialNum < trials.nTotal and expStop==False:
             myWin.flip(clearBuffer=True)
             t=trialClock.getTime()-t0; ts.append(t);
             if n==trialDurFrames-1: event.clearEvents(eventType='mouse');
-    if eyetracking:tracker.stopEyeTracking() #CF is amazing!
+    if eyetracking:
+            tracker.stopEyeTracking() #This seems to work immediately and cause the Eyelink machine to save the EDF file to its own drive
 
     #end of big stimulus loop
     accelerateComputer(0,process_priority, disable_gc) #turn off stuff that sped everything up
@@ -779,7 +781,12 @@ if expStop == True:
     print('user aborted experiment on keypress with trials trialNum=', trialNum)
     
 if eyetracking:
-    tracker.closeConnectionToEyeTracker(eyeMoveFile)
+    eyetrackerFileWaitingText = visual.TextStim(myWin,pos=(-.1,0),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
+    eyetrackerFileWaitingText.setText('Waiting for eyetracking file from Eyelink computer')
+    eyetrackerFileWaitingText.draw()
+    myWin.flip()
+    msg = tracker.closeConnectionToEyeTracker(eyeMoveFile) #this requests the data back and thus can be very time-consuming, like 20 min or more
+    print(msg); print(msg,file=logF) #""Eyelink connection closed successfully" or "Eyelink not available, not closed properly"
 print('finishing at ',timeAndDateStr, file=logF)
 print('%corr order report= ', round( numTrialsOrderCorrect*1.0/trialNum*100., 2)  , '% of ',trialNum,' trials', end=' ')
 print('%corr each speed: ', end=' ')

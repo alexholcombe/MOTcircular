@@ -43,7 +43,7 @@ offsets = np.array([[0,0],[-5,0],[-10,0]])
 respRadius=radii[0] #deg
 refreshRate= 60 *1.0;  #160 #set to the framerate of the monitor
 useClock = True #as opposed to using frame count, which assumes no frames are ever missed
-fullscr=0; scrn=1
+fullscr=0; scrn=0
 # create a dialog from dictionary 
 infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':True, 'Screen to use':scrn, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': refreshRate }
 OK = gui.DlgFromDict(dictionary=infoFirst, 
@@ -66,23 +66,6 @@ trialDur = 3.3
 if demo:trialDur = 5;refreshRate = 60.; 
 tokenChosenEachRing= [-999]*numRings
 rampUpDur=0; rampDownDur=0
-trackingExtraTime=1.0; #giving the person time to attend to the cue (secs). This gets added to trialDur
-trackVariableIntervMax = 0.8
-def maxTrialDur():
-    return( trialDur+trackingExtraTime+trackVariableIntervMax)
-badTimingCushion = 0.1 #Creating 100ms more of reversals than should need. Because if miss frames and using clock time instead of frames, might go longer
-def maxPossibleReversals():  #need answer to know how many blank fields to print to file
-    return int( ceil(      (maxTrialDur() - trackingExtraTime)  / timeTillReversalMin          ) )
-def getReversalTimes():
-    reversalTimesEachRing = [  [] for i in range(numRings)  ]
-    for r in range(numRings): # set random reversal times
-        thisReversalDur = trackingExtraTime
-        while thisReversalDur< trialDurTotal+badTimingCushion:  
-            thisReversalDur +=  np.random.uniform(timeTillReversalMin,timeTillReversalMax) #10000; print('WARNING thisReversalDur off') 
-            reversalTimesEachRing[r].append(thisReversalDur)
-    return reversalTimesEachRing
-    
-toTrackCueDur = rampUpDur+rampDownDur+trackingExtraTime  #giving the person time to attend to the cue (secs)
 trialDurFrames=int(trialDur*refreshRate)+int( trackingExtraTime*refreshRate )
 rampUpFrames = refreshRate*rampUpDur;   rampDownFrames = refreshRate*rampDownDur;
 ShowTrackCueFrames = int( refreshRate*toTrackCueDur )
@@ -211,7 +194,9 @@ if msgWrongResolution != '':
     logging.error(msgWrongResolution)
 
 myWin = openMyStimWindow(mon,widthPix,heightPix,bgColor,allowGUI,units,fullscr,scrn,waitBlank)
+print('Window opened')
 myMouse = event.Mouse(visible = 'true',win=myWin)
+print('Mouse enabled')
 runInfo = psychopy.info.RunTimeInfo(
         win=myWin,    ## a psychopy.visual.Window() instance; None = default temp window used; False = no win, no win.flips()
         refreshTest='grating', ## None, True, or 'grating' (eye-candy to avoid a blank screen)
@@ -255,16 +240,18 @@ NextRemindPctDoneText = visual.TextStim(myWin,pos=(-.1, -.4),colorSpace='rgb',co
 NextRemindCountText = visual.TextStim(myWin,pos=(.1, -.5),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
 
 stimList = []
-# temporalfrequency limit test
 numObjsInRings = [[1,8]] #First entry in each sub-list is num cues in the cue ring. Second entry is num objects in the objects ring
-speeds =  [ 1.3, 1.5, 1.7 ]     #dont want to go faster than 2 because of blur problem
+speeds =  [ 0.5 ]     #dont want to go faster than 2 because of blur problem
 #Set up the factorial design (list of all conditions)
-for numObjs in numObjsInRing: #set up experiment design
-    for speed in speeds:
+for numCues in [1]:
+ for numObjs in [4]:
+  for cueLeadTime in [.160, .700]:  #How long is the cue on prior to the eyeballs appearing
+      for speed in speeds:
               for direction in [-1.0,1.0]:  
-                    stimList.append( {'numObjectsInRing':numObjs,'speed':speed, 'direction':direction} )
+                    stimList.append( {'numCues':numCues,'numObjs':numObjs,'cueLeadTime':cueLeadTime,'speed':speed, 'direction':direction} )
 #set up record of proportion correct in various conditions
-trials = data.TrialHandler(stimList,trialsPerCondition) #constant stimuli method
+trials = data.TrialHandler(stimList,trialsPerCondition, #constant stimuli method
+                                        extraInfo= {'subject':subject} )  #will be included in each row of dataframe and wideText
 
 numRightWrongEachSpeedOrder = np.zeros([ len(speeds), 2 ]); #summary results to print out at end
 numRightWrongEachSpeedIdent = deepcopy(numRightWrongEachSpeedOrder)
@@ -331,7 +318,7 @@ def angleChangeThisFrame(thisTrial, moveDirection, numRing, thisFrameN, lastFram
     angleMove = moveDirection[numRing]*thisTrial['direction']*thisTrial['speed']*2*pi*(thisFrameN-lastFrameN)/refreshRate
     return angleMove
 
-def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngle,blobToCueEachRing,isReversed,reversalNumEachRing,ShowTrackCueFrames): 
+def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngle,isReversed,reversalNumEachRing,ShowTrackCueFrames): 
 #defining a function to draw each frame of stim. So can call second time for tracking task response phase
           global cueRing,ringRadial,ringRadialR, currentlyCuedBlob #makes python treat it as a local variable
           global angleIniEachRing, correctAnswers
@@ -356,7 +343,9 @@ def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngl
             angleMove = angleChangeThisFrame(thisTrial, moveDirection, numRing, n, n-1)
             currAngle[numRing] = currAngle[numRing]+angleMove*(isReversed[numRing])
             angleObject0 = angleIniEachRing[numRing] + currAngle[numRing]
-            for nobject in range(numObjects):
+            #if numRing==0:
+            #    print('angleMove=',np.round(angleMove,2)*180/pi, ' angleObject0=',np.round(angleObject0,2)*180/pi)
+            for nobject in range(thisTrial['numObjs']):
                 if nobject==0:
                         if reversalNumEachRing[numRing] <= len(reversalTimesEachRing[numRing]): #haven't exceeded  reversals assigned
                             reversalNum = int(reversalNumEachRing[numRing])
@@ -371,16 +360,11 @@ def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngl
                             if n > refreshRate * nextReversalTime: #have now exceeded time for this next reversal
                                 isReversed[numRing] = -1*isReversed[numRing]
                                 reversalNumEachRing[numRing] +=1
-                angleThisObject = angleObject0 + (2*pi)/numObjects*nobject
-                x,y = xyThisFrameThisAngle('circle',radii, numRing,angleThisObject,n,thisTrial['speed'])
+                angleThisObject = angleObject0 + (2*pi)/thisTrial['numObjs']*nobject
+                x,y = xyThisFrameThisAngle('circle',radii, numRing,angleThisObject,n,thisTrial['speed']) ########################################################
                 x += offsetXYeachRing[numRing][0]
                 y += offsetXYeachRing[numRing][1]
-                if n< ShowTrackCueFrames and nobject==blobToCueEachRing[numRing]: #cue in white  
-                    weightToTrueColor = n*1.0/ShowTrackCueFrames #compute weighted average to ramp from white to correct color
-                    blobColor = (1.0-weightToTrueColor)*cueColor +  weightToTrueColor*colors_all[nobject]
-                    blobColor *= contrast #also might want to change contrast, if everybody's contrast changing in contrast ramp
-                    #print('weightToTrueColor=',weightToTrueColor,' n=',n, '  blobColor=',blobColor)
-                else: blobColor = colors_all[0]*contrast
+                blobColor = colors_all[0]*contrast
                 #referenceCircle.setPos(offsetXYeachRing[numRing]);  referenceCircle.draw() #debug
                 gaussian.setColor( blobColor, log=autoLogging )
                 gaussian.setPos([x,y])
@@ -412,139 +396,9 @@ def collectResponseKH( expStop): #Kristjansson&Holcombe cuing experiment
                 STOP
     return responses,responsesAutopilot,respondedEachToken, expStop
 
-showClickableRegions = True
-def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,respRadius,currAngle,expStop ):
-    optionSets=numRings
-   #Draw response cues
-    numTimesRespSoundPlayed=0
-    if numTimesRespSoundPlayed<1: #2
-        respSound.setVolume(1)
-        if numRings > 1:
-            respSound.play()
-        numTimesRespSoundPlayed +=1
-   #respText.draw()
-
-    respondedEachToken = np.zeros([numRings,numObjects])  #potentially two sets of responses, one for each ring
-    optionIdexs=list();baseSeq=list();numOptionsEachSet=list();numRespsNeeded=list()
-    numRespsNeeded = np.zeros(numRings) 
-    for ring in xrange(numRings):
-        optionIdexs.append([])
-        noArray=list()
-        for k in range(numObjects):noArray.append(colors_all[0])
-        baseSeq.append(np.array(noArray))
-        for i in range(numObjects):
-            optionIdexs[ring].append(baseSeq[ring][i % len(baseSeq[ring])] )
-        if ring == thisTrial['ringToQuery']:
-            numRespsNeeded[ ring ] = 1
-        else: numRespsNeeded[ ring ] = 0
-        numOptionsEachSet.append(len(optionIdexs[ring]))
-    respcount = 0;     tClicked = 0;       lastClickState=0;       mouse1=0
-    for ring in range(optionSets): 
-            responses.append( list() )
-            responsesAutopilot.append( [0]*numRespsNeeded[ring] )  #autopilot response is 0
-    passThisTrial = False; 
-    numTimesRespSoundPlayed=0
-    while respcount < sum(numRespsNeeded): #collecting response
-               #Draw visual response cue
-               if visuallyPostCue:
-                        circlePostCue.setPos( offsetXYeachRing[ thisTrial['ringToQuery'] ] )
-                        circlePostCue.setRadius( radii[ thisTrial['ringToQuery'] ] )
-                        circlePostCue.draw()
-                        
-               for optionSet in range(optionSets):  #draw this group (ring) of options
-                  for ncheck in range( numOptionsEachSet[optionSet] ):  #draw each available to click on in this ring
-                        angle =  (angleIniEachRing[optionSet]+currAngle[optionSet]) + ncheck*1.0/numOptionsEachSet[optionSet] *2.*pi
-                        stretchOutwardRingsFactor = 1
-                        x,y = xyThisFrameThisAngle(thisTrial['basicShape'],radii,optionSet,angle,n,thisTrial['speed'])
-                        x = x+ offsetXYeachRing[optionSet][0]
-                        y = y+ offsetXYeachRing[optionSet][1]
-                        #draw colors, and circles around selected items. Colors are drawn in order they're in in optionsIdxs
-                        opts=optionIdexs;
-                        if respondedEachToken[optionSet][ncheck]:  #draw circle around this one to indicate this option has been chosen
-                               optionChosenCircle.setColor(array([1,-1,1]), log=autoLogging)
-                               optionChosenCircle.setPos([x,y])
-                               optionChosenCircle.draw()                
-                        gaussian.setColor(  colors_all[0], log=autoLogging )  #draw blob
-                        gaussian.setPos([x,y]);  
-                        gaussian.draw()
-                         
-               mouse1, mouse2, mouse3 = myMouse.getPressed()
-               if mouse1 and lastClickState==0:  #only count this event if is a new click. Problem is that mouse clicks continue to be pressed for along time
-                    mouseX,mouseY = myMouse.getPos()
-                    #print 'assumes window spans entire screen of ',monitorwidth,' cm; mouse position apparently in cm when units is set to deg = (',mouseX,',',mouseY,')'  
-                    #because mouse apparently giving coordinates in cm, I need to convert it to degrees of visual angle because that's what drawing is done in terms of
-                    cmperpixel = monitorwidth*1.0/widthPix
-                    degpercm = 1.0/cmperpixel/pixelperdegree;  
-                    mouseX = mouseX # * degpercm #mouse x location relative to center, converted to degrees
-                    mouseY = mouseY #* degpercm #mouse x location relative to center, converted to degrees
-                    for optionSet in range(optionSets):
-                      for ncheck in range( numOptionsEachSet[optionSet] ): 
-                            angle =  (angleIniEachRing[optionSet]+currAngle[optionSet]) + ncheck*1.0/numOptionsEachSet[optionSet] *2.*pi #radians
-                            x,y = xyThisFrameThisAngle(thisTrial['basicShape'],radii,optionSet,angle,n,thisTrial['speed'])
-                            x = x+ offsetXYeachRing[optionSet][0]
-                            y = y+ offsetXYeachRing[optionSet][1]
-                            #check whether mouse click was close to any of the colors
-                            #Colors were drawn in order they're in in optionsIdxs
-                            distance = sqrt(pow((x-mouseX),2)+pow((y-mouseY),2))
-                            mouseToler = mouseChoiceArea + optionSet*mouseChoiceArea/6.#deg visual angle?  origin=2
-                            if showClickableRegions: #revealed in green every time you click
-                                clickableRegion.setPos([x,y])
-                                clickableRegion.setRadius(mouseToler)
-                                clickableRegion.draw()
-                                #print('mouseXY=',round(mouseX,2),',',round(mouseY,2),'xy=',x,',',y, ' distance=',distance, ' mouseToler=',mouseToler)
-                            if distance<mouseToler:
-                                c = opts[optionSet][ncheck] #idx of color that this option num corresponds to
-                                if respondedEachToken[optionSet][ncheck]:  #clicked one that already clicked on
-                                    if lastClickState ==0: #only count this event if is a distinct click from the one that selected the blob!
-                                        respondedEachToken[optionSet][ncheck] =0
-                                        responses[optionSet].remove(c) #this redundant list also of course encodes the order
-                                        respcount -= 1
-                                        #print('removed number ',ncheck, ' from clicked list')
-                                else:         #clicked on new one, need to add to response    
-                                    numRespsAlready = len(  np.where(respondedEachToken[optionSet])[0]  )
-                                    #print('numRespsAlready=',numRespsAlready,' numRespsNeeded= ',numRespsNeeded,'  responses=',responses)   #debugOFF
-                                    if numRespsAlready >= numRespsNeeded[optionSet]:
-                                        pass #not allowed to select this one until de-select other
-                                    else:
-                                        respondedEachToken[optionSet][ncheck] = 1 #register this one has been clicked
-                                        responses[optionSet].append(c) #this redundant list also of course encodes the order
-                                        respcount += 1  
-                                        #print('added  ',ncheck,'th response to clicked list')
-                        #print 'response=', response, '  respcount=',respcount, ' lastClickState=',lastClickState, '  after affected by click'
-                   #end if mouse clicked
-                   
-               for key in event.getKeys():       #check if pressed abort-type key
-                      if key in ['escape','q']:
-                          expStop = True
-                          respcount = 1
-                      
-               lastClickState = mouse1
-               if autopilot: 
-                    respcount = 1
-                    for i in xrange(numRings):
-                        for j in xrange(numObjects):
-                            respondedEachToken[i][j] = 1 #must set to True for tracking task with click responses, because it uses to determine which one was clicked on
-               if blindspotFill:
-                    blindspotStim.draw()
-
-               myWin.flip#  (clearBuffer=True)  
-               if screenshot and ~screenshotDone:
-                   myWin.getMovieFrame()       
-                   screenshotDone = True
-                   myWin.saveMovieFrames('respScreen.jpg')
-               #end response collection loop for non-'track' task
-    #if [] in responses: responses.remove([]) #this is for case of tracking with click response, when only want one response but draw both rings. One of responses to optionset will then be blank. Need to get rid of it
-    return responses,responsesAutopilot,respondedEachToken, expStop
-    ####### #End of function definition that collects responses!!!! #################################################
     
 print('Starting experiment of',trials.nTotal,'trials. Current trial is trial 0.')
-#print header for data file
-print('trialnum\tsubject\tbasicShape\tnumObjects\tspeed\tdirection', end='\t', file=dataFile)
-print('orderCorrect\ttrialDurTotal\tnumTargets', end= '\t', file=dataFile) 
-for i in range(numRings):
-    print('whichIsTarget',i,  sep='', end='\t', file=dataFile)
-for i in range(numRings):dataFile.write('Direction'+str(i)+'\t')
-for i in range(numRings):dataFile.write('respAdj'+str(i)+'\t')
+
 for r in range(numRings):
     for j in range(maxPossibleReversals()):
         dataFile.write('rev'+str(r)+'_'+str(j)+'\t')  #reversal times for each ring
@@ -552,7 +406,7 @@ print('timingBlips', file=dataFile)
 #end of header
 trialClock = core.Clock()
 stimClock = core.Clock()
-trialNum=0; numTrialsOrderCorrect=0; numAllCorrectlyIdentified=0; blueMistakes=0; expStop=False; framesSaved=0;
+trialNum=0; numTrialsCorrect=0; expStop=False; framesSaved=0;
 thisTrial = trials.next()
 trialDurTotal=0;
 ts = list();
@@ -563,27 +417,25 @@ if eyetracking:
 
 while trialNum < trials.nTotal and expStop==False:
     accelerateComputer(1,process_priority, disable_gc) #speed up
-    colorRings=list();preDrawStimToGreasePipeline = list()
+    colorRings=list();
+    preDrawStimToGreasePipeline = list()
     isReversed= list([1]) * numRings #always takes values of -1 or 1
     reversalNumEachRing = list([0]) * numRings
     angleIniEachRing = list( np.random.uniform(0,2*pi,size=[numRings]) )
     currAngle = list([0]) * numRings
     moveDirection = list( np.random.random_integers(0,1,size=[numRings]) *2 -1 ) #randomise initial direction
-    trackVariableIntervDur=np.random.uniform(0,trackVariableIntervMax) #random interval tacked onto tracking to make total duration variable so cant predict final position
-    trialDurTotal = maxTrialDur() - trackVariableIntervDur
+    trialDurTotal = maxTrialDur()  #thisTrial['cueLeadTime'] + targetDur + maskDur
     trialDurFrames= int( trialDurTotal*refreshRate )
-    xyTargets = np.zeros( [thisTrial['numTargets'], 2] ) #need this for eventual case where targets can change what ring they are in
-    numDistracters = numRings*thisTrial['numObjectsInRing'] - thisTrial['numTargets']
-    xyDistracters = np.zeros( [numDistracters, 2] )
+    #xyTargets = np.zeros( [thisTrial['numTargets'], 2] ) #need this for eventual case where targets can change what ring they are in
+    #numDistracters = numRings*thisTrial['numObjectsInRing'] - thisTrial['numTargets']
+    #xyDistracters = np.zeros( [numDistracters, 2] )
 
     reversalTimesEachRing = getReversalTimes()
     #print('reversalTimesEachRing=',np.around(np.array(reversalTimesEachRing),2),' maxPossibleReversals=',maxPossibleReversals()) #debugOFF
-    numObjects = thisTrial['numObjectsInRing']
-    centerInMiddleOfSegment =360./numObjects/2.0
-    blobsToPreCue=thisTrial['whichIsTarget']
     core.wait(.1)
-    myMouse.setVisible(False)      
-    if eyetracking: tracker.startEyeTracking(trialNum,True,widthPix,heightPix) # CF is awesome! - start recording with eyetracker
+    myMouse.setVisible(False)
+    if eyetracking: 
+        tracker.startEyeTracking(trialNum,True,widthPix,heightPix) # CF is awesome! - start recording with eyetracker
 
     fixatnPeriodFrames = int(   (np.random.rand(1)/2.+0.8)   *refreshRate)  #random interval between x and x+800ms
     for i in range(fixatnPeriodFrames):
@@ -592,20 +444,21 @@ while trialNum < trials.nTotal and expStop==False:
         else: fixationBlank.draw()
         myWin.flip() #clearBuffer=True)  
     trialClock.reset()
-    t0=trialClock.getTime(); t=trialClock.getTime()-t0     
-    for L in range(len(ts)):ts.remove(ts[0]) # clear all ts array
+    t0=trialClock.getTime(); t=trialClock.getTime()-t0
+    ts = list()
     stimClock.reset()
     for n in range(trialDurFrames): #this is the loop for this trial's stimulus!
             offsetXYeachRing=[[0,0],[0,0]]
             (angleIni,currAngle,isReversed,reversalNumEachRing) = \
-                            oneFrameOfStim(thisTrial,n,stimClock,useClock,offsetXYeachRing,currAngle,blobsToPreCue,isReversed,reversalNumEachRing,ShowTrackCueFrames) #da big function
+                            oneFrameOfStim(thisTrial,n,stimClock,useClock,offsetXYeachRing,currAngle,isReversed,reversalNumEachRing,ShowTrackCueFrames) #da big function
             if exportImages:
                 myWin.getMovieFrame(buffer='back') #for later saving
                 framesSaved +=1
             myWin.flip(clearBuffer=True)
             t=trialClock.getTime()-t0; ts.append(t);
             if n==trialDurFrames-1: event.clearEvents(eventType='mouse');
-    if eyetracking:tracker.stopEyeTracking() #CF is amazing!
+    if eyetracking:
+        tracker.stopEyeTracking()
 
     #end of big stimulus loop
     accelerateComputer(0,process_priority, disable_gc) #turn off stuff that sped everything up
@@ -647,15 +500,6 @@ while trialNum < trials.nTotal and expStop==False:
     passThisTrial=False
     #Create postcues
     visuallyPostCue = True
-    ringQuerySoundFileNames = [ 'innerring.wav', 'middlering.wav', 'outerring.wav' ]
-    soundDir = 'sounds'
-    if numRings==3:
-        soundFileNum = thisTrial['ringToQuery']
-    else: #eg if numRings==2:
-        soundFileNum = thisTrial['ringToQuery']*2 #outer, not middle for ring==1
-        
-    soundPathAndFile= os.path.join(soundDir, ringQuerySoundFileNames[ soundFileNum ])
-    respSound = sound.Sound(soundPathAndFile, secs=.2)
     postCueNumBlobsAway=-999 #doesn't apply to click tracking and non-tracking task
      # ####### response set up answer
     responses = list();  responsesAutopilot = list()
@@ -669,62 +513,24 @@ while trialNum < trials.nTotal and expStop==False:
     #Handle response, calculate whether correct, ########################################
     if autopilot:responses = responsesAutopilot
     if True: #not expStop: #if short on responses, too hard to write code to handle it so don't even try
-        orderCorrect=0; numColorsCorrectlyIdentified=0; blueMistake=0;respAdj=list();sCorrect=list();targetCorrect=0;
+        correct=-99;  #FIX
         for l in range(numRings):
-                    if responses[l] !=[]: 
-                       tokenChosenEachRing[l]=np.where(respondedEachToken[l])  [0][0] 
-                       respAdjs= thisTrial['direction']*moveDirection[l]*isReversed[l]*(tokenChosenEachRing[l]-thisTrial['whichIsTarget'][l])
-                       if respAdjs> numObjects/2. : respAdjs-= numObjects  #code in terms of closest way around. So if 9 objects and 8 ahead, code as -1
-                       if respAdjs < -numObjects/2. : respAdjs += numObjects
-                       respAdj.append(respAdjs)
-                       if tokenChosenEachRing[l]==thisTrial['whichIsTarget'][l]: 
-                          sCorrects=1
-                          sCorrect.append(sCorrects);
-                          targetCorrect+=sCorrects
-                    else:
-                       respAdj.append(-999)
-                       sCorrect.append(0)
-        if targetCorrect==1: orderCorrect = 3
-        else: orderCorrect = 0
-                 
-        if respType=='order':  #: this used to work without last conditional
-            numColorsCorrectlyIdentified=-1
-        else: 
-            numColorsCorrectlyIdentified = len(   intersect1d(response,answer)   )
-            if numColorsCorrectlyIdentified < 3:
-                if 4 in answer and not (3 in answer): #dark blue present
-                    if 3 in response: #light blue in answer
-                        blueMistake =1
-                elif 3 in answer and not (4 in answer): #light blue present
-                    if 4 in response: #dark blue in answer
-                        blueMistake =1                
+            correct = -99
+            
         #end if statement for if not expStop
-    if passThisTrial:orderCorrect = -1    #indicate for data analysis that observer opted out of this trial, because think they moved their eyes
+    if passThisTrial: correct = -1    #indicate for data analysis that observer opted out of this trial, because think they moved their eyes
 
     #header print('trialnum\tsubject\tbasicShape\tnumObjects\tspeed\tdirection\tangleIni
-    print(trialNum,subject,thisTrial['basicShape'],thisTrial['numObjectsInRing'],thisTrial['speed'],thisTrial['direction'],sep='\t', end='\t', file=dataFile)
-    print(orderCorrect,'\t',trialDurTotal,'\t',thisTrial['numTargets'],'\t', end=' ', file=dataFile) #override newline end
-    for i in range(numRings):  print( thisTrial['whichIsTarget'][i], end='\t', file=dataFile  )
-    print( thisTrial['ringToQuery'],end='\t',file=dataFile )
-    for i in range(numRings):dataFile.write(str(round(moveDirection[i],4))+'\t') 
-    for i in range(numRings):dataFile.write(str(round(respAdj[i],4))+'\t') 
-    for k in range(numRings):
-        for i in range(len(reversalTimesEachRing[k])):
-            print(round(reversalTimesEachRing[k][i],4),'\t', end='', file=dataFile)
-        for j in range(i+1,maxPossibleReversals()):
-            print('-999\t', end='', file=dataFile)
-    print(numCasesInterframeLong, file=dataFile)
-    numTrialsOrderCorrect += (orderCorrect >0)  #so count -1 as 0
-    numAllCorrectlyIdentified += (numColorsCorrectlyIdentified==3)
-    speedIdx = np.where(uniqSpeeds==thisTrial['speed'])[0][0]  #extract index, where returns a list with first element array of the indexes
-    numRightWrongEachSpeedOrder[ speedIdx, (orderCorrect >0) ] +=1  #if right, add to 1th column, otherwise add to 0th column count
-    numRightWrongEachSpeedIdent[ speedIdx, (numColorsCorrectlyIdentified==3) ] +=1
-    blueMistakes+=blueMistake
+    trials.data.add('trialDurTotal', trialDurTotal)
+    trials.data.add('correct', correct) #switching to using psychopy-native ways of storing, saving data 
+    trials.data.add('timingBlips', numCasesInterframeLong)
+    
+    numTrialsCorrect += (correct >0)  #so count -1 as 0
+    speedIdx = np.where(speeds==thisTrial['speed'])[0][0]  #extract index, where returns a list with first element array of the indexes
+    numRightWrongEachSpeedOrder[ speedIdx, (correct >0) ] +=1  #if right, add to 1th column, otherwise add to 0th column count
     dataFile.flush(); logF.flush(); 
     
     if feedback and not expStop:
-        if orderCorrect==3  :correct=1
-        else:correct=0
         if correct:
             highA = sound.Sound('G',octave=5, sampleRate=6000, secs=.8, bits=8)
             highA.setVolume(0.8)
@@ -771,11 +577,27 @@ while trialNum < trials.nTotal and expStop==False:
 if expStop == True:
     print('user aborted experiment on keypress with trials trialNum=', trialNum, file=logF)
     print('user aborted experiment on keypress with trials trialNum=', trialNum)
-    
+else: 
+    print("Experiment finished")
+if  nDone >0:
+    print("Data was saved on each trial to", fileNameWithPath+'MANUAL.txt')
+    fileNamePP = fileNameWithPath
+    dfFromPP = trials.saveAsWideText(fileNamePP)
+    print("Psychopy's wideText has been saved as", fileNamePP)
+    #dfFromPP.to_pickle(fileNameWithPath+"_DataFrame.pickle") #doing this to have a dataframe to test plotDataAndPsychometricCurve with in analyzeData.py
+    fileNamePickle = fileNameWithPath #.psydat will automatically be appended
+    trials.saveAsPickle(fileNamePickle)
+    print("Most Psychopy-ic method: trials trialHandler has been saved as", fileNamePickle, "should include copy of code")
+                      
+    #df.dtypes in my case are  "objects". you can't take the mean
+    df = dfFromPP
+    print('df.dtypes=\n',df.dtypes)
+   
+
 if eyetracking:
     tracker.closeConnectionToEyeTracker(eyeMoveFile)
 print('finishing at ',timeAndDateStr, file=logF)
-print('%corr order report= ', round( numTrialsOrderCorrect*1.0/trialNum*100., 2)  , '% of ',trialNum,' trials', end=' ')
+print('%corr order report= ', round( correct*1.0/trialNum*100., 2)  , '% of ',trialNum,' trials', end=' ')
 print('%corr each speed: ', end=' ')
 print(np.around( numRightWrongEachSpeedOrder[:,1] / ( numRightWrongEachSpeedOrder[:,0] + numRightWrongEachSpeedOrder[:,1]), 2))
 print('\t\t\t\tnum trials each speed =', numRightWrongEachSpeedOrder[:,0] + numRightWrongEachSpeedOrder[:,1])
