@@ -53,7 +53,7 @@ if (tryQuickpsy) {
                   xmin=-4,xmax=-1, guess=0.5) #WORKS
   fit <- quickpsy(datDani, speed, correct, grouping=factors, bootstrap='none',
                   xmin=-4,xmax=-1, guess=0.5) #DOESNT WORK. Only uses first element
-  fit <- quickpsy_(datDani, 'speed', 'correct', grouping=factors, bootstrap='none'.
+  fit <- quickpsy_(datDani, 'speed', 'correct', grouping=factors, bootstrap='none',
                    xmin=-4,xmax=-1,guess=0.5) #guessing parameter doesn't work
 #  fit <- quickpsy(datDani, speed, correct, grouping=factors, bootstrap='none',
 #                  xmin=-4,xmax=-1, guess=0.5) #seems to be no way to use a variable for the grouping

@@ -256,7 +256,7 @@ NextRemindCountText = visual.TextStim(myWin,pos=(.1, -.5),colorSpace='rgb',color
 stimList = []
 # temporalfrequency limit test
 numObjsInRing = [2]
-speedsEachNumObjs =  [ [1.3, 1.5, 1.7] ]     #dont want to go faster than 2 because of blur problem
+speedsEachNumObjs =  [ [1.0] ]     #dont want to go faster than 2 because of blur problem
 numTargets = np.array([2])  # np.array([1,2,3])
 leastCommonMultipleSubsets = calcCondsPerNumTargets(numRings,numTargets)
 leastCommonMultipleTargetNums = LCM( numTargets )  #have to use this to choose whichToQuery. For explanation see newTrajectoryEventuallyForIdentityTracking.oo3
@@ -281,8 +281,8 @@ for numObjs in numObjsInRing: #set up experiment design
                           whichSubsetEntry = whichToQuery % nt  #e.g. if nt=2 and whichToQuery can be 0,1,or2 then modulus result is 0,1,0. This implies that whichToQuery won't be totally counterbalanced with which subset, which is bad because
                                           #might give more resources to one that's queried more often. Therefore for whichToQuery need to use least common multiple.
                           ringToQuery = s[whichSubsetEntry];  #print('ringToQuery=',ringToQuery,'subset=',s)
-                          for basicShape in ['circle','square']:
-                                  for direction in [-1.0,1.0]:  
+                          for basicShape in ['diamond']:
+                                  for direction in [-1.0,1.0]:
                                         stimList.append( {'basicShape':basicShape, 'numObjectsInRing':numObjs,'speed':speed, 'direction':direction,
                                             'numTargets':nt,'whichIsTarget':whichIsTarget,'ringToQuery':ringToQuery} )
 #set up record of proportion correct in various conditions
@@ -315,6 +315,48 @@ RFcontourPhase = 0
 def RFcontourCalcModulation(angle,freq,phase): 
     modulation = sin(angle*freq + phase) #radial frequency contour equation, e.g. http://www.journalofvision.org/content/14/11/12.full from Wilkinson et al. 1998
     return modulation
+    
+def diamondShape(constSpeedOrConstRps,angle):
+    def triangleWave(period, phase):
+           #triangle wave is in sine phase (starts at 0)
+           y = -abs(phase % (2*period) - period) # http://stackoverflow.com/questions/1073606/is-there-a-one-line-function-that-generates-a-triangle-wave
+           #y goes from -period to 0.  Need to rescale to -1 to 1 to match sine wave etc.
+           y = y/period*2 + 1
+           #Now goes from -1 to 1
+           return y
+           
+    if constSpeedOrConstRps: #maintain constant rps. So, draw the blob at the prescribed theta. But change the radius to correspond to a square.
+        #As a consequence, will travel faster the more the direction differs from the circle, like around the corners
+        #Theta varies from 0 to 2pi. Taking its cosine, gives x coordinate on circle.
+        #Instead of taking cosine, I should just make it a linear ramp of x back and forth. That is, turn it into a triangle wave
+        #Want 0 to pi to be -1 to 1
+        x = triangleWave(pi,angle)
+        y = triangleWave(pi, (angle-pi/2)%(2*pi ))
+        #This will always describe a diamond. To change the shape would have to use vector rotation formula
+    else: #constant speed, so
+        #take theta not as the angle wanted, but what proportion (after being divided by 2pi) along the trajectory you want to go
+        angle = angle % (2*pi) #modulus
+        proportnTraj = angle/(2*pi)
+        if (proportnTraj < 0) or (proportnTraj>1):
+            print("Unexpected angle below 0!"); logging.error("Unexpected angle below 0!")
+        #how do I go from proportnTraj either to x,y or to theta?
+        #Analytic method is that as increase theta deviates from 4 points that touches circle, theta change is smaller for equal change in proportnTraj
+        #Brute force method is to divide into 4 segments.
+        zeroToFour = proportnTraj*4
+        if zeroToFour < 1: #headed NW up the first quadrant
+            x = 1 - (zeroToFour-0)
+            y = (zeroToFour-0)
+        elif zeroToFour < 2: #SW
+            x = - (zeroToFour - 1)
+            y = 1- (zeroToFour - 1)
+        elif zeroToFour < 3: #SE
+            x = -1+(zeroToFour - 2)
+            y = - (zeroToFour - 2)
+        elif zeroToFour < 4: #NE
+            x = (zeroToFour-3)
+            y = -1+(zeroToFour-3)
+        else: logging.error("Unexpected zeroToFour="+ str(zeroToFour))
+        return x,y
 
 ampTemporalRadiusModulation = 0.0 # 1.0/3.0
 ampModulatnEachRingTemporalPhase = np.random.rand(numRings) * 2*np.pi
@@ -338,24 +380,17 @@ def xyThisFrameThisAngle(basicShape, radiiThisTrial, numRing, angle, thisFrameN,
         rThis += r * RFcontourAmp * RFcontourCalcModulation(angle,RFcontourFreq,RFcontourPhase)
         x = rThis*cos(angle)
         y = rThis*sin(angle)
-    elif basicShape == 'square': #actual square-shaped trajectory. Could also add all the modulations to this, later
-            #Theta varies from 0 to 2pi. Instead of taking its cosine, I should just pretend it is linear. Map it to 0->1 with triangle wave
-            #Want 0 to pi to be -1 to 1
-            def triangleWave(period, phase):
-                   #triangle wave is in sine phase (starts at 0)
-                   y = -abs(phase % (2*period) - period) # http://stackoverflow.com/questions/1073606/is-there-a-one-line-function-that-generates-a-triangle-wave
-                   #y goes from -period to 0.  Need to rescale to -1 to 1 to match sine wave etc.
-                   y = y/period*2 + 1
-                   #Now goes from -1 to 1
-                   return y
-            x = r * triangleWave(pi,angle)
-            y = r * triangleWave(pi, (angle-pi/2)%(2*pi ))
-            #This will always describe a diamond. To change the shape would have to use vector rotation formula
-    else: print('Unexpected basicShape ',basicShape)
+    elif basicShape == 'diamond': #actual square-shaped trajectory. Could also add all the modulations to this, later
+        x,y = diamondShape(constSpeedOrConstRps = False, angle=angle)
+        x*=r
+        y*=r
+    else: 
+        print('Unexpected basicShape: ',basicShape)
+    
     return x,y
 
-def angleChangeThisFrame(thisTrial, moveDirection, numRing, thisFrameN, lastFrameN):
-    angleMove = moveDirection[numRing]*thisTrial['direction']*thisTrial['speed']*2*pi*(thisFrameN-lastFrameN)/refreshRate
+def angleChangeThisFrame(speed,initialDirection, moveDirection, numRing, thisFrameN, lastFrameN):
+    angleMove = moveDirection[numRing]*initialDirection*speed*2*pi*(thisFrameN-lastFrameN)/refreshRate
     return angleMove
 
 def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngle,blobToCueEachRing,isReversed,reversalNumEachRing,ShowTrackCueFrames): 
@@ -378,9 +413,13 @@ def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngl
           else:
             fixationBlank.draw()
           fixationPoint.draw()
-          
           for numRing in range(numRings):
-            angleMove = angleChangeThisFrame(thisTrial, moveDirection, numRing, n, n-1)
+            speed = thisTrial['speed']
+            if basicShape == 'diamond':  #scale up speed so that it achieves that speed in rps
+                perimeter = radii[numRing]*4
+                circum = 2*pi*radii[numRing]
+                speed = thisTrial['speed'] * perimeter/circum #Have to go this much faster to get all the way around in same amount of time as for circle
+            angleMove = angleChangeThisFrame(speed,thisTrial['direction'],moveDirection, numRing, n, n-1)
             currAngle[numRing] = currAngle[numRing]+angleMove*(isReversed[numRing])
             angleObject0 = angleIniEachRing[numRing] + currAngle[numRing]
             for nobject in range(numObjects):
@@ -399,7 +438,7 @@ def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngl
                                 isReversed[numRing] = -1*isReversed[numRing]
                                 reversalNumEachRing[numRing] +=1
                 angleThisObject = angleObject0 + (2*pi)/numObjects*nobject
-                x,y = xyThisFrameThisAngle(thisTrial['basicShape'],radii, numRing,angleThisObject,n,thisTrial['speed'])
+                x,y = xyThisFrameThisAngle(thisTrial['basicShape'],radii, numRing,angleThisObject,n,speed)
                 x += offsetXYeachRing[numRing][0]
                 y += offsetXYeachRing[numRing][1]
                 if n< ShowTrackCueFrames and nobject==blobToCueEachRing[numRing]: #cue in white  

@@ -1,25 +1,26 @@
 Eyetracking
 ==============
 
-# Communication from Psychopy to Eyelink
+## Communication from Psychopy to Eyelink
 
 Call functions in `EyelinkEyetrackerForPsychopySUPA3.py` to open communication with eyetracker, to generate the calibration display and calibrate, to close the eyetracker and retrieve the eyetracking file from the Eyelink machine
 
-# Preprocessing of the Eyelink (EDF) file
+## Preprocessing of the Eyelink (EDF) file
 
 To get the eyetracking file that this file processes,
 Chris opens the EDF file created by Eyelink in the DataViewer(?) software
 He instructs the software to print out the following fields: 
 RECORDING_SESSION_LABEL 	TRIAL_LABEL	CURRENT_FIX_BLINK_AROUND	CURRENT_FIX_X
 
-This results in something like:
+This results in a file that begins with two lines like:
+
 `
 RECORDING_SESSION_LABEL	TRIAL_LABEL	CURRENT_FIX_BLINK_AROUND	CURRENT_FIX_X
 LN_20Apr2015_14-22	Trial: 1	NONE	403.80
 LN_20Apr2015_14-22	Trial: 2	AFTER	400.00
 `
 
-# Juno processing pipeline with EDF file
+## Juno processing pipeline with EDF file
 - his C program takes the output of edf2asc.exe (with certain flags, Juno will let us know when he gets additional data)
  (asc2msg) reads the first word on each line and use that as an indicator of what's on that line, basically the XY
 - messages carry the stimulus information
