@@ -7,9 +7,12 @@ Call functions in `EyelinkEyetrackerForPsychopySUPA3.py` to open communication w
 
 ## Preprocessing of the Eyelink (EDF) file
 
-To get the eyetracking file that this file processes,
-Chris opens the EDF file created by Eyelink in the DataViewer(?) software
-He instructs the software to print out the following fields: 
+Get the EDF file off the eyetracking machine (reboot eyetracking machine, select Windows), it's located in Eyelink:elcl:data and has the name of the participant.
+
+- On a machine with the Eyelink Dataviewer and dongle driver installed, put the dongle in the USB port and open Eyelink DataViewer.
+- choose Analysis->Reports-> and then if you are only interested in when fixation was broken, choose ->Fixation Report.
+- Choose which variables you want in the Output Report. In the case of checking whether fixation was broken, they are
+
 RECORDING_SESSION_LABEL 	TRIAL_LABEL	CURRENT_FIX_BLINK_AROUND	CURRENT_FIX_X
 
 This results in a file that begins with two lines like:
@@ -19,6 +22,17 @@ RECORDING_SESSION_LABEL	TRIAL_LABEL	CURRENT_FIX_BLINK_AROUND	CURRENT_FIX_X
 LN_20Apr2015_14-22	Trial: 1	NONE	403.80
 LN_20Apr2015_14-22	Trial: 2	AFTER	400.00
 `
+
+However, TRIAL_INDEX might be better because might not spit out the "Trial: " part.
+
+- When you want X,Y for each frame, that's called a Sample Report. 
+- In the Inspector box, choose Preferences instead of Data and click Data Loading and tick Load Samples. This affects import of EDF files. If you have already imported an EDF file, you will not have the samples. You must re-import.
+- Then generate a report, Analysis->Reports->Sample Report and include LEFT_GAZE_X and LEFT_GAZE_Y and possibly VIDEO_FRAME_INDEX for the time index, although I'm not certain that's as accurate as TIMESTAMP.
+
+## Pupillometry
+
+- Eyelink Data Viewer it lets you choose as a field to output Current_Fix_Pupil
+- Consider whether the eye is LEFT_IN_BLINK or LEFT_IN_SACCADE because you wouldn't have accurate pupil readings during that time.
 
 ## Juno processing pipeline with EDF file
 - his C program takes the output of edf2asc.exe (with certain flags, Juno will let us know when he gets additional data)

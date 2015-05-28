@@ -281,9 +281,9 @@ for numObjs in numObjsInRing: #set up experiment design
                           whichSubsetEntry = whichToQuery % nt  #e.g. if nt=2 and whichToQuery can be 0,1,or2 then modulus result is 0,1,0. This implies that whichToQuery won't be totally counterbalanced with which subset, which is bad because
                                           #might give more resources to one that's queried more often. Therefore for whichToQuery need to use least common multiple.
                           ringToQuery = s[whichSubsetEntry];  #print('ringToQuery=',ringToQuery,'subset=',s)
-                          for basicShape in ['diamond']:
-                                  for direction in [-1.0,1.0]:
-                                        stimList.append( {'basicShape':basicShape, 'numObjectsInRing':numObjs,'speed':speed, 'direction':direction,
+                          for basicShape in ['diamond','circle']:
+                            for initialDirRing0 in [-1,1]:
+                                    stimList.append( {'basicShape':basicShape, 'numObjectsInRing':numObjs,'speed':speed,'initialDirRing0':initialDirRing0,
                                             'numTargets':nt,'whichIsTarget':whichIsTarget,'ringToQuery':ringToQuery} )
 #set up record of proportion correct in various conditions
 trialSpeeds = list() #purely to allow report at end of how many trials got right at each speed
@@ -362,21 +362,27 @@ ampTemporalRadiusModulation = 0.0 # 1.0/3.0
 ampModulatnEachRingTemporalPhase = np.random.rand(numRings) * 2*np.pi
 def xyThisFrameThisAngle(basicShape, radiiThisTrial, numRing, angle, thisFrameN, speed):
     #period of oscillation should be in sec
-    periodOfRadiusModulation = 1.0/speed#so if speed=2 rps, radius modulation period = 0.5 s
     r = radiiThisTrial[numRing]
     timeSeconds = thisFrameN / refreshRate
-    modulatnPhaseRadians = timeSeconds/periodOfRadiusModulation * 2*pi + ampModulatnEachRingTemporalPhase[numRing]
-    def waveForm(phase,type):
-        if type=='sin':
-            return sin(modulatnPhaseRadians)
-        elif type == 'sqrWave':
-            ans = np.sign( sin(modulatnPhaseRadians) ) #-1 or 1. That's great because that's also sin min and max
-            if ans==0: ans = -1+ 2*round( np.random.rand(1)[0] ) #exception case is when 0, gives 0, so randomly change that to -1 or 1
-            return ans
-        else: print('Error! unexpected type in radiusThisFrameThisAngle')
+    def waveForm(type,speed,timeSeconds,numRing):
+        if speed==0 and ampTemporalRadiusModulation==0:
+            return 0 #this way don't get division by zero error when speed=0
+        else:
+            periodOfRadiusModulation = 1.0/speed#so if speed=2 rps, radius modulation period = 0.5 s
+            modulatnPhaseRadians = timeSeconds/periodOfRadiusModulation * 2*pi + ampModulatnEachRingTemporalPhase[numRing]
+            if type=='sin':
+                return sin(modulatnPhaseRadians)
+            elif type == 'sqrWave':
+                ans = np.sign( sin(modulatnPhaseRadians) ) #-1 or 1. That's great because that's also sin min and max
+                if ans==0: ans = -1+ 2*round( np.random.rand(1)[0] ) #exception case is when 0, gives 0, so randomly change that to -1 or 1
+                return ans
+            else: print('Error! unexpected type in radiusThisFrameThisAngle')
         
+    #if numRing==0:
+    #    basicShape='diamond'
+    #else: basicShape ='circle' #DEBUGOFF to compare speeds of circle and diamond
     if basicShape == 'circle':
-        rThis =  r + waveForm(modulatnPhaseRadians,'sin') * r * ampTemporalRadiusModulation
+        rThis =  r + waveForm('sin',speed,timeSeconds,numRing) * r * ampTemporalRadiusModulation
         rThis += r * RFcontourAmp * RFcontourCalcModulation(angle,RFcontourFreq,RFcontourPhase)
         x = rThis*cos(angle)
         y = rThis*sin(angle)
@@ -389,11 +395,11 @@ def xyThisFrameThisAngle(basicShape, radiiThisTrial, numRing, angle, thisFrameN,
     
     return x,y
 
-def angleChangeThisFrame(speed,initialDirection, moveDirection, numRing, thisFrameN, lastFrameN):
-    angleMove = moveDirection[numRing]*initialDirection*speed*2*pi*(thisFrameN-lastFrameN)/refreshRate
+def angleChangeThisFrame(speed,initialDirectionEachRing, numRing, thisFrameN, lastFrameN):
+    angleMove = initialDirectionEachRing[numRing] * speed*2*pi*(thisFrameN-lastFrameN) / refreshRate
     return angleMove
 
-def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngle,blobToCueEachRing,isReversed,reversalNumEachRing,ShowTrackCueFrames): 
+def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,initialDirectionEachRing,currAngle,blobToCueEachRing,isReversed,reversalNumEachRing,ShowTrackCueFrames): 
 #defining a function to draw each frame of stim. So can call second time for tracking task response phase
           global cueRing,ringRadial,ringRadialR, currentlyCuedBlob #makes python treat it as a local variable
           global angleIniEachRing, correctAnswers
@@ -415,11 +421,11 @@ def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngl
           fixationPoint.draw()
           for numRing in range(numRings):
             speed = thisTrial['speed']
-            if basicShape == 'diamond':  #scale up speed so that it achieves that speed in rps
-                perimeter = radii[numRing]*4
+            if basicShape == 'diamond':  #scale up speed so that it achieves that speed in rps even though it has farther to travel
+                perimeter = radii[numRing]*4.0
                 circum = 2*pi*radii[numRing]
                 speed = thisTrial['speed'] * perimeter/circum #Have to go this much faster to get all the way around in same amount of time as for circle
-            angleMove = angleChangeThisFrame(speed,thisTrial['direction'],moveDirection, numRing, n, n-1)
+            angleMove = angleChangeThisFrame(speed,initialDirectionEachRing, numRing, n, n-1)
             currAngle[numRing] = currAngle[numRing]+angleMove*(isReversed[numRing])
             angleObject0 = angleIniEachRing[numRing] + currAngle[numRing]
             for nobject in range(numObjects):
@@ -583,7 +589,7 @@ def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,
     
 print('Starting experiment of',trials.nTotal,'trials. Current trial is trial 0.')
 #print header for data file
-print('trialnum\tsubject\tbasicShape\tnumObjects\tspeed\tdirection', end='\t', file=dataFile)
+print('trialnum\tsubject\tbasicShape\tnumObjects\tspeed\tinitialDirRing0', end='\t', file=dataFile)
 print('orderCorrect\ttrialDurTotal\tnumTargets', end= '\t', file=dataFile) 
 for i in range(numRings):
     print('whichIsTarget',i,  sep='', end='\t', file=dataFile)
@@ -606,14 +612,24 @@ if eyetracking:
     eyeMoveFile=('EyeTrack_'+subject+'_'+timeAndDateStr+'.EDF')
     tracker=Tracker_EyeLink(myWin,trialClock,subject,1, 'HV5',(255,255,255),(0,0,0),False,(widthPix,heightPix))
 
+randomStartAngleEachRing = True
+randomInitiialDirExceptRing0 = True
+
 while trialNum < trials.nTotal and expStop==False:
     accelerateComputer(1,process_priority, disable_gc) #speed up
     colorRings=list();preDrawStimToGreasePipeline = list()
     isReversed= list([1]) * numRings #always takes values of -1 or 1
     reversalNumEachRing = list([0]) * numRings
-    angleIniEachRing = list( np.random.uniform(0,2*pi,size=[numRings]) )
+    if randomStartAngleEachRing:
+        angleIniEachRing = list( np.random.uniform(0,2*pi,size=[numRings]) )
+    else: 
+        angleIniEachRing = [0]*numRings
     currAngle = list([0]) * numRings
-    moveDirection = list( np.random.random_integers(0,1,size=[numRings]) *2 -1 ) #randomise initial direction
+    if randomInitiialDirExceptRing0:
+        initialDirectionEachRing = list( np.random.random_integers(0,1,size=[numRings]) *2 -1 ) #randomise initial direction of each ring
+        initialDirectionEachRing[0] = thisTrial['initialDirRing0']
+    else:
+        initialDirectionEachRing = [ thisTrial['initialDirRing0'] ] * numRings
     trackVariableIntervDur=np.random.uniform(0,trackVariableIntervMax) #random interval tacked onto tracking to make total duration variable so cant predict final position
     trialDurTotal = maxTrialDur() - trackVariableIntervDur
     trialDurFrames= int( trialDurTotal*refreshRate )
@@ -644,7 +660,7 @@ while trialNum < trials.nTotal and expStop==False:
     for n in range(trialDurFrames): #this is the loop for this trial's stimulus!
             offsetXYeachRing=[[0,0],[0,0]]
             (angleIni,currAngle,isReversed,reversalNumEachRing) = \
-                            oneFrameOfStim(thisTrial,n,stimClock,useClock,offsetXYeachRing,currAngle,blobsToPreCue,isReversed,reversalNumEachRing,ShowTrackCueFrames) #da big function
+                            oneFrameOfStim(thisTrial,n,stimClock,useClock,offsetXYeachRing,initialDirectionEachRing,currAngle,blobsToPreCue,isReversed,reversalNumEachRing,ShowTrackCueFrames) #da big function
             if exportImages:
                 myWin.getMovieFrame(buffer='back') #for later saving
                 framesSaved +=1
@@ -720,7 +736,7 @@ while trialNum < trials.nTotal and expStop==False:
         for l in range(numRings):
                     if responses[l] !=[]: 
                        tokenChosenEachRing[l]=np.where(respondedEachToken[l])  [0][0] 
-                       respAdjs= thisTrial['direction']*moveDirection[l]*isReversed[l]*(tokenChosenEachRing[l]-thisTrial['whichIsTarget'][l])
+                       respAdjs= initialDirectionEachRing[l]*isReversed[l]*(tokenChosenEachRing[l]-thisTrial['whichIsTarget'][l])
                        if respAdjs> numObjects/2. : respAdjs-= numObjects  #code in terms of closest way around. So if 9 objects and 8 ahead, code as -1
                        if respAdjs < -numObjects/2. : respAdjs += numObjects
                        respAdj.append(respAdjs)
@@ -748,12 +764,12 @@ while trialNum < trials.nTotal and expStop==False:
         #end if statement for if not expStop
     if passThisTrial:orderCorrect = -1    #indicate for data analysis that observer opted out of this trial, because think they moved their eyes
 
-    #header print('trialnum\tsubject\tbasicShape\tnumObjects\tspeed\tdirection\tangleIni
-    print(trialNum,subject,thisTrial['basicShape'],thisTrial['numObjectsInRing'],thisTrial['speed'],thisTrial['direction'],sep='\t', end='\t', file=dataFile)
+    #header print('trialnum\tsubject\tbasicShape\tnumObjects\tspeed\tinitialDirRing0\tangleIni
+    print(trialNum,subject,thisTrial['basicShape'],thisTrial['numObjectsInRing'],thisTrial['speed'],thisTrial['initialDirRing0'],sep='\t', end='\t', file=dataFile)
     print(orderCorrect,'\t',trialDurTotal,'\t',thisTrial['numTargets'],'\t', end=' ', file=dataFile) #override newline end
     for i in range(numRings):  print( thisTrial['whichIsTarget'][i], end='\t', file=dataFile  )
     print( thisTrial['ringToQuery'],end='\t',file=dataFile )
-    for i in range(numRings):dataFile.write(str(round(moveDirection[i],4))+'\t') 
+    for i in range(numRings):dataFile.write(str(round(initialDirectionEachRing[i],4))+'\t') 
     for i in range(numRings):dataFile.write(str(round(respAdj[i],4))+'\t') 
     for k in range(numRings):
         for i in range(len(reversalTimesEachRing[k])):
