@@ -40,9 +40,9 @@ radii=[2.5,9.5]   #Need to encode as array for those experiments wherein more th
 offsets = np.array([[0,0],[-5,0],[-10,0]])
 
 respRadius=radii[0] #deg
-refreshRate= 60 *1.0;  #160 #set to the framerate of the monitor
+refreshRate= 160 *1.0;  #160 #set to the framerate of the monitor
 useClock = True #as opposed to using frame count, which assumes no frames are ever missed
-fullscr=0; scrn=1
+fullscr=1; scrn=0
 # create a dialog from dictionary 
 infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':True, 'Screen to use':scrn, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': refreshRate }
 OK = gui.DlgFromDict(dictionary=infoFirst, 
@@ -256,7 +256,7 @@ NextRemindCountText = visual.TextStim(myWin,pos=(.1, -.5),colorSpace='rgb',color
 stimList = []
 # temporalfrequency limit test
 numObjsInRing = [2]
-speedsEachNumObjs =  [ [1.0] ]     #dont want to go faster than 2 because of blur problem
+speedsEachNumObjs =  [ [1.1,1.2,1.4,1.7] ]     #dont want to go faster than 2 because of blur problem
 numTargets = np.array([2])  # np.array([1,2,3])
 leastCommonMultipleSubsets = calcCondsPerNumTargets(numRings,numTargets)
 leastCommonMultipleTargetNums = LCM( numTargets )  #have to use this to choose whichToQuery. For explanation see newTrajectoryEventuallyForIdentityTracking.oo3
@@ -614,6 +614,7 @@ if eyetracking:
 
 randomStartAngleEachRing = True
 randomInitiialDirExceptRing0 = True
+oppositeInitialDirFirstTwoRings = True
 
 while trialNum < trials.nTotal and expStop==False:
     accelerateComputer(1,process_priority, disable_gc) #speed up
@@ -628,6 +629,8 @@ while trialNum < trials.nTotal and expStop==False:
     if randomInitiialDirExceptRing0:
         initialDirectionEachRing = list( np.random.random_integers(0,1,size=[numRings]) *2 -1 ) #randomise initial direction of each ring
         initialDirectionEachRing[0] = thisTrial['initialDirRing0']
+        if oppositeInitialDirFirstTwoRings and numRings>1:
+            initialDirectionEachRing[1] = -1*initialDirectionEachRing[0]
     else:
         initialDirectionEachRing = [ thisTrial['initialDirRing0'] ] * numRings
     trackVariableIntervDur=np.random.uniform(0,trackVariableIntervMax) #random interval tacked onto tracking to make total duration variable so cant predict final position
@@ -790,11 +793,11 @@ while trialNum < trials.nTotal and expStop==False:
         else:correct=0
         if correct:
             highA = sound.Sound('G',octave=5, sampleRate=6000, secs=.8, bits=8)
-            highA.setVolume(0.8)
+            highA.setVolume(0.3) #low volume because piercing, loud relative to inner, outer files
             highA.play()
         else: #incorrect
             lowD = sound.Sound('E',octave=3, sampleRate=6000, secs=.8, bits=8)
-            lowD.setVolume(0.8)
+            lowD.setVolume(0.9)
             lowD.play()
     trialNum+=1
     waitForKeyPressBetweenTrials = False
