@@ -10,7 +10,8 @@ from math import atan, pi, cos, sin, sqrt, ceil
 import time, sys, platform, os, StringIO, gc
 from EyelinkEyetrackerForPsychopySUPA3 import EyeLinkCoreGraphicsPsychopy, Tracker_EyeLink #Chris Fajou integration
 from helpersAOH import accelerateComputer, openMyStimWindow, calcCondsPerNumTargets, LCM, gcd
-eyetracking = False
+eyetracking = False; eyetrackFileGetFromEyelinkMachine = False #very timeconsuming to get the file from the Windows machine over the ethernet cable, 
+#usually better to get the EDF file from the Eyelink machine by hand by rebooting into Windows and going to 
 
 quitFinder = True
 if quitFinder:
@@ -836,20 +837,25 @@ if expStop == True:
     print('user aborted experiment on keypress with trials trialNum=', trialNum, file=logF)
     print('user aborted experiment on keypress with trials trialNum=', trialNum)
     
-if eyetracking:
-    eyetrackerFileWaitingText = visual.TextStim(myWin,pos=(-.1,0),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
-    eyetrackerFileWaitingText.setText('Waiting for eyetracking file from Eyelink computer')
-    eyetrackerFileWaitingText.draw()
-    myWin.flip()
-    msg = tracker.closeConnectionToEyeTracker(eyeMoveFile) #this requests the data back and thus can be very time-consuming, like 20 min or more
-    print(msg); print(msg,file=logF) #""Eyelink connection closed successfully" or "Eyelink not available, not closed properly"
 print('finishing at ',timeAndDateStr, file=logF)
 print('%corr order report= ', round( numTrialsOrderCorrect*1.0/trialNum*100., 2)  , '% of ',trialNum,' trials', end=' ')
 print('%corr each speed: ', end=' ')
 print(np.around( numRightWrongEachSpeedOrder[:,1] / ( numRightWrongEachSpeedOrder[:,0] + numRightWrongEachSpeedOrder[:,1]), 2))
 print('\t\t\t\tnum trials each speed =', numRightWrongEachSpeedOrder[:,0] + numRightWrongEachSpeedOrder[:,1])
 logging.flush(); dataFile.close(); logF.close()
-if quitFinder:
+
+if eyetracking 
+  if eyetrackFileGetFromEyelinkMachine:
+    eyetrackerFileWaitingText = visual.TextStim(myWin,pos=(-.1,0),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
+    eyetrackerFileWaitingText.setText('Waiting for eyetracking file from Eyelink computer. Do not abort eyetracking machine or file will not be saved?')
+    eyetrackerFileWaitingText.draw()
+    myWin.flip()
+    msg = tracker.closeConnectionToEyeTracker(eyeMoveFile) #this requests the data back and thus can be very time-consuming, like 20 min or more
+    print(msg); print(msg,file=logF) #""Eyelink connection closed successfully" or "Eyelink not available, not closed properly"
+  else: 
+    print('You will have to get the Eyelink EDF file off the eyetracking machine by hand')
+    
+if quitFinder: #turn Finder back on
         applescript="\'tell application \"Finder\" to launch\'" #turn Finder back on
         shellCmd = 'osascript -e '+applescript
         os.system(shellCmd)
