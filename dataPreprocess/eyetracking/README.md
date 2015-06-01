@@ -9,6 +9,8 @@ Call functions in `EyelinkEyetrackerForPsychopySUPA3.py` to open communication w
 
 Get the EDF file off the eyetracking machine (reboot eyetracking machine, select Windows), it's located in Eyelink:elcl:data and has the name of the participant.
 
+### Fixation report
+
 - On a machine with the Eyelink Dataviewer and dongle driver installed, put the dongle in the USB port and open Eyelink DataViewer.
 - choose Analysis->Reports-> and then if you are only interested in when fixation was broken, choose ->Fixation Report.
 - Choose which variables you want in the Output Report. In the case of checking whether fixation was broken, they are
@@ -25,9 +27,15 @@ LN_20Apr2015_14-22	Trial: 2	AFTER	400.00
 
 However, TRIAL_INDEX might be better because might not spit out the "Trial: " part.
 
+#### summariseEyelinkData.R started by Chris Fajou
+summariseEyelinkData.R takes the Fixation Report and goes through all the rows (events reported by Eyelink) for a given trial and works out whether the trial should be discarded.
+	
+### getting X,Y of every eyetracker sample
 - When you want X,Y for each frame, that's called a Sample Report. 
 - In the Inspector box, choose Preferences instead of Data and click Data Loading and tick Load Samples. This affects import of EDF files. If you have already imported an EDF file, you will not have the samples. You must re-import.
 - Then generate a report, Analysis->Reports->Sample Report and include LEFT_GAZE_X and LEFT_GAZE_Y and possibly VIDEO_FRAME_INDEX for the time index, although I'm not certain that's as accurate as TIMESTAMP.
+
+
 
 ## Pupillometry
 

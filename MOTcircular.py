@@ -33,7 +33,6 @@ trackAllIdenticalColors = True#with tracking, can either use same colors as othe
 timeAndDateStr = time.strftime("%d%b%Y_%H-%M", time.localtime()) 
 respTypes=['order']; respType=respTypes[0]
 bindRadiallyRingToIdentify=1 #0 is inner, 1 is outer
-trackPostcueOrClick = 1 #postcue means say yes/no postcued was a target, click means click on which you think was/were the targets
 
 numRings=2
 radii=[2.5,9.5]   #Need to encode as array for those experiments wherein more than one ring presented 
@@ -305,7 +304,6 @@ logging.info(    'numtrials='+ str(trials.nTotal)+' and each trialDur='+str(tria
 print(' numtrials=', trials.nTotal)
 print('rampUpDur=',rampUpDur, ' rampDownDur=', rampDownDur, ' secs', file=logF);  logging.info( logF.getvalue() ); logF = StringIO.StringIO() 
 logging.info('task='+'track'+'   respType='+respType)
-logging.info( 'colors_all='+str(colors_all)+ '  trackPostcueOrClick='+str(trackPostcueOrClick)  )
 logging.info(   'radii=' + str(radii)   )
 logging.flush()
 

@@ -140,19 +140,19 @@ for (expi in 1:length(expFolders)) {
       }      
     }		
   }
+ #check data counterbalancing of this exp
+ source("analysis/helpers/checkCounterbalancing.R")
+ checkCombosOccurEqually(dat, c("numObjects","numTargets") )
+ checkCombosOccurEqually(dat, c("numObjects","numTargets","ringToQuery") )
+ checkCombosOccurEqually(dat, c("condition","leftOrRight") )
+ checkCombosOccurEqually(dat, c("condition","leftOrRight","offsetXYring0") ) #NO?
+ checkCombosOccurEqually(dat, c("numObjects","numTargets","speed") )  
 }
 
 rawData = subset(rawData, subject != "auto") #get rid of any autopilot data
 dat <-rawData
 #end data importation
 
-#check data counterbalancing
-source("analysis/helpers/checkCounterbalancing.R")
-checkCombosOccurEqually(dat, c("numObjects","numTargets") )
-checkCombosOccurEqually(dat, c("numObjects","numTargets","ringToQuery") )
-checkCombosOccurEqually(dat, c("condition","leftOrRight") )
-checkCombosOccurEqually(dat, c("condition","leftOrRight","offsetXYring0") ) #NO?
-checkCombosOccurEqually(dat, c("numObjects","numTargets","speed") )
 #If instead of using raw speed, I rank the speed within each numObjects*numTargets, then from that perspective everything should
 #be perfectly counterbalanced, because each numObjects*numTargets combination has the same number of speeds tested
 #But the rank for a speed depends on what numObjects-numTargets condition it's in. Should be easy with ddply

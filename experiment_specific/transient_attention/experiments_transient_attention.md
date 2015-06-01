@@ -4,7 +4,7 @@ Collaboration with Arni Kristjansson
 ![alt text](KristjanssonNakayamaMackeben_stim.png
  "Screencap of the KNM paper")
 
-- The cue comes on and stays on. 
+- The cue appears (and stays on) `cueLeadTime` before the target iris displaces.
 - The eyeballs appear. Shortly after, the iris displaces. Do we ever want the eyeballs on during the cue? 
 - Task is to report the iris offset of the cued ball.
 - Contrast some conditions

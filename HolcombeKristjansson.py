@@ -10,7 +10,7 @@ from copy import deepcopy
 from math import atan, pi, cos, sin, sqrt, ceil
 import time, sys, platform, os, StringIO, gc
 from EyelinkEyetrackerForPsychopySUPA3 import EyeLinkCoreGraphicsPsychopy, Tracker_EyeLink #Chris Fajou integration
-from helpersAOH import accelerateComputer, openMyStimWindow
+from helpersAOH import accelerateComputer, openMyStimWindow, constructRingAsGrating
 eyetracking = False
 
 quitFinder = True
@@ -34,7 +34,7 @@ trackAllIdenticalColors = True#with tracking, can either use same colors as othe
 timeAndDateStr = time.strftime("%d%b%Y_%H-%M", time.localtime()) 
 respTypes=['order']; respType=respTypes[0]
 bindRadiallyRingToIdentify=1 #0 is inner, 1 is outer
-trackPostcueOrClick = 1 #postcue means say yes/no postcued was a target, click means click on which you think was/were the targets
+gratingTexPix=1024#numpy textures must be a power of 2. So, if numColorsRoundTheRing not divide without remainder into textPix, there will be some rounding so patches will not all be same size
 
 numRings=2
 radii=[2.5,9.5]   #Need to encode as array for those experiments wherein more than one ring presented 
@@ -45,7 +45,7 @@ refreshRate= 60 *1.0;  #160 #set to the framerate of the monitor
 useClock = True #as opposed to using frame count, which assumes no frames are ever missed
 fullscr=0; scrn=0
 # create a dialog from dictionary 
-infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':True, 'Screen to use':scrn, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': refreshRate }
+infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':False, 'Screen to use':scrn, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': refreshRate }
 OK = gui.DlgFromDict(dictionary=infoFirst, 
     title='MOT', 
     order=['Autopilot','Check refresh etc', 'Screen to use', 'Screen refresh rate', 'Fullscreen (timing errors if not)'], 
@@ -61,14 +61,12 @@ print('scrn = ',scrn, ' from dialog box')
 fullscr = infoFirst['Fullscreen (timing errors if not)']
 refreshRate = infoFirst['Screen refresh rate']
 
-#trialDur does not include trackingExtraTime, during which the cue is on. Not really part of the trial.
 trialDur = 3.3
 if demo:trialDur = 5;refreshRate = 60.; 
 tokenChosenEachRing= [-999]*numRings
 rampUpDur=0; rampDownDur=0
-trialDurFrames=int(trialDur*refreshRate)+int( trackingExtraTime*refreshRate )
+trialDurFrames=int(trialDur*refreshRate)+int( refreshRate )
 rampUpFrames = refreshRate*rampUpDur;   rampDownFrames = refreshRate*rampDownDur;
-ShowTrackCueFrames = int( refreshRate*toTrackCueDur )
 rampDownStart = trialDurFrames-rampDownFrames
 ballStdDev = 1.8
 mouseChoiceArea = ballStdDev*0.8 # origin =1.3
@@ -208,7 +206,33 @@ print('second window opening runInfo mean ms=',runInfo["windowRefreshTimeAvg_ms"
 logging.info(runInfo)
 logging.info('gammaGrid='+str(mon.getGammaGrid()))
 logging.info('linearizeMethod='+str(mon.getLinearizeMethod()))
-    
+
+eyeballRadius = 5
+eyeball = visual.Circle(myWin, radius=eyeballRadius, edges=32, fillColorSpace='rgb',fillColor = (1,0,1),autoLog=autoLogging) #to outline chosen options
+
+#def constructCues(numRings,numCuesEachRing): #they are bits of arc
+#   ringRadialMaskEachRing=[[0,0,0,0,1,] ,[0,0,0,0,0,0,0,1,],[0,0,0,0,0,0,0,0,0,0,1,1,]] #to mask off center part of cirle, all a part of creating arc
+#   cuesEachRing = list()
+#    cueTex.append(np.ones([gratingTexPix,gratingTexPix,3])*bgColor[0])
+#
+#    for r in range( numRings ):
+#        if numCuesEachRing[r] > 0: #draw cue
+#            cueArcOuterRadius = radii[0] + eyeballRadius
+#        cueArcInner = \ #draw cueing grating for tracking task. Have entire grating be empty except for one white sector
+#             visual.RadialStim(myWin, tex=cueTex[i], color=[1,1,1],cueArcOuterRadius, #cueTexInner is white. Only one sector of it shown by mask
+#             visibleWedge=(0, 30), 
+#             mask=ringRadialMask[0], 
+#             radialCycles=0, angularCycles=1, #only one cycle because no pattern actually repeats- trying to highlight only one sector
+#             angularRes=angRes, interpolate=antialiasGrating, autoLog=autoLogging)
+#        cueArcOuter =  \ #draw cueing grating for tracking task. Have entire grating be empty except for one white sector
+#             visual.RadialStim(myWin, tex=cueTex[i], color=[1,1,1],cueArcOuterRadius, #cueTexInner is white. Only one sector of it shown by mask
+#             visibleWedge=(0, 30), 
+#             mask=ringRadialMask[0], 
+#             radialCycles=0, angularCycles=1, #only one cycle because no pattern actually repeats- trying to highlight only one sector
+#             angularRes=angRes, interpolate=antialiasGrating, autoLog=autoLogging)
+#        cuesEachRing.append([cueArcInner,cueArcOuter])
+#    return cuesEachRing
+
 gaussian = visual.PatchStim(myWin, tex='none',mask='gauss',colorSpace='rgb',size=ballStdDev,autoLog=autoLogging)
 gaussian2 = visual.PatchStim(myWin, tex='none',mask='gauss',colorSpace='rgb',size=ballStdDev,autoLog=autoLogging)
 optionChosenCircle = visual.Circle(myWin, radius=mouseChoiceArea, edges=32, fillColorSpace='rgb',fillColor = (1,0,1),autoLog=autoLogging) #to outline chosen options
@@ -240,15 +264,14 @@ NextRemindPctDoneText = visual.TextStim(myWin,pos=(-.1, -.4),colorSpace='rgb',co
 NextRemindCountText = visual.TextStim(myWin,pos=(.1, -.5),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
 
 stimList = []
-numObjsInRings = [[1,8]] #First entry in each sub-list is num cues in the cue ring. Second entry is num objects in the objects ring
 speeds =  [ 0.5 ]     #dont want to go faster than 2 because of blur problem
 #Set up the factorial design (list of all conditions)
-for numCues in [1]:
- for numObjs in [4]:
+for numCuesEachRing in [ [1,0] ]:
+ for numObjsEachRing in [ [1,8] ]: #First entry in each sub-list is num objects in the first ring, second entry is num objects in the second ring
   for cueLeadTime in [.160, .700]:  #How long is the cue on prior to the eyeballs appearing
       for speed in speeds:
               for direction in [-1.0,1.0]:  
-                    stimList.append( {'numCues':numCues,'numObjs':numObjs,'cueLeadTime':cueLeadTime,'speed':speed, 'direction':direction} )
+                    stimList.append( {'numCuesEachRing':numCuesEachRing,'numObjsEachRing':numObjsEachRing,'cueLeadTime':cueLeadTime,'speed':speed, 'direction':direction} )
 #set up record of proportion correct in various conditions
 trials = data.TrialHandler(stimList,trialsPerCondition, #constant stimuli method
                                         extraInfo= {'subject':subject} )  #will be included in each row of dataframe and wideText
@@ -265,7 +288,6 @@ logging.info(    'numtrials='+ str(trials.nTotal)+' and each trialDur='+str(tria
 print(' numtrials=', trials.nTotal)
 print('rampUpDur=',rampUpDur, ' rampDownDur=', rampDownDur, ' secs', file=logF);  logging.info( logF.getvalue() ); logF = StringIO.StringIO() 
 logging.info('task='+'track'+'   respType='+respType)
-logging.info( 'colors_all='+str(colors_all)+ '  trackPostcueOrClick='+str(trackPostcueOrClick)  )
 logging.info(   'radii=' + str(radii)   )
 logging.flush()
 
@@ -318,7 +340,7 @@ def angleChangeThisFrame(thisTrial, moveDirection, numRing, thisFrameN, lastFram
     angleMove = moveDirection[numRing]*thisTrial['direction']*thisTrial['speed']*2*pi*(thisFrameN-lastFrameN)/refreshRate
     return angleMove
 
-def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngle,isReversed,reversalNumEachRing,ShowTrackCueFrames): 
+def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,eyeballsCurrAngleEachRing,isReversed,reversalNumEachRing): 
 #defining a function to draw each frame of stim. So can call second time for tracking task response phase
           global cueRing,ringRadial,ringRadialR, currentlyCuedBlob #makes python treat it as a local variable
           global angleIniEachRing, correctAnswers
@@ -338,40 +360,46 @@ def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,currAngl
           else:
             fixationBlank.draw()
           fixationPoint.draw()
-          
-          for numRing in range(numRings):
+          #draw cue
+          for cue in cueRings:
             angleMove = angleChangeThisFrame(thisTrial, moveDirection, numRing, n, n-1)
-            currAngle[numRing] = currAngle[numRing]+angleMove*(isReversed[numRing])
-            angleObject0 = angleIniEachRing[numRing] + currAngle[numRing]
-            #if numRing==0:
-            #    print('angleMove=',np.round(angleMove,2)*180/pi, ' angleObject0=',np.round(angleObject0,2)*180/pi)
-            for nobject in range(thisTrial['numObjs']):
-                if nobject==0:
-                        if reversalNumEachRing[numRing] <= len(reversalTimesEachRing[numRing]): #haven't exceeded  reversals assigned
-                            reversalNum = int(reversalNumEachRing[numRing])
-                            if len( reversalTimesEachRing[numRing] ) <= reversalNum:
-                                msg = 'You failed to allocate enough reversal times, reached ' +str(reversalNum)+ ' reversals at '+ str(reversalTimesEachRing[numRing][reversalNum-1]) + \
-                                          'and still going, current time ='+str(n/refreshRate)+' asking for time of next one, will assume no more reversals'
-                                logging.error(msg)
-                                print(msg)
-                                nextReversalTime = 9999 #didn't allocate enough, will just not reverse any more
-                            else: #allocated enough reversals
-                                nextReversalTime = reversalTimesEachRing[numRing][ reversalNum ]
-                            if n > refreshRate * nextReversalTime: #have now exceeded time for this next reversal
-                                isReversed[numRing] = -1*isReversed[numRing]
-                                reversalNumEachRing[numRing] +=1
-                angleThisObject = angleObject0 + (2*pi)/thisTrial['numObjs']*nobject
-                x,y = xyThisFrameThisAngle('circle',radii, numRing,angleThisObject,n,thisTrial['speed']) ########################################################
-                x += offsetXYeachRing[numRing][0]
-                y += offsetXYeachRing[numRing][1]
-                blobColor = colors_all[0]*contrast
-                #referenceCircle.setPos(offsetXYeachRing[numRing]);  referenceCircle.draw() #debug
-                gaussian.setColor( blobColor, log=autoLogging )
-                gaussian.setPos([x,y])
-                gaussian.draw()
+            cue.setOri(angleMove,operation='+',log=autoLogging)
+            cue.draw()
+          #draw eyeballs
+          if n >= thisTrial['cueLeadTime']*refreshRate: #also draw rings
+              for numRing in range(numRings):
+                angleMove = angleChangeThisFrame(thisTrial, moveDirection, numRing, n, n-1)
+                eyeballsCurrAngleEachRing[numRing] = eyeballsCurrAngleEachRing[numRing]+angleMove*(isReversed[numRing])
+                angleObject0 = angleIniEachRing[numRing] + eyeballsCurrAngleEachRing[numRing]
+                #if numRing==0:
+                #    print('angleMove=',np.round(angleMove,2)*180/pi, ' angleObject0=',np.round(angleObject0,2)*180/pi)
+                for nobject in range(thisTrial['numObjsEachRing'][numRing]):
+                    if nobject==0:
+                            if reversalNumEachRing[numRing] <= len(reversalTimesEachRing[numRing]): #haven't exceeded  reversals assigned
+                                reversalNum = int(reversalNumEachRing[numRing])
+                                if len( reversalTimesEachRing[numRing] ) <= reversalNum:
+                                    msg = 'You failed to allocate enough reversal times, reached ' +str(reversalNum)+ ' reversals at '+ str(reversalTimesEachRing[numRing][reversalNum-1]) + \
+                                              'and still going, current time ='+str(n/refreshRate)+' asking for time of next one, will assume no more reversals'
+                                    logging.error(msg)
+                                    print(msg)
+                                    nextReversalTime = 9999 #didn't allocate enough, will just not reverse any more
+                                else: #allocated enough reversals
+                                    nextReversalTime = reversalTimesEachRing[numRing][ reversalNum ]
+                                if n > refreshRate * nextReversalTime: #have now exceeded time for this next reversal
+                                    isReversed[numRing] = -1*isReversed[numRing]
+                                    reversalNumEachRing[numRing] +=1
+                    angleThisObject = angleObject0 + (2*pi)/thisTrial['numObjs']*nobject
+                    x,y = xyThisFrameThisAngle('circle',radii, numRing,angleThisObject,n,thisTrial['speed']) ########################################################
+                    x += offsetXYeachRing[numRing][0]
+                    y += offsetXYeachRing[numRing][1]
+                    blobColor = colors_all[0]*contrast
+                    #referenceCircle.setPos(offsetXYeachRing[numRing]);  referenceCircle.draw() #debug
+                    gaussian.setColor( blobColor, log=autoLogging )
+                    gaussian.setPos([x,y])
+                    gaussian.draw()
           if blindspotFill:
               blindspotStim.draw()
-          return angleIniEachRing,currAngle,isReversed,reversalNumEachRing   
+          return angleIniEachRing,eyeballsCurrAngleEachRing,isReversed,reversalNumEachRing   
 # #######End of function definition that displays the stimuli!!!! #####################################
 
 def collectResponseKH( expStop): #Kristjansson&Holcombe cuing experiment
@@ -396,19 +424,14 @@ def collectResponseKH( expStop): #Kristjansson&Holcombe cuing experiment
                 STOP
     return responses,responsesAutopilot,respondedEachToken, expStop
 
-    
-print('Starting experiment of',trials.nTotal,'trials. Current trial is trial 0.')
 
-for r in range(numRings):
-    for j in range(maxPossibleReversals()):
-        dataFile.write('rev'+str(r)+'_'+str(j)+'\t')  #reversal times for each ring
 print('timingBlips', file=dataFile)
+trialNum=0; numTrialsCorrect=0; expStop=False; framesSaved=0;
+print('Starting experiment of',trials.nTotal,'trials. Current trial is trial ',trialNum)
 #end of header
 trialClock = core.Clock()
 stimClock = core.Clock()
-trialNum=0; numTrialsCorrect=0; expStop=False; framesSaved=0;
 thisTrial = trials.next()
-trialDurTotal=0;
 ts = list();
 
 if eyetracking:
@@ -422,13 +445,18 @@ while trialNum < trials.nTotal and expStop==False:
     isReversed= list([1]) * numRings #always takes values of -1 or 1
     reversalNumEachRing = list([0]) * numRings
     angleIniEachRing = list( np.random.uniform(0,2*pi,size=[numRings]) )
-    currAngle = list([0]) * numRings
+    cueCurrAngleEachRing = list([0]) * numRings
     moveDirection = list( np.random.random_integers(0,1,size=[numRings]) *2 -1 ) #randomise initial direction
-    trialDurTotal = maxTrialDur()  #thisTrial['cueLeadTime'] + targetDur + maskDur
+    trialDurTotal = trialDur + thisTrial['cueLeadTime']
     trialDurFrames= int( trialDurTotal*refreshRate )
     #xyTargets = np.zeros( [thisTrial['numTargets'], 2] ) #need this for eventual case where targets can change what ring they are in
     #numDistracters = numRings*thisTrial['numObjectsInRing'] - thisTrial['numTargets']
     #xyDistracters = np.zeros( [numDistracters, 2] )
+    
+    #change to use wedge range
+    ringRadial,cueRings,currentlyCuedBlob =  \
+        constructRingAsGrating(numObjects=1,patchAngle=30,colors=[[1,0,0],[0,1,1]],stimColorIdxsOrder=[[0,0],[0,0]],gratingTexPix=gratingTexPix,blobToCue=0,ppLog=logging)
+    #I will not be using ringRadial or currentlyCuedBlob, so modify constructRingAsGrating later to delete it
 
     reversalTimesEachRing = getReversalTimes()
     #print('reversalTimesEachRing=',np.around(np.array(reversalTimesEachRing),2),' maxPossibleReversals=',maxPossibleReversals()) #debugOFF
@@ -449,8 +477,8 @@ while trialNum < trials.nTotal and expStop==False:
     stimClock.reset()
     for n in range(trialDurFrames): #this is the loop for this trial's stimulus!
             offsetXYeachRing=[[0,0],[0,0]]
-            (angleIni,currAngle,isReversed,reversalNumEachRing) = \
-                            oneFrameOfStim(thisTrial,n,stimClock,useClock,offsetXYeachRing,currAngle,isReversed,reversalNumEachRing,ShowTrackCueFrames) #da big function
+            (angleIni,eyeballsCurrAngleEachRing,isReversed,reversalNumEachRing) = \
+                            oneFrameOfStim(thisTrial,n,cueRings,stimClock,useClock,offsetXYeachRing,eyeballsCurrAngleEachRing,isReversed,reversalNumEachRing) #da big function
             if exportImages:
                 myWin.getMovieFrame(buffer='back') #for later saving
                 framesSaved +=1
