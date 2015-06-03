@@ -10,22 +10,42 @@
 #The job of this program is to examine each fixation event designated by Eyelink and check whether
 #all the fixations for each trial is within the desired fixation zone.
 #It also outputs whether the subject blinked on each trial.
-inputFilename<-"TrackingExperimentEyetrackingLN"
+library(stringr)
+
+inputFilename<-"WN_26May2015_13-44Eyetracking"# "TrackingExperimentEyetrackingLN"
 inputFilenameSuffix<-".txt"
-inputDir<-"./"
+inputDir<-"./dataForTestingOfCode/"
 inputFilenameWithPath<-paste0(inputDir,inputFilename,inputFilenameSuffix)
-outputFilename<-paste0(inputFilename,"_eachTrialSummary")
-mydata <- read.table(inputFilenameWithPath, header = TRUE, sep ="\t")
+outputFilename<-paste0(inputDir,inputFilename,"_eachTrialSummary")
+df <- read.table(inputFilenameWithPath, header = TRUE, sep ="\t")
 
-#Change names of columns to something more readable
-colnames(mydata)<- c("Subject", "Trial", "Blink", "Position")
+#trial num should be contained in either TRIAL_LABEL or TRIAL_INDEX
+if (any(str_detect(colnames(df),"TRIAL_LABEL"))) {
+  #TRIAL_LABEL column contents are printed as as "Trial:1", "Trial:2". Let's delete "Trial:"
+  mydata$Trial<-gsub("Trial:", "", mydata$TRIAL_LABEL)
+  #Converts Trial number in to numeric form  
+  mydata<-transform(mydata, TRIAL_LABEL=as.numeric(TRIAL_LABEL))
+  names(df)[names(df) == 'TRIAL_LABEL'] <- 'trial' #rename column
+} else if (any(str_detect(colnames(df),"TRIAL_INDEX"))){
+  names(df)[names(df) == 'TRIAL_INDEX'] <- 'trial' #rename column
+} else { 
+  print("Neither TRIAL_LABEL nor TRIAL_INDEX present, need one!") }
 
-#Eyelink spits out this column contents as "Trial:1", "Trial:2". Let's delete "Trial:"
-#removes the word Trial from that column
-mydata$Trial<-gsub("Trial:", "", mydata$Trial)
-
-#Converts Trial number in to numeric form  
-mydata<-transform(mydata, Trial=as.numeric(Trial))
+colsExpected = c("RECORDING_SESSION_LABEL","trial","CURRENT_FIX_BLINK_AROUND",
+                 "CURRENT_FIX_X","CURRENT_FIX_Y")
+colsExpectedNotPresent <- setdiff( colsExpected,colnames(df) )
+if (length(colsExpectedNotPresent) >0) {
+  if (length(colsExpectedNotPresent)==1 && colsExpectedNotPresent[1]=="CURRENT_FIX_Y") {
+    print("Chris early output did not include CURRENT_FIX_Y, that's ok for now")
+  } else {
+    stop( paste0("The file ",inputFilename," does not have the expected columns  :",colsExpectedNotPresent) )
+  }
+}
+colsPresentNotExpected<- setdiff( colnames(df), colsExpected )
+if (length(colsPresentNotExpected) >0) {
+  cat("These columns are in the file",inputFilename," but were not expected:")
+  print( paste(colsPresentNotExpected,collapse=',') )
+}
 
 #Calculating the exclusion zone numbers
 exclusionDeg = 0.2 #if participant's eye is ever more than exclusionDeg away from fixation, Exclusion=1
@@ -48,8 +68,11 @@ for(i in 1:nrow(mydata)){
 	mydata$blink[i] = blinked
 }
 
+#Change names of columns to something more readable
+#colnames(mydata)<- c("Subject", "Trial", "Blink", "Position")
+
 #Find the highest value in the Trial Column (the number of trials)
-highestValue = max(mydata$Trial)
+highestValue = max(mydata$trial)
 
 #Loop through all the trials, to check each trial individually
 trialsCollapsed<-NULL

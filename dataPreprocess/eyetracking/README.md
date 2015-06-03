@@ -36,7 +36,6 @@ summariseEyelinkData.R takes the Fixation Report and goes through all the rows (
 - Then generate a report, Analysis->Reports->Sample Report and include LEFT_GAZE_X and LEFT_GAZE_Y and possibly VIDEO_FRAME_INDEX for the time index, although I'm not certain that's as accurate as TIMESTAMP.
 
 
-
 ## Pupillometry
 
 - Eyelink Data Viewer it lets you choose as a field to output Current_Fix_Pupil
@@ -51,7 +50,3 @@ summariseEyelinkData.R takes the Fixation Report and goes through all the rows (
 - Then, Juno has R program that reads in the two files output from asc2msg, then it looks for certain events which denote the time interval of interest.
 
 EDF2ASC can do at least two different things. Split out different things.
-
-- Meet with Tamara
-
--- Order with which the EDF files are saved. The event markers were appearing after the data. Please ensure that the events are written in before the start. Ask Tamara about that.
