@@ -11,6 +11,7 @@
 #all the fixations for each trial is within the desired fixation zone.
 #It also outputs whether the subject blinked on each trial.
 library(stringr)
+library(dplyr)
 
 inputFilename<-"WN_26May2015_13-44Eyetracking"# "TrackingExperimentEyetrackingLN"
 inputFilenameSuffix<-".txt"
@@ -20,13 +21,13 @@ outputFilename<-paste0(inputDir,inputFilename,"_eachTrialSummary")
 df <- read.table(inputFilenameWithPath, header = TRUE, sep ="\t")
 
 #trial num should be contained in either TRIAL_LABEL or TRIAL_INDEX
-if (any(str_detect(colnames(df),"TRIAL_LABEL"))) {
+if ("TRIAL_LABEL" %in% colnames(df)) {
   #TRIAL_LABEL column contents are printed as as "Trial:1", "Trial:2". Let's delete "Trial:"
-  mydata$Trial<-gsub("Trial:", "", mydata$TRIAL_LABEL)
+  df$TRIAL_LABEL<-gsub("Trial:", "", df$TRIAL_LABEL)
   #Converts Trial number in to numeric form  
-  mydata<-transform(mydata, TRIAL_LABEL=as.numeric(TRIAL_LABEL))
+  df<-transform(df, TRIAL_LABEL=as.numeric(TRIAL_LABEL))
   names(df)[names(df) == 'TRIAL_LABEL'] <- 'trial' #rename column
-} else if (any(str_detect(colnames(df),"TRIAL_INDEX"))){
+} else if ("TRIAL_INDEX" %in% colnames(df)){
   names(df)[names(df) == 'TRIAL_INDEX'] <- 'trial' #rename column
 } else { 
   print("Neither TRIAL_LABEL nor TRIAL_INDEX present, need one!") }
@@ -56,38 +57,40 @@ viewdist = 57 #cm
 widthScreenDeg =  2*(atan((monitorWidth/2)/viewdist) /pi*180)
 pixelsPerDegree = widthPix / widthScreenDeg
 exclusionPixels = exclusionDeg * pixelsPerDegree
-leftThresholdPixel = widthPix/2 - exclusionPixels
-rightThresholdPixel = widthPix/2 + exclusionPixels
+leftLimitPixel = widthPix/2 - exclusionPixels
+rightLimitPixel = widthPix/2 + exclusionPixels
+bottomLimitPixel = heightPix/2 + exclusionPixels
+topLimitPixel = heightPix/2 - exclusionPixels
 
-#Go through every fixation event for all trials and check whether each fixation is within the designated limit
-#Also check for any blinks during all trials
-for(i in 1:nrow(mydata)){
-	withinRange = (mydata$Position[i]>=leftThresholdPixel) & (mydata$Position[i]<= rightThresholdPixel)
-	blinked = (mydata$Blink[i] != "NONE")
-	mydata$eyeOutOfFixationArea[i] = !withinRange
-	mydata$blink[i] = blinked
+#File is formatted with potentially many rows for each trial. Multiple events in each trial according to Eyelink
+#Code whether a blink occurred around the time of every event
+dg<-mutate(df,blink=(CURRENT_FIX_BLINK_AROUND!="NONE"))
+
+#Go through every event for all trials and indicate whether each event falls within the designated limits
+dg<-mutate(dg, outOfDesiredArea= 
+             (CURRENT_FIX_X>leftLimitPixel) & (CURRENT_FIX_X<rightLimitPixel) )
+
+if ("CURRENT_FIX_Y" %in% colnames(dg)) {
+  dg<-mutate(dg, outOfDesiredArea= 
+               (CURRENT_FIX_Y>=bottomLimitPixel) & (CURRENT_FIX_X<topLimitPixel) )  
 }
 
 #Change names of columns to something more readable
 #colnames(mydata)<- c("Subject", "Trial", "Blink", "Position")
 
-#Find the highest value in the Trial Column (the number of trials)
-highestValue = max(mydata$trial)
+#Break apart by trial number, then find max deviation and whether any fell out of desired area, etc
+by_trial <- group_by(dg, trial)
+oneRowPerTrial <- summarise(by_trial,
+                   outOfDesiredArea = max(outOfDesiredArea),
+                   maxXdev = max( abs(CURRENT_FIX_X-widthPix/2) ),
+                   blinks = sum( blink ),
+                   meanX = mean(CURRENT_FIX_X) )
 
-#Loop through all the trials, to check each trial individually
-trialsCollapsed<-NULL
-for(i in 1:highestValue){
-	thisTrial <-NULL
-	thisTrial$Trial<-i
-	#Get only the data for this trial 
-	sub<-subset(mydata, Trial==i)
-	thisTrial$meanPosition<-mean(sub$Position)
-	deviationFromCentre = sub$Position-widthPix/2
-	indexOfMax<-which.max( abs(deviationFromCentre) )
-	thisTrial$maxDeviation = deviationFromCentre[indexOfMax]
-	thisTrial$eyeOutOfFixationArea<-max(sub$eyeOutOfFixationArea) #if any fixation events fell outside zone, 1 else 0
-	thisTrial$blink<- max(sub$blink) #TRUE if any TRUE 
-	trialsCollapsed <-rbind(trialsCollapsed, thisTrial)
+if ("CURRENT_FIX_Y" %in% colnames(dg)) {
+  oneRowPerTrialExtra <- summarise(by_trial, 
+                    maxYdev = max( abs(CURRENT_FIX_Y-heightPix/2) ),
+                    meanY = mean(CURRENT_FIX_Y) )
+  oneRowPerTrial<- merge(oneRowPerTrial, oneRowPerTrialExtra, by=c("trial"))
 }
-
-write.table(trialsCollapsed, paste0(inputDir, outputFilename,".txt"), sep="\t", row.names=FALSE)
+head(oneRowPerTrial)
+#write.table(oneRowPerTrial, paste0(inputDir, outputFilename,".txt"), sep="\t", row.names=FALSE)
