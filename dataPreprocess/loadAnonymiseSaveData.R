@@ -4,13 +4,25 @@
 #Expects eyetracking file name to be paste0(withoutSuffix,"Eyetracking.txt")
 #Expects in the eyetracking file that there should be a column called Exclusion
 setwd("/Users/alexh/Documents/attention_tempresltn/multiple object tracking/newTraj/newTraj_repo")
-
+source('dataPreprocess/eyetracking/summariseEyelinkData.R')
 expFoldersPrefix= "dataRaw/"
 expFolders <- c("offCenter","circleOrSquare_twoTargets")
 expFoldersPostfix = "" #"/rawdata"
 destinationName = "offCenterAndShape"
 destinatnDir<-"dataAnonymized/" #where the anonymized data will be exported to
 anonymiseData <- TRUE
+
+#Eyemovement exclusion zone numbers
+exclusionDeg = 0.2
+widthPix = 800
+heightPix = 600
+monitorWidth = 39.5 #cm
+viewdist = 57 #cm
+widthScreenDeg =  2*(atan((monitorWidth/2)/viewdist) /pi*180)
+pixelsPerDegree = widthPix / widthScreenDeg
+exclusionPixels = exclusionDeg * pixelsPerDegree
+centralZoneWidthPix = exclusionPixels*2
+centralZoneHeightPix = exclusionPixels*2
 
 for (expi in 1:length(expFolders)) {
   thisExpFolder = paste0(expFoldersPrefix,expFolders[expi], expFoldersPostfix)
@@ -23,18 +35,17 @@ for (expi in 1:length(expFolders)) {
     eyetrackIdxs = grep("Eyetracking",files)
     if (length(eyetrackIdxs) ==0) {
     		eyetrackFiles = FALSE
-    }
-    else { 
+    } else { 
     		eyetrackFiles = TRUE 
     		eyetrackFiles = files[eyetrackIdxs]
-	}
+	  }
     nonEyetrackIdxs = grep("Eyetracking",files,invert=TRUE)
     files<- files[nonEyetrackIdxs] #don't include eyetracking ones
     #allFilesStr <- paste(files,collapse=",") #print(allFilesStr)
     for (j in 1:length(files)) { #read in sessions of this subject
-    	  file = files[j]
+    	file = files[j]
       fname = paste0(thisSubjectDir,"/",file)
-	  rawDataLoad=tryCatch( 
+	    rawDataLoad=tryCatch( 
       	    		read.table(fname,sep='\t',header=TRUE), 
       	    		error=function(e) { 
       	    	   			stop( paste0("ERROR reading the file ",fname," :",e) )
@@ -44,7 +55,7 @@ for (expi in 1:length(expFolders)) {
       #Search for eyetracking file
       fileNameLen = nchar(file)
       withoutSuffix<-substr(file,1,fileNameLen-4) 
-      eyetrackFileNameShouldBe<- paste0(withoutSuffix,"Eyetracking.txt")
+      eyetrackFileNameShouldBe<- paste0(withoutSuffix,"EyetrackingReport.txt")
       row <- grep(eyetrackFileNameShouldBe, eyetrackFiles)
       eyetrackFileFound = ( length(row) >0 )
       numTrials<- length(rawDataLoad$trialnum)
@@ -54,19 +65,17 @@ for (expi in 1:length(expFolders)) {
       {
       	trackFname = paste0(thisSubjectDir,"/", eyetrackFileNameShouldBe)
       	eyeTrackInfo = tryCatch( 
-      	    read.table(trackFname,header=TRUE), 
+      	    read.table(trackFname,header=TRUE,sep='\t'), 
       	    error=function(e) { 
-      	    	   stop( paste0('eyeTrackingFile exists: ',trackFname,"but ERROR reading the file :",e) )
+      	    	   stop( paste0('eyeTrackingFile exists: ',trackFname," but ERROR reading the file :",e) )
            } )
       	numExcluded<- sum(eyeTrackInfo$Exclusion)
       	msg=paste0(" and found and loaded Eyetracking file. ", round(100*numExcluded/length(eyeTrackInfo$Exclusion),1),"% trials broke fixation")
     	    #Eyetracker begins trials with 1, whereas python and psychopy convention is 0
       	#So to match the eyetracker file with the psychopy file, subtract one from trial num
-      	eyeTrackInfo$trialnum = eyeTrackInfo$Trial-1
-      	#Delete the Trial column which confusingly is one greater than trialnum
-      	eyeTrackInfo$Subject <- NULL #has entire filename with date stamp
-      	eyeTrackInfo$Trial <- NULL
-      	rawDataWithEyetrack<- merge(rawDataLoad, eyeTrackInfo, by=c("trialnum"))
+      	eyeTrackOneRowPerTrial<- eyelinkReportSummarise(eyeTrackInfo,widthPix,heightPix,centralZoneWidthPix,centralZoneHeightPix)
+      	eyeTrackOneRowPerTrial$trialnum = eyeTrackOneRowPerTrial$trial-1 #psychopy starts with zero, Eyelink with 1
+      	rawDataWithEyetrack<- merge(rawDataLoad, eyeTrackOneRowPerTrial, by=c("trialnum"))
       	rawDataThis<- rawDataWithEyetrack
     	  }
      print(paste0("Loaded file ",file,msg))
@@ -140,16 +149,16 @@ for (expi in 1:length(expFolders)) {
       }      
     }		
   }
+ rawData = subset(rawData, subject != "auto") #get rid of any autopilot data
  #check data counterbalancing of this exp
  source("analysis/helpers/checkCounterbalancing.R")
- checkCombosOccurEqually(dat, c("numObjects","numTargets") )
- checkCombosOccurEqually(dat, c("numObjects","numTargets","ringToQuery") )
- checkCombosOccurEqually(dat, c("condition","leftOrRight") )
- checkCombosOccurEqually(dat, c("condition","leftOrRight","offsetXYring0") ) #NO?
- checkCombosOccurEqually(dat, c("numObjects","numTargets","speed") )  
+ checkCombosOccurEqually(rawData, c("numObjects","numTargets") )
+ checkCombosOccurEqually(rawData, c("numObjects","numTargets","ringToQuery") )
+ checkCombosOccurEqually(rawData, c("condition","leftOrRight") )
+ checkCombosOccurEqually(rawData, c("condition","leftOrRight","offsetXYring0") ) #NO?
+ checkCombosOccurEqually(rawData, c("numObjects","numTargets","speed") )  
 }
 
-rawData = subset(rawData, subject != "auto") #get rid of any autopilot data
 dat <-rawData
 #end data importation
 
@@ -158,11 +167,13 @@ dat <-rawData
 #But the rank for a speed depends on what numObjects-numTargets condition it's in. Should be easy with ddply
 ordinalSpeedAssign <- function(df) {
 #df$speedRank <- rank(df$speed)  #Rank won't work, always wants to break all ties. Whereas I want to preserve ties.
-  df$speedRank <- match(df$speed,unique(df$speed)) 
+  df$speedRank <- match(df$speed,unique(df$speed))
+  print(df$speed)
   df
 }
-library(plyr)
-d<- ddply(dat,.(numObjects,numTargets),ordinalSpeedAssign)
+d<- plyr::ddply(dat,.(numObjects,numTargets),ordinalSpeedAssign)
+grouped<- group_by(dat,numObjects,numTargets)
+d<- dplyr::summarise(grouped, speedRank= n()) # match(speed,unique(speed)))
 #check whether counterbalanced with for each speed list for a particular condition, did each equally often
 #Might not be if ran multiple sessions with different speeds
 checkCombosOccurEqually(d, c("numObjects","numTargets","speedRank") )
