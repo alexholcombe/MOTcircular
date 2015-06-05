@@ -10,7 +10,8 @@ Call functions in `EyelinkEyetrackerForPsychopySUPA3.py` to open communication w
 Long term, instead of using separate machine, communicate directly with eyetracker via pylink, which is part of Psychopy. Actually we are using modified pylink code to start and stop the eyetracker.
 http://www.psychopy.org/api/hardware/pylink.html
 
-A simple example of getting individual data from the eyetracker and a gaze-contingent experiment is [here](https://github.com/ryancotterell/WilsonLab/blob/master/WilsonLab/pylink/eyeTracker)py
+A simple example of getting individual data from the eyetracker and a gaze-contingent experiment is [here](https://github.com/ryancotterell/WilsonLab/blob/master/WilsonLab/pylink/eyeTracker.py)
+but preferably you'd use ioHub built in Psychopy eye_tracker/run.py
 
 ## Preprocessing of the Eyelink (EDF) file
 
