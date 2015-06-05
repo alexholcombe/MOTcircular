@@ -5,6 +5,13 @@ Eyetracking
 
 Call functions in `EyelinkEyetrackerForPsychopySUPA3.py` to open communication with eyetracker, to generate the calibration display and calibrate, to close the eyetracker and retrieve the eyetracking file from the Eyelink machine
 
+### Avoid going through EDF decoding
+
+Long term, instead of using separate machine, communicate directly with eyetracker via pylink, which is part of Psychopy. Actually we are using modified pylink code to start and stop the eyetracker.
+http://www.psychopy.org/api/hardware/pylink.html
+
+A simple example of getting individual data from the eyetracker and a gaze-contingent experiment is [here](https://github.com/ryancotterell/WilsonLab/blob/master/WilsonLab/pylink/eyeTracker)py
+
 ## Preprocessing of the Eyelink (EDF) file
 
 Get the EDF file off the eyetracking machine (reboot eyetracking machine, select Windows), it's located in Eyelink:elcl:data and has the name of the participant.

@@ -3,3 +3,4 @@ old/
 dataPreprocess/anonymisationKey.txt
 dataRaw/
 *.Rhistory
+.Rapp.history
