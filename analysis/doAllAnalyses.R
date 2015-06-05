@@ -43,7 +43,7 @@ datAnalyze<-datThis
 #factorsForBreakdownForAnalysis[ length(factorsForBreakdownForAnalysis)+1 ]<- "exp"
 source('analyzeMakeReadyForPlot.R') #returns fitParms, psychometrics, and function calcPctCorrThisSpeed
 table(psychometrics$condName)
-source('plotIndividDataWithPsychometricCurves.R')
+source('individDataWithPsychometricCurves.R') #for plotIndividDataAndCurves()
 plotIndividDataAndCurves(expThis,datThis,psychometrics,factorsEachExpForBreakdown[[1]]) 
 if (tryQuickpsy) {
   datDani<-datThis; datDani$speed = -1*datDani$speed
