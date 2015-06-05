@@ -56,12 +56,13 @@ eyelinkReportSummarise<- function(df,widthPix,heightPix,centralZoneWidthPix,cent
   dg<-mutate(df,blink=(CURRENT_FIX_BLINK_AROUND!="NONE")) #"NONE", "AFTER", or "BEFORE"
   
   #Go through every event for all trials and indicate whether each event falls within the designated limits
+  print(paste0("leftLimitPixel=",leftLimitPixel))
   dg<-mutate(dg, outOfCentralArea= 
-               (CURRENT_FIX_X>leftLimitPixel) & (CURRENT_FIX_X<rightLimitPixel) )
+               (CURRENT_FIX_X<leftLimitPixel) | (CURRENT_FIX_X>rightLimitPixel) )
   
   if ("CURRENT_FIX_Y" %in% colnames(dg)) {
     dg<-mutate(dg, outOfCentralArea= 
-                 (CURRENT_FIX_Y>=bottomLimitPixel) & (CURRENT_FIX_X<topLimitPixel) )  
+                 (CURRENT_FIX_Y>=bottomLimitPixel) | (CURRENT_FIX_X<topLimitPixel) )  
   }
   
   #Change names of columns to something more readable

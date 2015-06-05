@@ -22,7 +22,7 @@ widthScreenDeg =  2*(atan((monitorWidth/2)/viewdist) /pi*180)
 pixelsPerDegree = widthPix / widthScreenDeg
 exclusionPixels = exclusionDeg * pixelsPerDegree
 centralZoneWidthPix = exclusionPixels*2
-centralZoneHeightPix = exclusionPixels*2
+centralZoneHeightPix = exclusionPixels*2 #assumes the monitor is correct aspect ratio so that pixels are square
 
 for (expi in 1:length(expFolders)) {
   thisExpFolder = paste0(expFoldersPrefix,expFolders[expi], expFoldersPostfix)
@@ -69,12 +69,13 @@ for (expi in 1:length(expFolders)) {
       	    error=function(e) { 
       	    	   stop( paste0('eyeTrackingFile exists: ',trackFname," but ERROR reading the file :",e) )
            } )
-      	numExcluded<- sum(eyeTrackInfo$Exclusion)
-      	msg=paste0(" and found and loaded Eyetracking file. ", round(100*numExcluded/length(eyeTrackInfo$Exclusion),1),"% trials broke fixation")
+      	msg=paste0(" and loaded Eyetracking file. ")
     	    #Eyetracker begins trials with 1, whereas python and psychopy convention is 0
       	#So to match the eyetracker file with the psychopy file, subtract one from trial num
       	eyeTrackOneRowPerTrial<- eyelinkReportSummarise(eyeTrackInfo,widthPix,heightPix,centralZoneWidthPix,centralZoneHeightPix)
       	eyeTrackOneRowPerTrial$trialnum = eyeTrackOneRowPerTrial$trial-1 #psychopy starts with zero, Eyelink with 1
+      	proportnTrialsOutOfCentralArea = sum(eyeTrackOneRowPerTrial$outOfCentralArea != 0) / nrow(eyeTrackOneRowPerTrial)
+      	msg=paste0(" fixation broken on ",as.character(round(proportnTrialsOutOfCentralArea*100,1)), "% of trials")
       	rawDataWithEyetrack<- merge(rawDataLoad, eyeTrackOneRowPerTrial, by=c("trialnum"))
       	rawDataThis<- rawDataWithEyetrack
     	  }
@@ -168,16 +169,28 @@ dat <-rawData
 ordinalSpeedAssign <- function(df) {
 #df$speedRank <- rank(df$speed)  #Rank won't work, always wants to break all ties. Whereas I want to preserve ties.
   df$speedRank <- match(df$speed,unique(df$speed))
-  print(df$speed)
   df
 }
 d<- plyr::ddply(dat,.(numObjects,numTargets),ordinalSpeedAssign)
-grouped<- group_by(dat,numObjects,numTargets)
-d<- dplyr::summarise(grouped, speedRank= n()) # match(speed,unique(speed)))
+#grouped<- group_by(dat,numObjects,numTargets) #can't get this to work with dpylr but involves something with .  http://stackoverflow.com/questions/22182442/dplyr-how-to-apply-do-on-result-of-group-by
+#d<- dplyr::summarise(grouped, speedRank= match(speed,unique(.$speed)))
+#dat %>% group_by(numObjects,numTargets) %>% do(match(speed,unique(.$speed)))
 #check whether counterbalanced with for each speed list for a particular condition, did each equally often
 #Might not be if ran multiple sessions with different speeds
 checkCombosOccurEqually(d, c("numObjects","numTargets","speedRank") )
 
+sanityCheckEyeTracking=TRUE
+if (sanityCheckEyeTracking) {
+  h<-ggplot(filter(dat,exp=="circleOrSquare_twoTargets",subject=="LT"),
+            aes(x=maxXdev,y=maxYdev,color=file)) + geom_point()  #Have a look at fixation positions
+  quartz(); h
+  h<-ggplot(filter(dat,exp=="circleOrSquare_twoTargets",subject=="LT"),
+            aes(x=meanX,y=meanY,color=file)) + geom_point()  #Have a look at fixation positions
+  quartz(); h
+  h<-ggplot(filter(dat,exp=="offCenter"),
+            aes(x=maxXdev)) + geom_histogram()+ facet_grid(~subject) #Have a look at fixation positions
+  quartz(); h
+}
 dat$correct = dat$orderCorrect /3
 dat$chanceRate= 1 / dat$numObjects
 

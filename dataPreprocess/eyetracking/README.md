@@ -33,8 +33,8 @@ summariseEyelinkData.R takes the Fixation Report and goes through all the rows (
 ### getting X,Y of every eyetracker sample
 - When you want X,Y for each frame, that's called a Sample Report. 
 - In the Inspector box, choose Preferences instead of Data and click Data Loading and tick Load Samples. This affects import of EDF files. If you have already imported an EDF file, you will not have the samples. You must re-import.
-- Then generate a report, Analysis->Reports->Sample Report and include LEFT_GAZE_X and LEFT_GAZE_Y and possibly VIDEO_FRAME_INDEX for the time index, although I'm not certain that's as accurate as TIMESTAMP.
-
+- To reimport, click on the Data name, e.g. LT_01June2015 and right-click and select Delete. Then go back to operating system and double-click on the EDF file to re-import
+- Then generate a report, Analysis->Reports->Sample Report and include LEFT_GAZE_X and LEFT_GAZE_Y and possibly VIDEO_FRAME_INDEX for the time index ("index of the video frame that was visible at the samnple time"), although I'm not certain that's as accurate as TIMESTAMP ("time stamp of the sample (in milliseconds since Eyelink tracker was activated"), LEFT_PUPIL_SIZE.
 
 ## Pupillometry
 
@@ -49,4 +49,12 @@ summariseEyelinkData.R takes the Fixation Report and goes through all the rows (
 
 - Then, Juno has R program that reads in the two files output from asc2msg, then it looks for certain events which denote the time interval of interest.
 
+## Further automation
+
 EDF2ASC can do at least two different things. Split out different things.
+
+Search the SR Research support forums for EDFVIEW, which is mentioned here 
+"A sample analyzer using this toolkit has also been included. This is the source file sac_proc.c which processes the sample data file data.asc. These can be used as a template for your own analyzers."
+
+
+http://download.sr-support.com/dispdoc/page25.html
