@@ -10,7 +10,7 @@ from copy import deepcopy
 from math import atan, pi, cos, sin, sqrt, ceil
 import time, sys, platform, os, StringIO, gc
 from EyelinkEyetrackerForPsychopySUPA3 import EyeLinkCoreGraphicsPsychopy, Tracker_EyeLink #Chris Fajou integration
-from helpersAOH import accelerateComputer, openMyStimWindow, constructRingsAsGratings
+from helpersAOH import accelerateComputer, openMyStimWindow, constructMulticolorRingAsGrating
 eyetracking = False
 
 quitFinder = True
@@ -37,7 +37,7 @@ bindRadiallyRingToIdentify=1 #0 is inner, 1 is outer
 gratingTexPix=1024#numpy textures must be a power of 2. So, if numColorsRoundTheRing not divide without remainder into textPix, there will be some rounding so patches will not all be same size
 
 numRings=2
-radii=[2.5,9.5]   #Need to encode as array for those experiments wherein more than one ring presented 
+radii=[2.5]   #Need to encode as array for those experiments wherein more than one ring presented 
 offsets = np.array([[0,0],[-5,0],[-10,0]])
 
 respRadius=radii[0] #deg
@@ -449,13 +449,16 @@ while trialNum < trials.nTotal and expStop==False:
     moveDirection = list( np.random.random_integers(0,1,size=[numRings]) *2 -1 ) #randomise initial direction
     trialDurTotal = trialDur + thisTrial['cueLeadTime']
     trialDurFrames= int( trialDurTotal*refreshRate )
-    #xyTargets = np.zeros( [thisTrial['numTargets'], 2] ) #need this for eventual case where targets can change what ring they are in
-    #numDistracters = numRings*thisTrial['numObjectsInRing'] - thisTrial['numTargets']
-    #xyDistracters = np.zeros( [numDistracters, 2] )
     
-    #change to use wedge range
-    ringRadial,cueRings,currentlyCuedBlob =  \
-        constructRingsAsGratings(numObjects=1,patchAngle=30,colors=[[1,0,0],[0,1,1]],stimColorIdxsOrder=[[0,0],[0,0]],gratingTexPix=gratingTexPix,blobToCue=0,ppLog=logging)
+    #First draw the thick wedges. Task will be to judge which thick wedge has the thin wedge offset within it
+    numObjects = 8
+    patchAngle = 360/numObjects/2
+    colors=[[1,1,1]]
+    radialMask = [0,0,0,0,0,0,1]
+    gratingTexPix= 1024
+    blobToCue= -999
+    ringRadial,cueRing,currentlyCuedBlob =  \
+        constructMulticolorRingAsGrating(myWin,radii[0],radialMask,numObjects,patchAngle,colors,stimColorIdxsOrder,gratingTexPix,blobToCue,ppLog=logging)
     #I will not be using ringRadial or currentlyCuedBlob, so modify constructRingAsGrating later to delete it
 
     reversalTimesEachRing = getReversalTimes()

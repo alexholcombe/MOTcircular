@@ -169,10 +169,13 @@ def constructRingsAsGratings(myWin,numRings,radii,ringRadialMaskEachRing,numObje
     return ringsRadial,cueRings,currentlyCuedBlobEachRing
     ######### End constructRingAsGrating ###########################################################
 
-def constructMulticolorRingAsGrating(myWin,radius,radialMask,numObjects,patchAngle,colors,stimColorIdxsOrder,gratingTexPix,blobToCue,ppLog):
+def constructMulticolorRingAsGrating(myWin,radius,radialMask,visibleWedge,numObjects,patchAngle,colors,stimColorIdxsOrder,gratingTexPix,blobToCue,ppLog):
     #Construct a grating formed of the colors in order of stimColorIdxsOrder
-    #Also construct a similar cueRing grating with same colors, but one blob potentially highlighted. Has different spacing than ringRadial, not sure why
-    antialiasGrating = True
+    #Also construct a similar cueRing grating with same colors, but one blob potentially highlighted. 
+    #cueRing Has different spacing than ringRadial, not sure why, I think because calculations tend to be off as it's 
+    #always one cycle.
+    #radialMask doesn't seem to eliminate very-central part, bizarre
+    antialiasGrating = False #Don't set this to true because in present context, it's like imposing a radial Gaussian ramp on each object
     autoLogging = False
     stimColorIdxsOrder= stimColorIdxsOrder[::-1]  #reverse order of indices, because grating texture is rendered in reverse order than is blobs version
     numUniquePatches= len(stimColorIdxsOrder)
@@ -213,8 +216,8 @@ def constructMulticolorRingAsGrating(myWin,radius,radialMask,numObjects,patchAng
             for cycle in range(int(round(numCycles))):  #draw cueing ring. Is very similar to normal ring with same colors, but cue replaces one or more of the colors
                   base = cycle*gratingTexPix/numCycles
                   cueTex[:, base+start/numCycles:base+end/numCycles, colorChannel] = patchColr[colorChannel]
-            #spaces in between objects should be bgColor
-            #draw this area by overwriting first and last entries of segment 
+            #spaces in between objects should be bgColor,
+            #created by overwriting first and last entries of segment 
             ringTex[:, start:start+patchFlankSize, colorChannel] = bgColor[colorChannel]  #one flank
             ringTex[:, end-1-patchFlankSize:end, colorChannel] = bgColor[colorChannel]  #other flank
         
@@ -245,13 +248,15 @@ def constructMulticolorRingAsGrating(myWin,radius,radialMask,numObjects,patchAng
         cueTex[:, cueEndEntry-1-blackGrains:cueEndEntry, :] = bgColor[0];
     angRes = 100 #100 is default. I have not seen any effect. This is currently not printed to log file!
     
-    ringRadial= visual.RadialStim(myWin, tex=ringTex, color=[1,1,1],size=radius,#ringTex is the actual colored pattern. radial grating used to make it an annulus 
+    ringRadial= visual.RadialStim(myWin, tex=ringTex, color=[1,1,1],size=radius,#ringTex is the actual colored pattern. radial grating used to make it an annulus
+            visibleWedge=visibleWedge,
             mask=radialMask, # this is a 1-D mask masking the centre, to create an annulus
             radialCycles=0, angularCycles=numObjects*1.0/numUniquePatches,
             angularRes=angRes, interpolate=antialiasGrating, autoLog=autoLogging)
     #end preparation of colored rings
     #draw cueing grating for tracking task. Have entire grating be empty except for one white sector
     cueRing = visual.RadialStim(myWin, tex=cueTex, color=[1,1,1],size=radius, #cueTexInner is white. Only one sector of it shown by mask
+                    visibleWedge=visibleWedge,
                     mask = radialMask, radialCycles=0, angularCycles=1, #only one cycle because no pattern actually repeats- trying to highlight only one sector
                     angularRes=angRes, interpolate=antialiasGrating, autoLog=autoLogging)
     
@@ -271,22 +276,19 @@ if __name__ == "__main__": #do self-tests
     myWin = openMyStimWindow(mon,widthPix,heightPix,bgColor,allowGUI,units,fullscr,scrn,waitBlank)
     widthPix = myWin.size[0]; heightPix = myWin.size[1]
 
-#    numRings = 2
-#    radii = [10, 22]
-#    ringRadialMaskEachRing=[[0,0,0,0,1,] ,[0,0,0,0,0,0,0,1,],[0,0,0,0,0,0,0,0,0,0,1,1,]] #to mask off center part of cirle, all a part of creating arc
+#    radius= 22
+#    ringRadialMask=[0,0,0,0,1] #to mask off center part of cirle, all a part of creating arc
 #
 #    numObjects = 4
-#    blobToCueEachRing = [-1,-1]
+#    blobToCue = 2
 #    patchAngle = 30
-#    gratingTexPix=1024#numpy textures must be a power of 2. So, if numColorsRoundTheRing not divide without remainder into textPix, there will be some rounding so patches will not all be same size
-#    #test constructRings
-#    ringRadial,cueRings,currentlyCuedBlobEachRing =  constructRingsAsGratings(myWin, \
-#                        numRings,radii,ringRadialMaskEachRing,numObjects,patchAngle,colors=[[1,0,0],[0,1,1]],stimColorIdxsOrder=[[0,0],[0,0]],\
-#                        gratingTexPix=gratingTexPix,blobToCueEachRing=blobToCueEachRing,ppLog=logging)
+#    gratingTexPix=1024#nump
+#    ring,cueRing,currentlyCuedBlob =  constructMulticolorRingAsGrating(myWin,
+#                        radius,ringRadialMask,numObjects,patchAngle,colors=[[1,0,0],[0,0,1]],stimColorIdxsOrder=[0,1],\
+#                        gratingTexPix=gratingTexPix,blobToCue=blobToCue,ppLog=logging)
 #    keepGoing = True
 #    while keepGoing:
-#        for ring in ringRadial:
-#            ring.draw()
+#        ring.draw()
 #        myWin.flip()
 #        for key in event.getKeys():       #check if pressed abort-type key
 #              if key in ['escape','q']:
@@ -296,8 +298,7 @@ if __name__ == "__main__": #do self-tests
 #                print('key =', key)
 #    keepGoing=True
 #    while keepGoing:
-#        for cueRing in cueRings:
-#            cueRing.draw()
+#        cueRing.draw()
 #        myWin.flip()
 #        for key in event.getKeys():       #check if pressed abort-type key
 #              if key in ['escape','q']:
@@ -305,21 +306,35 @@ if __name__ == "__main__": #do self-tests
 #                  respcount = 1
 #              else: #key in [
 #                print('key =', key)
-#    myWin.close()
+#   
+  
+    #First draw the thick wedges. Task will be to judge which thick wedge has the thin wedge offset within it
+    numObjects = 8
+    patchAngleThickWedges = 360/numObjects/2
+    colors=[[1,1,1]]
+    radialMask = [0,0,0,0,0,0,1]
+    gratingTexPix= 1024
+    blobToCue= -999
+    radius = 10
+    stimColorIdxsOrder = [0]
+    visibleWedge = [0,360]
+    thickWedgesRing,cueRing,currentlyCuedBlob =  \
+        constructMulticolorRingAsGrating(myWin,radius,radialMask,visibleWedge,numObjects,patchAngleThickWedges,colors,stimColorIdxsOrder,gratingTexPix,blobToCue,ppLog=logging)
 
-    radius= 22
-    ringRadialMask=[0,0,0,0,1] #to mask off center part of cirle, all a part of creating arc
+    #Now draw the thin wedges.
+    patchAngleThinWedges = patchAngleThickWedges/4
+    colors=[[1,0,0]]
+    visibleWedge = [0,90]
+    thinWedgesRing,cueRing,currentlyCuedBlob =  \
+        constructMulticolorRingAsGrating(myWin,radius,radialMask,visibleWedge,numObjects,patchAngleThinWedges,colors,stimColorIdxsOrder,gratingTexPix,blobToCue,ppLog=logging)
 
-    numObjects = 4
-    blobToCue = 2
-    patchAngle = 30
-    gratingTexPix=1024#nump
-    ring,cueRing,currentlyCuedBlob =  constructMulticolorRingAsGrating(myWin,
-                        radius,ringRadialMask,numObjects,patchAngle,colors=[[1,0,0],[0,1,1]],stimColorIdxsOrder=[0,0],\
-                        gratingTexPix=gratingTexPix,blobToCue=blobToCue,ppLog=logging)
     keepGoing = True
     while keepGoing:
-        ring.draw()
+        thickWedgesRing.draw()
+        thinWedgesRing.draw() #To superpose, do I have to draw in one go? Or can I use opacity somehow?
+        #Alternatively draw all the thin wedges in one go, but draw the target thin wedge separately. especially when it's time to offset it
+        #Will it work to superpose the targetWedge using visibleWedge=[0, 45]? Yes.
+        #So, draw thin wedges at same time as thick wedges. But when time to draw target, draw over old position of target thin wedge and draw displaced version 
         myWin.flip()
         for key in event.getKeys():       #check if pressed abort-type key
               if key in ['escape','q']:
@@ -337,4 +352,4 @@ if __name__ == "__main__": #do self-tests
                   respcount = 1
               else: #key in [
                 print('key =', key)
-    myWin.close() 
+    myWin.close()
