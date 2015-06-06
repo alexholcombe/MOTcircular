@@ -10,7 +10,7 @@ from copy import deepcopy
 from math import atan, pi, cos, sin, sqrt, ceil
 import time, sys, platform, os, StringIO, gc
 from EyelinkEyetrackerForPsychopySUPA3 import EyeLinkCoreGraphicsPsychopy, Tracker_EyeLink #Chris Fajou integration
-from helpersAOH import accelerateComputer, openMyStimWindow, constructRingAsGrating
+from helpersAOH import accelerateComputer, openMyStimWindow, constructRingsAsGratings
 eyetracking = False
 
 quitFinder = True
@@ -455,7 +455,7 @@ while trialNum < trials.nTotal and expStop==False:
     
     #change to use wedge range
     ringRadial,cueRings,currentlyCuedBlob =  \
-        constructRingAsGrating(numObjects=1,patchAngle=30,colors=[[1,0,0],[0,1,1]],stimColorIdxsOrder=[[0,0],[0,0]],gratingTexPix=gratingTexPix,blobToCue=0,ppLog=logging)
+        constructRingsAsGratings(numObjects=1,patchAngle=30,colors=[[1,0,0],[0,1,1]],stimColorIdxsOrder=[[0,0],[0,0]],gratingTexPix=gratingTexPix,blobToCue=0,ppLog=logging)
     #I will not be using ringRadial or currentlyCuedBlob, so modify constructRingAsGrating later to delete it
 
     reversalTimesEachRing = getReversalTimes()

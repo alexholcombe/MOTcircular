@@ -70,8 +70,10 @@ def openMyStimWindow(monitorSpec,widthPix,heightPix,bgColor,allowGUI,units,fulls
         core.quit()
     return myWin
 
-def constructRingsAsGratings(numObjects,patchAngle,colors,stimColorIdxsOrder,gratingTexPix,blobToCue,ppLog):
+def constructRingsAsGratings(myWin,numRings,radii,ringRadialMaskEachRing,numObjects,patchAngle,colors,stimColorIdxsOrder,gratingTexPix,blobToCueEachRing,ppLog):
     #Originally to construct a grating formed of the colors in order of stimColorIdxsOrder
+    antialiasGrating = True
+    autoLogging = False
     texEachRing=list() #texture which will draw the ring of objects via openGL texture on grating
     cueTexEachRing=list() #making a separate grating for the cue, wherein everything background color except the location of the cue
     ringsRadial=list(); #after making the rings of object, put them in this list
@@ -134,15 +136,15 @@ def constructRingsAsGratings(numObjects,patchAngle,colors,stimColorIdxsOrder,gra
     #color the segment to be cued white. First, figure out cue segment len
     segmentLen = gratingTexPix/numCycles*1/numUniquePatches
     WhiteCueSizeAdj=0 # adust the white cue marker wingAdd 20110923
-    if thisTrial['numObjectsInRing']==3:WhiteCueSizeAdj=110
-    elif thisTrial['numObjectsInRing']==6:WhiteCueSizeAdj=25
-    elif thisTrial['numObjectsInRing']==12:WhiteCueSizeAdj=-15
-    elif thisTrial['numObjectsInRing']==2:WhiteCueSizeAdj=200
+    if numObjects==3:WhiteCueSizeAdj=110
+    elif numObjects==6:WhiteCueSizeAdj=25
+    elif numObjects==12:WhiteCueSizeAdj=-15
+    elif numObjects==2:WhiteCueSizeAdj=200
     
     for i in range(numRings): #color cue position white
-            if blobToCue[i] >=0: #-999 means dont cue anything
-                blobToCueCorrectForRingReversal = numObjects-1 - blobToCue[i] #grating seems to be laid out in opposite direction than blobs, this fixes postCueNumBlobsAway so positive is in direction of motion
-                if blobToCueCorrectForRingReversal==0 and thisTrial['numObjectsInRing']==12:   WhiteCueSizeAdj=0
+            if blobToCueEachRing[i] >=0: #-999 means dont cue anything
+                blobToCueCorrectForRingReversal = numObjects-1 - blobToCueEachRing[i] #grating seems to be laid out in opposite direction than blobs, this fixes postCueNumBlobsAway so positive is in direction of motion
+                if blobToCueCorrectForRingReversal==0 and numObjects==12:   WhiteCueSizeAdj=0
                 cueStartEntry = blobToCueCorrectForRingReversal*segmentLen+WhiteCueSizeAdj
                 cueEndEntry = cueStartEntry + segmentLen-2*WhiteCueSizeAdj
                 cueTexEachRing[i][:, cueStartEntry:cueEndEntry, :] = -1*bgColor[0]   #-1*bgColor is that what makes it white?
@@ -153,8 +155,8 @@ def constructRingsAsGratings(numObjects,patchAngle,colors,stimColorIdxsOrder,gra
     
     for i in range(numRings):
          ringsRadial.append(visual.RadialStim(myWin, tex=texEachRing[i], color=[1,1,1],size=radii[i],#myTexInner is the actual colored pattern. radial grating used to make it an annulus 
-            mask=ringRadialMask[i], # this is a 1-D mask dictating the behaviour from the centre of the stimulus to the surround.
-            radialCycles=0, angularCycles=double(thisTrial['numObjectsInRing'])/numUniquePatches,
+            mask=ringRadialMaskEachRing[i], # this is a 1-D mask dictating the behaviour from the centre of the stimulus to the surround.
+            radialCycles=0, angularCycles=numObjects*1.0/numUniquePatches,
             angularRes=angRes, interpolate=antialiasGrating, autoLog=autoLogging))
          #the mask is radial and indicates that should show only .3-.4 as one moves radially, creating an annulus
     #end preparation of colored rings
@@ -163,6 +165,176 @@ def constructRingsAsGratings(numObjects,patchAngle,colors,stimColorIdxsOrder,gra
                         mask = radialMaskEachRing[i], radialCycles=0, angularCycles=1, #only one cycle because no pattern actually repeats- trying to highlight only one sector
                         angularRes=angRes, interpolate=antialiasGrating, autoLog=autoLogging) )#depth doesn't seem to work, just always makes it invisible?
     
-    currentlyCuedBlob = blobToCue #this will mean that don't have to redraw 
-    return ringsRadial,cueRings,currentlyCuedBlob
+    currentlyCuedBlobEachRing = blobToCueEachRing #this will mean that don't have to redraw 
+    return ringsRadial,cueRings,currentlyCuedBlobEachRing
     ######### End constructRingAsGrating ###########################################################
+
+def constructMulticolorRingAsGrating(myWin,radius,radialMask,numObjects,patchAngle,colors,stimColorIdxsOrder,gratingTexPix,blobToCue,ppLog):
+    #Construct a grating formed of the colors in order of stimColorIdxsOrder
+    #Also construct a similar cueRing grating with same colors, but one blob potentially highlighted. Has different spacing than ringRadial, not sure why
+    antialiasGrating = True
+    autoLogging = False
+    stimColorIdxsOrder= stimColorIdxsOrder[::-1]  #reverse order of indices, because grating texture is rendered in reverse order than is blobs version
+    numUniquePatches= len(stimColorIdxsOrder)
+    numCycles =(1.0*numObjects) / numUniquePatches
+    angleSegment = 360./(numUniquePatches*numCycles)
+    if gratingTexPix % numUniquePatches >0: #gratingTexPix contains numUniquePatches. numCycles will control how many total objects there are around circle
+        ppLog.warn('Warning: could not exactly render a '+str(numUniquePatches)+'-segment pattern radially, will be off by '+str( (gratingTexPix%numUniquePatches)*1.0 /gratingTexPix ) )
+    if numObjects % numUniquePatches >0:
+        msg= 'Warning: numUniquePatches ('+str(numUniquePatches)+') not go evenly into numObjects'; ppLog.warn(msg)
+    #create texture for red-green-blue-red-green-blue etc. radial grating
+    #2-D texture which will draw the ring of objects via openGL texture on grating
+    ringTex = np.zeros([gratingTexPix,gratingTexPix,3])+bgColor[0]  #start with all channels in all locs = bgColor
+    #making a separate grating for the cue, wherein everything background color except the location of the cue
+    cueTex = np.ones([gratingTexPix,gratingTexPix,3])*bgColor[0]  
+    if patchAngle > angleSegment:
+        msg='Error: patchAngle requested ('+str(patchAngle)+') bigger than maximum possible ('+str(angleSegment)+') numUniquePatches='+str(numUniquePatches)+' numCycles='+str(numCycles); 
+        print(msg); ppLog.error(msg)
+  
+    oneCycleAngle = 360./numCycles
+    segmentSizeTexture = angleSegment/oneCycleAngle *gratingTexPix #I call it segment because includes spaces between objects, that I'll write over subsequently
+    patchSizeTexture = patchAngle/oneCycleAngle *gratingTexPix
+    patchSizeTexture = round(patchSizeTexture) #best is odd number, even space on either size
+    patchFlankSize = (segmentSizeTexture-patchSizeTexture)/2.
+    patchAngleActual = patchSizeTexture / gratingTexPix * oneCycleAngle
+    if abs(patchAngleActual - patchAngle) > .04:
+        msg = 'Desired patchAngle = '+str(patchAngle)+' but closest can get with '+str(gratingTexPix)+' gratingTexPix is '+str(patchAngleActual); 
+        ppLog.warn(msg)
+    
+    for colrI in range(numUniquePatches): #for that portion of texture, set color
+        start = colrI*segmentSizeTexture #identify starting texture position for this patch
+        end = start + segmentSizeTexture
+        start = round(start) #don't round until after do addition, otherwise can fall short
+        end = round(end)
+        nColor = colrI
+        patchColr = colors[ stimColorIdxsOrder[nColor] ] #use this color for this patch
+        for colorChannel in range(3):
+            ringTex[:, start:end, colorChannel] = patchColr[colorChannel]
+            for cycle in range(int(round(numCycles))):  #draw cueing ring. Is very similar to normal ring with same colors, but cue replaces one or more of the colors
+                  base = cycle*gratingTexPix/numCycles
+                  cueTex[:, base+start/numCycles:base+end/numCycles, colorChannel] = patchColr[colorChannel]
+            #spaces in between objects should be bgColor
+            #draw this area by overwriting first and last entries of segment 
+            ringTex[:, start:start+patchFlankSize, colorChannel] = bgColor[colorChannel]  #one flank
+            ringTex[:, end-1-patchFlankSize:end, colorChannel] = bgColor[colorChannel]  #other flank
+        
+        for cycle in range(int(round(numCycles))): #draw the blank parts of the cue ring
+              base = cycle*gratingTexPix/numCycles
+              for c in range(3):
+                 cueTex[:,base+start/numCycles:base+(start+patchFlankSize)/numCycles,c] = bgColor[c]
+                 cueTex[:,base+(end-1-patchFlankSize)/numCycles:base+end/numCycles,c] = bgColor[c]
+        
+    #color the segment to be cued white. First, figure out cue segment len
+    segmentLen = gratingTexPix/numCycles*1/numUniquePatches
+    WhiteCueSizeAdj=0 # adujst the white cue marker wingAdd 20110923
+    if numObjects==3:WhiteCueSizeAdj=110
+    elif numObjects==6:WhiteCueSizeAdj=25
+    elif numObjects==12:WhiteCueSizeAdj=-15
+    elif numObjects==2:WhiteCueSizeAdj=200
+    
+    #Finally, add cue to cueRing
+    if blobToCue >=0: #-999 means dont cue anything. 
+        blobToCueCorrectForRingReversal = numObjects-1 - blobToCue #grating seems to be laid out in opposite direction than blobs, this fixes postCueNumBlobsAway so positive is in direction of motion
+        if blobToCueCorrectForRingReversal==0 and numObjects==12:   
+            WhiteCueSizeAdj=0
+        cueStartEntry = blobToCueCorrectForRingReversal*segmentLen+WhiteCueSizeAdj
+        cueEndEntry = cueStartEntry + segmentLen-2*WhiteCueSizeAdj
+        cueTex[:, cueStartEntry:cueEndEntry, :] = -1*bgColor[0]   #-1*bgColor is that what makes it white?
+        blackGrains = round( .25*(cueEndEntry-cueStartEntry) )#number of "pixels" of texture at either end of cue sector to make black. Need to update this to reflect patchAngle
+        cueTex[:, cueStartEntry:cueStartEntry+blackGrains, :] = bgColor[0];  #this one doesn't seem to do anything?
+        cueTex[:, cueEndEntry-1-blackGrains:cueEndEntry, :] = bgColor[0];
+    angRes = 100 #100 is default. I have not seen any effect. This is currently not printed to log file!
+    
+    ringRadial= visual.RadialStim(myWin, tex=ringTex, color=[1,1,1],size=radius,#ringTex is the actual colored pattern. radial grating used to make it an annulus 
+            mask=radialMask, # this is a 1-D mask masking the centre, to create an annulus
+            radialCycles=0, angularCycles=numObjects*1.0/numUniquePatches,
+            angularRes=angRes, interpolate=antialiasGrating, autoLog=autoLogging)
+    #end preparation of colored rings
+    #draw cueing grating for tracking task. Have entire grating be empty except for one white sector
+    cueRing = visual.RadialStim(myWin, tex=cueTex, color=[1,1,1],size=radius, #cueTexInner is white. Only one sector of it shown by mask
+                    mask = radialMask, radialCycles=0, angularCycles=1, #only one cycle because no pattern actually repeats- trying to highlight only one sector
+                    angularRes=angRes, interpolate=antialiasGrating, autoLog=autoLogging)
+    
+    currentlyCuedBlob = blobToCue #this will mean that don't have to redraw 
+    return ringRadial,cueRing,currentlyCuedBlob
+    ######### End constructRingAsGrating ###########################################################
+    
+if __name__ == "__main__": #do self-tests
+    from psychopy import *
+    from psychopy import monitors, logging
+    monitorwidth = 38.5 #28.5 #monitor width in centimeters
+    viewdist = 57.; #cm
+    mon = monitors.Monitor("testMonitor",width=monitorwidth, distance=viewdist) #fetch the most recent calib for this monitor
+    bgColor = [-1,-1,-1]; allowGUI = True; units='deg'; fullscr=0; scrn=0; waitBlank=False
+    #mon.setSizePix( (widthPix,heightPix) )
+    widthPix = 800; heightPix = 600
+    myWin = openMyStimWindow(mon,widthPix,heightPix,bgColor,allowGUI,units,fullscr,scrn,waitBlank)
+    widthPix = myWin.size[0]; heightPix = myWin.size[1]
+
+#    numRings = 2
+#    radii = [10, 22]
+#    ringRadialMaskEachRing=[[0,0,0,0,1,] ,[0,0,0,0,0,0,0,1,],[0,0,0,0,0,0,0,0,0,0,1,1,]] #to mask off center part of cirle, all a part of creating arc
+#
+#    numObjects = 4
+#    blobToCueEachRing = [-1,-1]
+#    patchAngle = 30
+#    gratingTexPix=1024#numpy textures must be a power of 2. So, if numColorsRoundTheRing not divide without remainder into textPix, there will be some rounding so patches will not all be same size
+#    #test constructRings
+#    ringRadial,cueRings,currentlyCuedBlobEachRing =  constructRingsAsGratings(myWin, \
+#                        numRings,radii,ringRadialMaskEachRing,numObjects,patchAngle,colors=[[1,0,0],[0,1,1]],stimColorIdxsOrder=[[0,0],[0,0]],\
+#                        gratingTexPix=gratingTexPix,blobToCueEachRing=blobToCueEachRing,ppLog=logging)
+#    keepGoing = True
+#    while keepGoing:
+#        for ring in ringRadial:
+#            ring.draw()
+#        myWin.flip()
+#        for key in event.getKeys():       #check if pressed abort-type key
+#              if key in ['escape','q']:
+#                  keepGoing = False
+#                  respcount = 1
+#              else: #key in [
+#                print('key =', key)
+#    keepGoing=True
+#    while keepGoing:
+#        for cueRing in cueRings:
+#            cueRing.draw()
+#        myWin.flip()
+#        for key in event.getKeys():       #check if pressed abort-type key
+#              if key in ['escape','q']:
+#                  keepGoing = False
+#                  respcount = 1
+#              else: #key in [
+#                print('key =', key)
+#    myWin.close()
+
+    radius= 22
+    ringRadialMask=[0,0,0,0,1] #to mask off center part of cirle, all a part of creating arc
+
+    numObjects = 4
+    blobToCue = 2
+    patchAngle = 30
+    gratingTexPix=1024#nump
+    ring,cueRing,currentlyCuedBlob =  constructMulticolorRingAsGrating(myWin,
+                        radius,ringRadialMask,numObjects,patchAngle,colors=[[1,0,0],[0,1,1]],stimColorIdxsOrder=[0,0],\
+                        gratingTexPix=gratingTexPix,blobToCue=blobToCue,ppLog=logging)
+    keepGoing = True
+    while keepGoing:
+        ring.draw()
+        myWin.flip()
+        for key in event.getKeys():       #check if pressed abort-type key
+              if key in ['escape','q']:
+                  keepGoing = False
+                  respcount = 1
+              else: #key in [
+                print('key =', key)
+    keepGoing=True
+    while keepGoing:
+        cueRing.draw()
+        myWin.flip()
+        for key in event.getKeys():       #check if pressed abort-type key
+              if key in ['escape','q']:
+                  keepGoing = False
+                  respcount = 1
+              else: #key in [
+                print('key =', key)
+    myWin.close() 
