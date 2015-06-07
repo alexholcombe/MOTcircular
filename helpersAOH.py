@@ -168,8 +168,10 @@ def constructRingsAsGratings(myWin,numRings,radii,ringRadialMaskEachRing,numObje
     currentlyCuedBlobEachRing = blobToCueEachRing #this will mean that don't have to redraw 
     return ringsRadial,cueRings,currentlyCuedBlobEachRing
     ######### End constructRingAsGrating ###########################################################
+#########################################
 
-def constructMulticolorRingAsGrating(myWin,radius,radialMask,visibleWedge,numObjects,patchAngle,colors,stimColorIdxsOrder,gratingTexPix,blobToCue,ppLog):
+def constructThickAndThinWedgeRings(myWin,radius,radialMask,visibleWedge,numObjects,patchAngleThick,patchAngleThin,thickWedgeColor,thinWedgeColor,
+                                                                        gratingTexPix,cueColor,blobToCue,ppLog):
     #Construct a grating formed of the colors in order of stimColorIdxsOrder
     #Also construct a similar cueRing grating with same colors, but one blob potentially highlighted. 
     #cueRing Has different spacing than ringRadial, not sure why, I think because calculations tend to be off as it's 
@@ -177,72 +179,69 @@ def constructMulticolorRingAsGrating(myWin,radius,radialMask,visibleWedge,numObj
     #radialMask doesn't seem to eliminate very-central part, bizarre
     antialiasGrating = False #Don't set this to true because in present context, it's like imposing a radial Gaussian ramp on each object
     autoLogging = False
-    stimColorIdxsOrder= stimColorIdxsOrder[::-1]  #reverse order of indices, because grating texture is rendered in reverse order than is blobs version
-    numUniquePatches= len(stimColorIdxsOrder)
-    numCycles =(1.0*numObjects) / numUniquePatches
-    angleSegment = 360./(numUniquePatches*numCycles)
-    if gratingTexPix % numUniquePatches >0: #gratingTexPix contains numUniquePatches. numCycles will control how many total objects there are around circle
-        ppLog.warn('Warning: could not exactly render a '+str(numUniquePatches)+'-segment pattern radially, will be off by '+str( (gratingTexPix%numUniquePatches)*1.0 /gratingTexPix ) )
-    if numObjects % numUniquePatches >0:
-        msg= 'Warning: numUniquePatches ('+str(numUniquePatches)+') not go evenly into numObjects'; ppLog.warn(msg)
+    numCycles = numObjects
+    segmentAngle = 360./numCycles
     #create texture for red-green-blue-red-green-blue etc. radial grating
     #2-D texture which will draw the ring of objects via openGL texture on grating
     ringTex = np.zeros([gratingTexPix,gratingTexPix,3])+bgColor[0]  #start with all channels in all locs = bgColor
-    #making a separate grating for the cue, wherein everything background color except the location of the cue
-    cueTex = np.ones([gratingTexPix,gratingTexPix,3])*bgColor[0]  
-    if patchAngle > angleSegment:
-        msg='Error: patchAngle requested ('+str(patchAngle)+') bigger than maximum possible ('+str(angleSegment)+') numUniquePatches='+str(numUniquePatches)+' numCycles='+str(numCycles); 
-        print(msg); ppLog.error(msg)
-  
+    cueTex = np.zeros([gratingTexPix,gratingTexPix,3])+bgColor[0]  #start with all channels in all locs = bgColor
     oneCycleAngle = 360./numCycles
-    segmentSizeTexture = angleSegment/oneCycleAngle *gratingTexPix #I call it segment because includes spaces between objects, that I'll write over subsequently
-    patchSizeTexture = patchAngle/oneCycleAngle *gratingTexPix
+    segmentSizeTexture = segmentAngle/oneCycleAngle *gratingTexPix #I call it segment because includes spaces between objects, that I'll write over subsequently
+
+    if patchAngleThick > segmentAngle:
+        msg='Error: patchAngleThick requested ('+str(patchAngle)+') bigger than maximum possible ('+str(angleSegment)+')  numCycles='+str(numCycles)
+        print(msg); ppLog.error(msg)
+    patchSizeTexture = patchAngleThick/oneCycleAngle *gratingTexPix
     patchSizeTexture = round(patchSizeTexture) #best is odd number, even space on either size
     patchFlankSize = (segmentSizeTexture-patchSizeTexture)/2.
     patchAngleActual = patchSizeTexture / gratingTexPix * oneCycleAngle
-    if abs(patchAngleActual - patchAngle) > .04:
-        msg = 'Desired patchAngle = '+str(patchAngle)+' but closest can get with '+str(gratingTexPix)+' gratingTexPix is '+str(patchAngleActual); 
+    if abs(patchAngleActual - patchAngleThick) > .04:
+        msg = 'Desired patchAngleThick = '+str(patchAngleThick)+' but closest can get with '+str(gratingTexPix)+' gratingTexPix is '+str(patchAngleActual); 
         ppLog.warn(msg)
     
-    for colrI in range(numUniquePatches): #for that portion of texture, set color
-        start = colrI*segmentSizeTexture #identify starting texture position for this patch
-        end = start + segmentSizeTexture
-        start = round(start) #don't round until after do addition, otherwise can fall short
-        end = round(end)
-        nColor = colrI
-        patchColr = colors[ stimColorIdxsOrder[nColor] ] #use this color for this patch
-        for colorChannel in range(3):
-            ringTex[:, start:end, colorChannel] = patchColr[colorChannel]
-            for cycle in range(int(round(numCycles))):  #draw cueing ring. Is very similar to normal ring with same colors, but cue replaces one or more of the colors
-                  base = cycle*gratingTexPix/numCycles
-                  cueTex[:, base+start/numCycles:base+end/numCycles, colorChannel] = patchColr[colorChannel]
-            #spaces in between objects should be bgColor,
-            #created by overwriting first and last entries of segment 
-            ringTex[:, start:start+patchFlankSize, colorChannel] = bgColor[colorChannel]  #one flank
-            ringTex[:, end-1-patchFlankSize:end, colorChannel] = bgColor[colorChannel]  #other flank
-        
-        for cycle in range(int(round(numCycles))): #draw the blank parts of the cue ring
+    #for texture, set color
+    start = 0 #identify starting texture position for this patch
+    end = start + segmentSizeTexture
+    start = round(start) #don't round until after do addition, otherwise can fall short
+    end = round(end)
+    nColor = 0
+    patchColr = thickWedgeColor #use this color for this patch
+    for g in range(3):
+        ringTex[:, start:end, g] = patchColr[g]
+        for cycle in range(int(round(numCycles))):  
               base = cycle*gratingTexPix/numCycles
-              for c in range(3):
-                 cueTex[:,base+start/numCycles:base+(start+patchFlankSize)/numCycles,c] = bgColor[c]
-                 cueTex[:,base+(end-1-patchFlankSize)/numCycles:base+end/numCycles,c] = bgColor[c]
+        #spaces in between objects should be bgColor,
+        #created by overwriting first and last entries of segment 
+        ringTex[:, start:start+patchFlankSize, g] = bgColor[g]  #one flank
+        ringTex[:, end-1-patchFlankSize:end, g] = bgColor[g]  #other flank
+
+    for g in range(3):
+        for cycle in range(int(round(numCycles))): 
+              base = cycle*gratingTexPix/numCycles
+              #draw cue ring, which will become cue arc. Is very similar to normal ring, so first draw it like that
+              cueTex[:, base+start/numCycles:base+end/numCycles, g] = patchColr[g]
+              #draw the blank parts of the cue ring
+              #maybe here I can modify first dimension to create two arcs, inner and outer
+              cueTex[:,base+start/numCycles:base+(start+patchFlankSize)/numCycles,g] = bgColor[g]
+              cueTex[:,base+(end-1-patchFlankSize)/numCycles:base+end/numCycles,g] = bgColor[g]
         
     #color the segment to be cued white. First, figure out cue segment len
-    segmentLen = gratingTexPix/numCycles*1/numUniquePatches
+    segmentLen = gratingTexPix/numCycles
     WhiteCueSizeAdj=0 # adujst the white cue marker wingAdd 20110923
     if numObjects==3:WhiteCueSizeAdj=110
     elif numObjects==6:WhiteCueSizeAdj=25
     elif numObjects==12:WhiteCueSizeAdj=-15
     elif numObjects==2:WhiteCueSizeAdj=200
     
-    #Finally, add cue to cueRing
+    #Finally, add cue part to cueRing
     if blobToCue >=0: #-999 means dont cue anything. 
         blobToCueCorrectForRingReversal = numObjects-1 - blobToCue #grating seems to be laid out in opposite direction than blobs, this fixes postCueNumBlobsAway so positive is in direction of motion
         if blobToCueCorrectForRingReversal==0 and numObjects==12:   
             WhiteCueSizeAdj=0
         cueStartEntry = blobToCueCorrectForRingReversal*segmentLen+WhiteCueSizeAdj
         cueEndEntry = cueStartEntry + segmentLen-2*WhiteCueSizeAdj
-        cueTex[:, cueStartEntry:cueEndEntry, :] = -1*bgColor[0]   #-1*bgColor is that what makes it white?
+        for g in range(3):
+            cueTex[:, cueStartEntry:cueEndEntry, g] = cueColor[g]   #-1*bgColor is that what makes it white?
         blackGrains = round( .25*(cueEndEntry-cueStartEntry) )#number of "pixels" of texture at either end of cue sector to make black. Need to update this to reflect patchAngle
         cueTex[:, cueStartEntry:cueStartEntry+blackGrains, :] = bgColor[0];  #this one doesn't seem to do anything?
         cueTex[:, cueEndEntry-1-blackGrains:cueEndEntry, :] = bgColor[0];
@@ -251,7 +250,7 @@ def constructMulticolorRingAsGrating(myWin,radius,radialMask,visibleWedge,numObj
     ringRadial= visual.RadialStim(myWin, tex=ringTex, color=[1,1,1],size=radius,#ringTex is the actual colored pattern. radial grating used to make it an annulus
             visibleWedge=visibleWedge,
             mask=radialMask, # this is a 1-D mask masking the centre, to create an annulus
-            radialCycles=0, angularCycles=numObjects*1.0/numUniquePatches,
+            radialCycles=0, angularCycles=numObjects,
             angularRes=angRes, interpolate=antialiasGrating, autoLog=autoLogging)
     #end preparation of colored rings
     #draw cueing grating for tracking task. Have entire grating be empty except for one white sector
@@ -263,7 +262,7 @@ def constructMulticolorRingAsGrating(myWin,radius,radialMask,visibleWedge,numObj
     currentlyCuedBlob = blobToCue #this will mean that don't have to redraw 
     return ringRadial,cueRing,currentlyCuedBlob
     ######### End constructRingAsGrating ###########################################################
-    
+
 if __name__ == "__main__": #do self-tests
     from psychopy import *
     from psychopy import monitors, logging
@@ -311,27 +310,21 @@ if __name__ == "__main__": #do self-tests
     #First draw the thick wedges. Task will be to judge which thick wedge has the thin wedge offset within it
     numObjects = 8
     patchAngleThickWedges = 360/numObjects/2
-    colors=[[1,1,1]]
+    thickWedgeColor = [1,-1,-1]
+    thinWedgeColor=[0,0,1]
+    cueColor=[0,1,1]
     radialMask = [0,0,0,0,0,0,1]
     gratingTexPix= 1024
-    blobToCue= -999
+    blobToCue= 0
     radius = 10
-    stimColorIdxsOrder = [0]
     visibleWedge = [0,360]
     thickWedgesRing,cueRing,currentlyCuedBlob =  \
-        constructMulticolorRingAsGrating(myWin,radius,radialMask,visibleWedge,numObjects,patchAngleThickWedges,colors,stimColorIdxsOrder,gratingTexPix,blobToCue,ppLog=logging)
-
-    #Now draw the thin wedges.
-    patchAngleThinWedges = patchAngleThickWedges/4
-    colors=[[1,0,0]]
-    visibleWedge = [0,90]
-    thinWedgesRing,cueRing,currentlyCuedBlob =  \
-        constructMulticolorRingAsGrating(myWin,radius,radialMask,visibleWedge,numObjects,patchAngleThinWedges,colors,stimColorIdxsOrder,gratingTexPix,blobToCue,ppLog=logging)
+        constructThickAndThinWedgeRings(myWin,radius,radialMask,visibleWedge,numObjects,patchAngleThickWedges,5,thickWedgeColor,thinWedgeColor,
+                            gratingTexPix,cueColor,blobToCue,ppLog=logging)
 
     keepGoing = True
     while keepGoing:
         thickWedgesRing.draw()
-        thinWedgesRing.draw() #To superpose, do I have to draw in one go? Or can I use opacity somehow?
         #Alternatively draw all the thin wedges in one go, but draw the target thin wedge separately. especially when it's time to offset it
         #Will it work to superpose the targetWedge using visibleWedge=[0, 45]? Yes.
         #So, draw thin wedges at same time as thick wedges. But when time to draw target, draw over old position of target thin wedge and draw displaced version 
