@@ -111,10 +111,9 @@ def constructRingsAsGratings(myWin,numRings,radii,ringRadialMaskEachRing,numObje
         end = start + segmentSizeTexture
         start = round(start) #don't round until after do addition, otherwise can fall short
         end = round(end)
-        nColor = colrI #mimics code in drawoneframe
         ringColr=list();
         for i in range(numRings):
-            ringColr.append(colors[ stimColorIdxsOrder[i][nColor] ])
+            ringColr.append(colors[ stimColorIdxsOrder[i][colrI] ])
         for colorChannel in range(3):
             for i in range(numRings):
                 texEachRing[i][:, start:end, colorChannel] = ringColr[i][colorChannel]; 
@@ -186,40 +185,43 @@ def constructThickAndThinWedgeRings(myWin,radius,radialMask,visibleWedge,numObje
     ringTex = np.zeros([gratingTexPix,gratingTexPix,3])+bgColor[0]  #start with all channels in all locs = bgColor
     cueTex = np.zeros([gratingTexPix,gratingTexPix,3])+bgColor[0]  #start with all channels in all locs = bgColor
     oneCycleAngle = 360./numCycles
-    segmentSizeTexture = segmentAngle/oneCycleAngle *gratingTexPix #I call it segment because includes spaces between objects, that I'll write over subsequently
-
-    if patchAngleThick > segmentAngle:
-        msg='Error: patchAngleThick requested ('+str(patchAngle)+') bigger than maximum possible ('+str(angleSegment)+')  numCycles='+str(numCycles)
-        print(msg); ppLog.error(msg)
-    patchSizeTexture = patchAngleThick/oneCycleAngle *gratingTexPix
-    patchSizeTexture = round(patchSizeTexture) #best is odd number, even space on either size
-    patchFlankSize = (segmentSizeTexture-patchSizeTexture)/2.
-    patchAngleActual = patchSizeTexture / gratingTexPix * oneCycleAngle
-    if abs(patchAngleActual - patchAngleThick) > .04:
-        msg = 'Desired patchAngleThick = '+str(patchAngleThick)+' but closest can get with '+str(gratingTexPix)+' gratingTexPix is '+str(patchAngleActual); 
-        ppLog.warn(msg)
+    def patchSizeForTexture(segmentAngle, patchAngle, oneCycleAngle, gratingTexPix):
+        segmentSizeTexture = segmentAngle/oneCycleAngle *gratingTexPix #I call it segment because includes spaces between objects, that I'll write over subsequently
+        if patchAngleThick > segmentAngle:
+            msg='Error: patchAngleThick requested ('+str(patchAngle)+') bigger than maximum possible ('+str(segmentAngle)+')  numCycles='+str(numCycles)
+            print(msg); ppLog.error(msg)
+        patchSizeTexture = patchAngle/oneCycleAngle *gratingTexPix
+        patchSizeTexture = round(patchSizeTexture) #best is odd number, even space on either size
+        patchFlankSize = (segmentSizeTexture-patchSizeTexture)/2. #this area will be drawn in bgColor
+        patchAngleActual = patchSizeTexture / gratingTexPix * oneCycleAngle
+        if abs(patchAngleActual - patchAngleThick) > .04:
+            msg = 'Desired patchAngleThick = '+str(patchAngleThick)+' but closest can get with '+str(gratingTexPix)+' gratingTexPix is '+str(patchAngleActual); 
+            ppLog.warn(msg)
+        return segmentSizeTexture, patchSizeTexture, patchFlankSize
+        
+    segmentSizeTexture, patchSizeTexture, patchFlankSize = patchSizeForTexture(segmentAngle, patchAngleThick, oneCycleAngle, gratingTexPix)
     
     #for texture, set color
-    start = 0 #identify starting texture position for this patch
-    end = start + segmentSizeTexture
-    start = round(start) #don't round until after do addition, otherwise can fall short
-    end = round(end)
-    nColor = 0
-    patchColr = thickWedgeColor #use this color for this patch
-    for g in range(3):
-        ringTex[:, start:end, g] = patchColr[g]
-        for cycle in range(int(round(numCycles))):  
-              base = cycle*gratingTexPix/numCycles
-        #spaces in between objects should be bgColor,
-        #created by overwriting first and last entries of segment 
-        ringTex[:, start:start+patchFlankSize, g] = bgColor[g]  #one flank
-        ringTex[:, end-1-patchFlankSize:end, g] = bgColor[g]  #other flank
+    start = round( 0 ) #identify starting texture position for this segment
+    end = round( start + segmentSizeTexture ) #don't round until after do addition, otherwise can fall short
+    #First draw the entire segment in patchColr, then erase sides (flankers) leaving only the patchAngle
+    ringTex[:, start:end, :] = thickWedgeColor[:]
+    #spaces in between objects are termed the flanks, should be bgColor,
+    ringTex[:, start:start+patchFlankSize, :] = bgColor[:]  #one flank
+    ringTex[:, end-1-patchFlankSize:end, :] = bgColor[:]  #other flank
+    
+    segmentSizeTexture, thinWedgeSizeTexture, patchFlankSize = patchSizeForTexture(segmentAngle, patchAngleThin, oneCycleAngle, gratingTexPix)
+    #First draw the entire segment in patchColr, then erase sides (flankers) leaving only the patchAngle
+    start = patchFlankSize #identify starting texture position for this segment
+    end = round( start + thinWedgeSizeTexture ) #don't round until after do addition, otherwise can fall short
+    ringTex[:, start:end, :] = th inWedgeColor[:]
 
+    #draw texture for cueRing
     for g in range(3):
         for cycle in range(int(round(numCycles))): 
               base = cycle*gratingTexPix/numCycles
               #draw cue ring, which will become cue arc. Is very similar to normal ring, so first draw it like that
-              cueTex[:, base+start/numCycles:base+end/numCycles, g] = patchColr[g]
+              cueTex[:, base+start/numCycles:base+end/numCycles, g] = thickWedgeColor[g]
               #draw the blank parts of the cue ring
               #maybe here I can modify first dimension to create two arcs, inner and outer
               cueTex[:,base+start/numCycles:base+(start+patchFlankSize)/numCycles,g] = bgColor[g]
@@ -285,30 +287,10 @@ if __name__ == "__main__": #do self-tests
 #    ring,cueRing,currentlyCuedBlob =  constructMulticolorRingAsGrating(myWin,
 #                        radius,ringRadialMask,numObjects,patchAngle,colors=[[1,0,0],[0,0,1]],stimColorIdxsOrder=[0,1],\
 #                        gratingTexPix=gratingTexPix,blobToCue=blobToCue,ppLog=logging)
-#    keepGoing = True
-#    while keepGoing:
-#        ring.draw()
-#        myWin.flip()
-#        for key in event.getKeys():       #check if pressed abort-type key
-#              if key in ['escape','q']:
-#                  keepGoing = False
-#                  respcount = 1
-#              else: #key in [
-#                print('key =', key)
-#    keepGoing=True
-#    while keepGoing:
-#        cueRing.draw()
-#        myWin.flip()
-#        for key in event.getKeys():       #check if pressed abort-type key
-#              if key in ['escape','q']:
-#                  keepGoing = False
-#                  respcount = 1
-#              else: #key in [
-#                print('key =', key)
-#   
+
   
     #First draw the thick wedges. Task will be to judge which thick wedge has the thin wedge offset within it
-    numObjects = 8
+    numObjects = 2
     patchAngleThickWedges = 360/numObjects/2
     thickWedgeColor = [1,-1,-1]
     thinWedgeColor=[0,0,1]
@@ -318,16 +300,15 @@ if __name__ == "__main__": #do self-tests
     blobToCue= 0
     radius = 10
     visibleWedge = [0,360]
-    thickWedgesRing,cueRing,currentlyCuedBlob =  \
+    thickThinWedgesRing,cueRing,currentlyCuedBlob =  \
         constructThickAndThinWedgeRings(myWin,radius,radialMask,visibleWedge,numObjects,patchAngleThickWedges,5,thickWedgeColor,thinWedgeColor,
                             gratingTexPix,cueColor,blobToCue,ppLog=logging)
 
     keepGoing = True
     while keepGoing:
-        thickWedgesRing.draw()
-        #Alternatively draw all the thin wedges in one go, but draw the target thin wedge separately. especially when it's time to offset it
-        #Will it work to superpose the targetWedge using visibleWedge=[0, 45]? Yes.
-        #So, draw thin wedges at same time as thick wedges. But when time to draw target, draw over old position of target thin wedge and draw displaced version 
+        thickThinWedgesRing.draw()
+        #Draw thin wedges at same time as thick wedges. But when time to draw target, draw over old position of target thin wedge and draw displaced version
+        #Now program the cue arcs and the target-displaced ring
         myWin.flip()
         for key in event.getKeys():       #check if pressed abort-type key
               if key in ['escape','q']:
