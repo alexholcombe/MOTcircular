@@ -61,13 +61,11 @@ print('scrn = ',scrn, ' from dialog box')
 fullscr = infoFirst['Fullscreen (timing errors if not)']
 refreshRate = infoFirst['Screen refresh rate']
 
-trialDur = 2
-if demo:trialDur = 5;refreshRate = 60.; 
+if demo: refreshRate = 60. 
 tokenChosenEachRing= [-999]*numRings
-rampUpDur=0; rampDownDur=0
-trialDurFrames=int(trialDur*refreshRate)+int( refreshRate )
-rampUpFrames = refreshRate*rampUpDur;   rampDownFrames = refreshRate*rampDownDur;
-rampDownStart = trialDurFrames-rampDownFrames
+targetDur = 0.1
+rampUpDur=0
+rampUpFrames = refreshRate*rampUpDur
 ballStdDev = 1.8
 mouseChoiceArea = ballStdDev*0.8 # origin =1.3
 units='deg' #'cm'
@@ -262,11 +260,10 @@ numRightWrongEachSpeedIdent = deepcopy(numRightWrongEachSpeedOrder)
 
 timeAndDateStr = time.strftime("%d%b%Y_%H-%M", time.localtime()) 
 logging.info(  str('starting exp with name: "'+'MovingCue'+'" at '+timeAndDateStr)   )
-logF = StringIO.StringIO()  #kludge so I dont have to change all the print >>logF statements
-logging.info(    'numtrials='+ str(trials.nTotal)+' and each trialDur='+str(trialDur)+' refreshRate='+str(refreshRate)      )
+logging.info( 'numtrials='+ str(trials.nTotal)+' refreshRate='+str(refreshRate)      )
 
 print(' numtrials=', trials.nTotal)
-print('rampUpDur=',rampUpDur, ' rampDownDur=', rampDownDur, ' secs', file=logF);  logging.info( logF.getvalue() ); logF = StringIO.StringIO() 
+print('rampUpDur=',rampUpDur, ' targetDur=', targetDur, ' secs', file=logF);  
 logging.info('task='+'track'+'   respType='+respType)
 logging.info(   'radii=' + str(radii)   )
 logging.flush()
@@ -453,7 +450,7 @@ while trialNum < trials.nTotal and expStop==False:
     angleIniEachRing = list( np.random.uniform(0,2*pi,size=[numRings]) )
     cueCurrAngleEachRing = list([0]) * numRings
     moveDirection = list( np.random.random_integers(0,1,size=[numRings]) *2 -1 ) #randomise initial direction
-    trialDurTotal = trialDur + thisTrial['cueLeadTime']
+    trialDurTotal = thisTrial['cueLeadTime'] + targetDur
     trialDurFrames= int( trialDurTotal*refreshRate )
     
     #Task will be to judge which thick wedge has the thin wedge offset within it
@@ -530,7 +527,6 @@ while trialNum < trials.nTotal and expStop==False:
     accelerateComputer(0,process_priority, disable_gc) #turn off stuff that sped everything up
     #check for timing problems
     interframeIntervs = np.diff(ts)*1000 #difference in time between successive frames, in ms
-    #print >>logF, 'trialnum=',trialNum, '   interframe intervs were ',around(interframeIntervs,1)
     idxsInterframeLong = np.where( interframeIntervs > longFrameLimit ) [0] #frames that exceeded longerThanRefreshTolerance of expected duration
     numCasesInterframeLong = len( idxsInterframeLong )
     if numCasesInterframeLong >0:
