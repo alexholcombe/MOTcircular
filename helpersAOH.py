@@ -169,8 +169,8 @@ def constructRingsAsGratings(myWin,numRings,radii,ringRadialMaskEachRing,numObje
     ######### End constructRingAsGrating ###########################################################
 #########################################
 
-def constructThickAndThinWedgeRings(myWin,radius,radialMask,cueRadalMask,visibleWedge,numObjects,patchAngleThick,patchAngleThin,thickWedgeColor,thinWedgeColor,
-                                                                        gratingTexPix,cueColor,blobToCue,ppLog):
+def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,cueRadialMask,visibleWedge,numObjects,patchAngleThick,patchAngleThin,bgColor,
+                                            thickWedgeColor,thinWedgeColor,targetAngleOffset,gratingTexPix,cueColor,blobToCue,ppLog):
     #Construct a grating formed of the colors in order of stimColorIdxsOrder
     #Also construct a similar cueRing grating with same colors, but one blob potentially highlighted. 
     #cueRing Has different spacing than ringRadial, not sure why, I think because calculations tend to be off as it's 
@@ -199,7 +199,7 @@ def constructThickAndThinWedgeRings(myWin,radius,radialMask,cueRadalMask,visible
             ppLog.warn(msg)
         return segmentSizeTexture, patchSizeTexture, patchFlankSize
     
-    #draw thick wedges
+    #thick wedges. Create texture for visual.radialStim
     segmentSizeTexture, patchSizeTexture, patchFlankSize = patchSizeForTexture(segmentAngle, patchAngleThick, oneCycleAngle, gratingTexPix)
     start = round( 0 ) #identify starting texture position for this segment
     end = round( start + segmentSizeTexture ) #don't round until after do addition, otherwise can fall short
@@ -209,49 +209,50 @@ def constructThickAndThinWedgeRings(myWin,radius,radialMask,cueRadalMask,visible
     ringTex[:, start:start+patchFlankSize, :] = bgColor[:]  #one flank
     ringTex[:, end-1-patchFlankSize:end, :] = bgColor[:]  #other flank
     
-    #draw thin wedges
+    #thin wedges. Create texture for visual.radialStim
     segmentSizeTexture, thinWedgeSizeTexture, patchFlankSize = patchSizeForTexture(segmentAngle, patchAngleThin, oneCycleAngle, gratingTexPix)
     #First draw the entire segment in patchColr, then erase sides (flankers) leaving only the patchAngle
     start = patchFlankSize #identify starting texture position for this segment
     end = round( start + thinWedgeSizeTexture ) #don't round until after do addition, otherwise can fall short
     ringTex[:, start:end, :] = thinWedgeColor[:]
 
-    #Drawing cue
-    #Perhaps both inner and outer cue arcs can be drawn in one go via a radial mask
-    #use visibleWedge so it only highlights a single thick wedge
-    #draw texture for cueRing
-#    for g in range(3):
-#        for cycle in range(int(round(numCycles))): 
-#              base = cycle*gratingTexPix/numCycles
-#              #draw cue ring, which will become cue arc. Is very similar to normal ring, so first draw it like that
-#              cueTex[:, base+start/numCycles:base+end/numCycles, g] = thickWedgeColor[g]
-#              #draw the blank parts of the cue ring
-#              #maybe here I can modify first dimension to create two arcs, inner and outer
-#              cueTex[:,base+start/numCycles:base+(start+patchFlankSize)/numCycles,g] = bgColor[g]
-#              cueTex[:,base+(end-1-patchFlankSize)/numCycles:base+end/numCycles,g] = bgColor[g]
-    start = round( 0 ) #identify starting texture position for this segment
-    start = round( start+patchFlankSize )
-    end = round(start + segmentSizeTexture - patchFlankSize) #don't round until after do addition, otherwise can fall short
-    cueTex[:, start:end, :] = cueColor[:]
-
-#    #Finally, add cue part to cueRing
-#    if blobToCue >=0: #-999 means dont cue anything. 
-#        blobToCueCorrectForRingReversal = numObjects-1 - blobToCue #grating seems to be laid out in opposite direction than blobs, this fixes postCueNumBlobsAway so positive is in direction of motion
-#        cueStartEntry = blobToCueCorrectForRingReversal*segmentLen+WhiteCueSizeAdj
-#        cueEndEntry = cueStartEntry + segmentLen-2*WhiteCueSizeAdj
-#        for g in range(3):
-#            cueTex[:, cueStartEntry:cueEndEntry, g] = cueColor[g]   #-1*bgColor is that what makes it white?
-#        blackGrains = round( .25*(cueEndEntry-cueStartEntry) )#number of "pixels" of texture at either end of cue sector to make black. Need to update this to reflect patchAngle
-#        cueTex[:, cueStartEntry:cueStartEntry+blackGrains, :] = bgColor[0];  #this one doesn't seem to do anything?
-#        cueTex[:, cueEndEntry-1-blackGrains:cueEndEntry, :] = bgColor[0];
-    angRes = 100 #100 is default. I have not seen any effect. This is currently not printed to log file!
+    angRes = 200 #100 is default. I have not seen an artifact at present when set to 100, two things drawn don't overlap exactly
     ringRadial= visual.RadialStim(myWin, tex=ringTex, color=[1,1,1],size=radius,#ringTex is the actual colored pattern. radial grating used to make it an annulus
             visibleWedge=visibleWedge,
             mask=radialMask, # this is a 1-D mask masking the centre, to create an annulus
             radialCycles=0, angularCycles=numObjects,
             angularRes=angRes, interpolate=antialiasGrating, autoLog=autoLogging)
-    #end preparation of colored rings
-    #draw cueing grating for tracking task. Have entire grating be empty except for one white sector
+
+    #Draw target (task is to judge offset of thin wedge relative to thick wedge.
+    #So, overdraw a single segment of the grating by using visibleWedge
+    #angularPhase = 
+    #I need to not show the part of the thick wedge that will be displaced, while showing enough of thick wedge to overdraw previous location of thin wedge
+    targetCorrectForRingReversal = numObjects-1 - blobToCue #grating seems to be laid out in opposite direction than blobs, this fixes postCueNumBlobsAway so positive is in direction of motion
+    visibleAngleStart = targetCorrectForRingReversal*segmentAngle + (segmentAngle-patchAngleThick)/2
+    visibleAngleEnd = visibleAngleStart + patchAngleThick
+    if targetAngleOffset >= 0:
+        visibleAngleEnd -= targetAngleOffset #don't show the part of the thick wedge that would be displaced
+    else: #shifted the other way, towards the start, so spillover on that side needs to be avoided by not drawing it
+        visibleAngleStart -= targetAngleOffset
+    
+    #Below call is identical to ringRadial except ori
+    targetRadial= visual.RadialStim(myWin, tex=ringTex, color=[1,1,1],size=radius,#ringTex is the actual colored pattern. radial grating used to make it an annulus
+            visibleWedge=[visibleAngleStart,visibleAngleEnd],
+            ori = targetAngleOffset,
+            mask=radialMask, # this is a 1-D mask masking the centre, to create an annulus
+            radialCycles=0, angularCycles=numObjects,
+            angularRes=angRes, interpolate=antialiasGrating, autoLog=autoLogging)
+            
+    #Creating cue texture
+    #Both inner and outer cue arcs can be drawn in one go via a radial mask
+    #use visibleWedge so it only highlights a single thick wedge
+    #draw texture for cueRing
+    start = round( 0 ) #identify starting texture position for this segment
+    start = round( start+patchFlankSize )
+    end = round(start + segmentSizeTexture - patchFlankSize) #don't round until after do addition, otherwise can fall short
+    cueTex[:, start:end, :] = cueColor[:]
+
+    #draw cue
     visibleAngleStart = 0; visibleAngleEnd=360
     if blobToCue>=0:
         blobToCueCorrectForRingReversal = numObjects-1 - blobToCue #grating seems to be laid out in opposite direction than blobs, this fixes postCueNumBlobsAway so positive is in direction of motion
@@ -263,8 +264,7 @@ def constructThickAndThinWedgeRings(myWin,radius,radialMask,cueRadalMask,visible
                     mask = cueRadialMask, radialCycles=0, angularCycles=1, #only one cycle because no pattern actually repeats- trying to highlight only one sector
                     angularRes=angRes, interpolate=antialiasGrating, autoLog=autoLogging)
     
-    currentlyCuedBlob = blobToCue #this will mean that don't have to redraw 
-    return ringRadial,cueRing,currentlyCuedBlob
+    return ringRadial,targetRadial,cueRing
     ######### End constructRingAsGrating ###########################################################
 
 if __name__ == "__main__": #do self-tests
@@ -291,7 +291,7 @@ if __name__ == "__main__": #do self-tests
 #                        gratingTexPix=gratingTexPix,blobToCue=blobToCue,ppLog=logging)
 
   
-    #First draw the thick wedges. Task will be to judge which thick wedge has the thin wedge offset within it
+    #Task will be to judge which thick wedge has the thin wedge offset within it
     numObjects = 6
     gratingTexPix= 1024
     blobToCue= 1
@@ -301,15 +301,17 @@ if __name__ == "__main__": #do self-tests
     thickWedgeColor = [1,-1,-1]
     thinWedgeColor=[0,0,1]
     cueColor=[0,1,1]
-    radialMask =   np.array( [0,0,0,0,0,0,0,1,0,0] )
-    wedgeCenterRadiusFraction = np.where(radialMask)[0][0]*1.0 / len(radialMask)
-    print('wedgeCenterRadiusFraction = ',wedgeCenterRadiusFraction)
+    radialMask =   np.array( [0,0,0,0,0,0,0,1,0,0,0] )
+    wedgeRadiusFraction = np.where(radialMask)[0][0]*1.0 / len(radialMask)
+    print('wedgeRadiusFraction = ',wedgeRadiusFraction)
     wedgeThicknessFraction = len( np.where(radialMask)[0] )*1.0 / len(radialMask)
     print('wedgeThickness = ',wedgeThicknessFraction*radius)
-    cueInnerArcDesiredFraction = wedgeCenterRadiusFraction - .2
-    cueOuterArcDesiredFraction = wedgeCenterRadiusFraction + .2
+    wedgeCenterFraction = wedgeRadiusFraction + wedgeThicknessFraction/2.
+    desiredArcDistanceFractionRadius = .23
+    cueInnerArcDesiredFraction = wedgeCenterFraction - desiredArcDistanceFractionRadius
+    cueOuterArcDesiredFraction = wedgeCenterFraction + desiredArcDistanceFractionRadius
     if cueOuterArcDesiredFraction > 1:
-        msg='Can"t put outer arc at fraction='+str(cueOuterArcDesiredFraction)
+        msg='Can"t start outer arc at fraction='+str(cueOuterArcDesiredFraction)
         logging.error(msg); print(msg)
     fractionResolution = .02     #Quantisation of possible positions of cue arc
     binsNeeded = 1.0 / fractionResolution
@@ -321,17 +323,10 @@ if __name__ == "__main__": #do self-tests
     cueRadialMask[ outerArcCenterPos ] = 1
     print('cueInnerArcDesiredFraction = ',cueInnerArcDesiredFraction, ' actual = ', innerArcCenterPos*1.0/len(cueRadialMask) )
     print('cueOuterArcDesiredFraction = ',cueOuterArcDesiredFraction, ' actual = ', outerArcCenterPos*1.0/len(cueRadialMask) )
-
-#    expansion = 3
-#    cueRadialMask = np.zeros( expansion*len(radialMask) )   #np.repeat( radialMask, expansion, axis=0 )
-#    center = np.where(radialMask)[0][0] * expansion
-#    center = (np.where(radialMask)[0][0] +1)* expansion -(expansion-1)
-#    cueRadialMask[center - expansion] = 1
-#    cueRadialMask[center + expansion] = 1
-
-    thickThinWedgesRing,cueRing,currentlyCuedBlob =  \
-        constructThickAndThinWedgeRings(myWin,radius,radialMask,cueRadialMask,visibleWedge,numObjects,patchAngleThickWedges,5,thickWedgeColor,thinWedgeColor,
-                            gratingTexPix,cueColor,blobToCue,ppLog=logging)
+    targetAngleOffset = -6
+    thickThinWedgesRing, targetRing, cueRing =  \
+        constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,cueRadialMask,visibleWedge,numObjects,patchAngleThickWedges,5,
+                            bgColor,thickWedgeColor,thinWedgeColor,targetAngleOffset,gratingTexPix,cueColor,blobToCue,ppLog=logging)
 
     keepGoing = True
     while keepGoing:
@@ -345,6 +340,21 @@ if __name__ == "__main__": #do self-tests
                   respcount = 1
               else: #key in [
                 print('key =', key)
+
+    keepGoing = True #draw target superposed
+    while keepGoing:
+        thickThinWedgesRing.draw()
+        targetRing.draw()
+        #Draw thin wedges at same time as thick wedges. But when time to draw target, draw over old position of target thin wedge and draw displaced version
+        #Now program the cue arcs and the target-displaced ring
+        myWin.flip()
+        for key in event.getKeys():       #check if pressed abort-type key
+              if key in ['escape','q']:
+                  keepGoing = False
+                  respcount = 1
+              else: #key in [
+                print('key =', key)
+    
     keepGoing=True
     while keepGoing:
         thickThinWedgesRing.draw()
