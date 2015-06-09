@@ -24,7 +24,7 @@ disable_gc = True
 subject='test'#'test'
 autoLogging = False
 demo = False
-autopilot=False
+autopilot=True
 if autopilot:  subject='auto'
 feedback=True
 exportImages= False #quits after one trial / output image
@@ -245,7 +245,7 @@ speeds = np.array( [ 0.5 ]  )   #dont want to go faster than 2 because of blur p
 #Set up the factorial design (list of all conditions)
 for numCuesEachRing in [ [1] ]:
  for numObjsEachRing in [ [8] ]: #First entry in each sub-list is num objects in the first ring, second entry is num objects in the second ring
-  for cueLeadTime in [.4]: # [.160, .700]:  #How long is the cue on prior to the eyeballs appearing
+  for cueLeadTime in [.16]: # [.160, .700]:  #How long is the cue on prior to the eyeballs appearing
       for speed in speeds:
           for direction in [-1.0,1.0]:
             for targetAngleOffset in [-8,8]:
@@ -389,7 +389,7 @@ def collectResponses(expStop): #Kristjansson&Holcombe cuing experiment
     #eyeball left, eyeball right, eyeball down, eyeball up
     #draw something that represents clockwise 
     responsesNeeded = 1
-    responsesAutopilot = list()
+    responsesAutopilot = list(['A'])
     for r in range(responsesNeeded):
         responsesAutopilot.append('A')
     respcount =0
@@ -411,12 +411,18 @@ def collectResponses(expStop): #Kristjansson&Holcombe cuing experiment
                     myWin.flip(); myWin.flip()
                     respPromptText.draw()
                     myWin.flip()
+        if autopilot:
+           respCount = responsesNeeded
+           break
+           
     return responses,responsesAutopilot, expStop
-
 
 print('timingBlips', file=dataFile)
 trialNum=0; numTrialsCorrect=0; expStop=False; framesSaved=0;
 print('Starting experiment of',trials.nTotal,'trials. Current trial is trial ',trialNum)
+NextRemindCountText.setText( str(trialNum) + ' of ' + str(trials.nTotal)     )
+NextRemindCountText.draw()
+myWin.flip()
 #end of header
 trialClock = core.Clock()
 stimClock = core.Clock()
@@ -429,6 +435,7 @@ if eyetracking:
 
 while trialNum < trials.nTotal and expStop==False:
     accelerateComputer(1,process_priority, disable_gc) #speed up
+    
     numObjects = thisTrial['numObjsEachRing'][0] #haven't implemented additional rings yet
     objsPerQuadrant = numObjects / 4
     if numObjects % 4 != 0:
@@ -479,10 +486,15 @@ while trialNum < trials.nTotal and expStop==False:
     cueRadialMask[ innerArcCenterPos ] = 1
     cueRadialMask[ outerArcCenterPos ] = 1
     thinWedgesAngleSubtend = 2
-    print('cueInnerArcDesiredFraction = ',cueInnerArcDesiredFraction, ' actual = ', innerArcCenterPos*1.0/len(cueRadialMask) )
-    print('cueOuterArcDesiredFraction = ',cueOuterArcDesiredFraction, ' actual = ', outerArcCenterPos*1.0/len(cueRadialMask) )
+    innerArcActualFraction = innerArcCenterPos*1.0/len(cueRadialMask)
+    outerArcActualFraction = outerArcCenterPos*1.0/len(cueRadialMask)
+    closeEnough = .01
+    if abs(cueInnerArcDesiredFraction - innerArcActualFraction) > closeEnough:
+        print('cueInnerArcDesiredFraction of object radius = ',cueInnerArcDesiredFraction, ' actual = ', innerArcActualFraction, ' exceeding tolerance of ',closeEnough )
+    if abs(cueOuterArcDesiredFraction - outerArcActualFraction) > closeEnough:
+        print('cueOuterArcDesiredFraction of object radius = ',cueOuterArcDesiredFraction, ' actual = ', outerArcActualFraction, ' exceeding tolerance of ',closeEnough)
     thickThinWedgesRing, target, cue =  \
-        constructThickThinWedgeRingsTargetAndCue(myWin,radii[0],radialMask,cueRadialMask,visibleWedge,numObjects,patchAngleThickWedges,
+            constructThickThinWedgeRingsTargetAndCue(myWin,radii[0],radialMask,cueRadialMask,visibleWedge,numObjects,patchAngleThickWedges,
                             thinWedgesAngleSubtend,bgColor,thickWedgeColor,thinWedgeColor,thisTrial['targetAngleOffset'],gratingTexPix,cueColor,objToCue,ppLog=logging)
     core.wait(.1)
     myMouse.setVisible(False)
@@ -508,12 +520,7 @@ while trialNum < trials.nTotal and expStop==False:
                 framesSaved +=1
             myWin.flip(clearBuffer=True)
             t=trialClock.getTime()-t0; ts.append(t);
-    cont = False #debugON
-    while not cont:
-        for key in event.getKeys():       #check if pressed abort-type key
-                  key = key.upper()
-                  if key in ['ESCAPE','Q']:
-                    cont = True
+    #event.waitKeys(maxWait=2, keyList=['SPACE'], timeStamped=False) #debugOFF
     myWin.flip()
     event.clearEvents(eventType='mouse')
     if eyetracking:
@@ -559,21 +566,21 @@ while trialNum < trials.nTotal and expStop==False:
         myWin.saveMovieFrames('exported/frame.png')    
         expStop=True
     #Handle response, calculate whether correct, ########################################
-    if autopilot:responses = responsesAutopilot
-    if not expStop: #if short on responses, too hard to write code to handle it so don't even try
-        #score response
-        if thisTrial['targetAngleOffset'] >0:
-            answer = 'L'
-        else:
-            answer = 'A'
-        if responses[0] == answer:
-            correct = 1
-        else: correct = 0            
+    if autopilot:
+        responses = responsesAutopilot
+    #score response
+    if thisTrial['targetAngleOffset'] >0:
+        answer = 'L'
+    else:
+        answer = 'A'
+    if responses[0] == answer:
+        correct = 1
+    else: correct = 0            
     if passThisTrial: 
         correct = -1    #indicate for data analysis that observer opted out of this trial, because think they moved their eyes
     
     #header print('trialnum\tsubject\tbasicShape\tnumObjects\tspeed\tdirection\tangleIni
-    trials.data.add('objToCue', trialDurTotal)
+    trials.data.add('objToCue', objToCue)
     trials.data.add('trialDurTotal', trialDurTotal)
     trials.data.add('response', responses[0]) #switching to using psychopy-native ways of storing, saving data 
     trials.data.add('correct', correct) #switching to using psychopy-native ways of storing, saving data 
@@ -635,7 +642,7 @@ if expStop == True:
     print('user aborted experiment on keypress with trials trialNum=', trialNum)
 else: 
     print("Experiment finished")
-if  nDone >0:
+if  trialNum >0:
     print("Data was saved on each trial to", fileNameWithPath+'MANUAL.txt')
     fileNamePP = fileNameWithPath
     dfFromPP = trials.saveAsWideText(fileNamePP)

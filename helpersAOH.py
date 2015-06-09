@@ -187,15 +187,15 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,cueRadialMa
     oneCycleAngle = 360./numCycles
     def patchSizeForTexture(segmentAngle, patchAngle, oneCycleAngle, gratingTexPix):
         segmentSizeTexture = segmentAngle/oneCycleAngle *gratingTexPix #I call it segment because includes spaces between objects, that I'll write over subsequently
-        if patchAngleThick > segmentAngle:
-            msg='Error: patchAngleThick requested ('+str(patchAngle)+') bigger than maximum possible ('+str(segmentAngle)+')  numCycles='+str(numCycles)
+        if patchAngle > segmentAngle:
+            msg='Error: patchAngle requested ('+str(patchAngle)+') bigger than maximum possible ('+str(segmentAngle)+')  numCycles='+str(numCycles)
             print(msg); ppLog.error(msg)
-        patchSizeTexture = patchAngle/oneCycleAngle *gratingTexPix
+        patchSizeTexture = patchAngle*1.0/oneCycleAngle *gratingTexPix
         patchSizeTexture = round(patchSizeTexture) #best is odd number, even space on either size
         patchFlankSize = (segmentSizeTexture-patchSizeTexture)/2. #this area will be drawn in bgColor
-        patchAngleActual = patchSizeTexture / gratingTexPix * oneCycleAngle
-        if abs(patchAngleActual - patchAngleThick) > .04:
-            msg = 'Desired patchAngleThick = '+str(patchAngleThick)+' but closest can get with '+str(gratingTexPix)+' gratingTexPix is '+str(patchAngleActual); 
+        patchAngleActual = patchSizeTexture*1.0 / gratingTexPix * oneCycleAngle
+        if abs(patchAngleActual - patchAngle) > .04:
+            msg = 'Desired patchAngle = '+str(patchAngle)+' but closest can get with '+str(gratingTexPix)+' gratingTexPix is '+str(patchAngleActual); 
             ppLog.warn(msg)
         return segmentSizeTexture, patchSizeTexture, patchFlankSize
     
