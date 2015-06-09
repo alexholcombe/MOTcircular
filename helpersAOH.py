@@ -170,7 +170,7 @@ def constructRingsAsGratings(myWin,numRings,radii,ringRadialMaskEachRing,numObje
 #########################################
 
 def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,cueRadialMask,visibleWedge,numObjects,patchAngleThick,patchAngleThin,bgColor,
-                                            thickWedgeColor,thinWedgeColor,targetAngleOffset,gratingTexPix,cueColor,blobToCue,ppLog):
+                                            thickWedgeColor,thinWedgeColor,targetAngleOffset,gratingTexPix,cueColor,objToCue,ppLog):
     #Construct a grating formed of the colors in order of stimColorIdxsOrder
     #Also construct a similar cueRing grating with same colors, but one blob potentially highlighted. 
     #cueRing Has different spacing than ringRadial, not sure why, I think because calculations tend to be off as it's 
@@ -227,9 +227,10 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,cueRadialMa
     #So, overdraw a single segment of the grating by using visibleWedge
     #angularPhase = 
     #I need to not show the part of the thick wedge that will be displaced, while showing enough of thick wedge to overdraw previous location of thin wedge
-    targetCorrectForRingReversal = numObjects-1 - blobToCue #grating seems to be laid out in opposite direction than blobs, this fixes postCueNumBlobsAway so positive is in direction of motion
-    visibleAngleStart = targetCorrectForRingReversal*segmentAngle + (segmentAngle-patchAngleThick)/2
+    targetCorrectedForRingReversal = numObjects-1 - objToCue #grating seems to be laid out in opposite direction than blobs, this fixes postCueNumBlobsAway so positive is in direction of motion
+    visibleAngleStart = targetCorrectedForRingReversal*segmentAngle + (segmentAngle-patchAngleThick)/2
     visibleAngleEnd = visibleAngleStart + patchAngleThick
+    print('targetCorrectedForRingReversal = ',targetCorrectedForRingReversal,' visibleAngleStart=',visibleAngleStart,' visibleAngleEnd=',visibleAngleEnd)
     if targetAngleOffset >= 0:
         visibleAngleEnd -= targetAngleOffset #don't show the part of the thick wedge that would be displaced
     else: #shifted the other way, towards the start, so spillover on that side needs to be avoided by not drawing it
@@ -251,13 +252,16 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,cueRadialMa
     start = round( start+patchFlankSize )
     end = round(start + segmentSizeTexture - patchFlankSize) #don't round until after do addition, otherwise can fall short
     cueTex[:, start:end, :] = cueColor[:]
-
+    #Actually because I'm only showing a tiny sliver via visibleAngle, could color the whole thing
+    cueTex[:, :, :] = cueColor[:]
+    
     #draw cue
     visibleAngleStart = 0; visibleAngleEnd=360
-    if blobToCue>=0:
-        blobToCueCorrectForRingReversal = numObjects-1 - blobToCue #grating seems to be laid out in opposite direction than blobs, this fixes postCueNumBlobsAway so positive is in direction of motion
-        visibleAngleStart = blobToCueCorrectForRingReversal*segmentAngle + (segmentAngle-patchAngleThick)/2
+    if objToCue>=0:
+        objToCueCorrectdForRingReversal = numObjects-1 - objToCue #grating seems to be laid out in opposite direction than blobs, this fixes postCueNumBlobsAway so positive is in direction of motion
+        visibleAngleStart = objToCueCorrectdForRingReversal*segmentAngle + (segmentAngle-patchAngleThick)/2
         visibleAngleEnd = visibleAngleStart + patchAngleThick
+        print('objToCueCorrectdForRingReversal = ',objToCueCorrectdForRingReversal,' visibleAngleStart=',visibleAngleStart,' visibleAngleEnd=',visibleAngleEnd)
 
     cueRing = visual.RadialStim(myWin, tex=cueTex, color=[1,1,1],size=radius, #cueTexInner is white. Only one sector of it shown by mask
                     visibleWedge=[visibleAngleStart,visibleAngleEnd],
@@ -294,7 +298,7 @@ if __name__ == "__main__": #do self-tests
     #Task will be to judge which thick wedge has the thin wedge offset within it
     numObjects = 6
     gratingTexPix= 1024
-    blobToCue= 1
+    objToCue= 3
     radius = 25
     visibleWedge = [0,360]
     patchAngleThickWedges = 360/numObjects/2
@@ -326,11 +330,12 @@ if __name__ == "__main__": #do self-tests
     targetAngleOffset = -6
     thickThinWedgesRing, targetRing, cueRing =  \
         constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,cueRadialMask,visibleWedge,numObjects,patchAngleThickWedges,5,
-                            bgColor,thickWedgeColor,thinWedgeColor,targetAngleOffset,gratingTexPix,cueColor,blobToCue,ppLog=logging)
+                            bgColor,thickWedgeColor,thinWedgeColor,targetAngleOffset,gratingTexPix,cueColor,objToCue,ppLog=logging)
 
     keepGoing = True
     while keepGoing:
         thickThinWedgesRing.draw()
+        cueRing.draw()
         #Draw thin wedges at same time as thick wedges. But when time to draw target, draw over old position of target thin wedge and draw displaced version
         #Now program the cue arcs and the target-displaced ring
         myWin.flip()
@@ -354,16 +359,3 @@ if __name__ == "__main__": #do self-tests
                   respcount = 1
               else: #key in [
                 print('key =', key)
-    
-    keepGoing=True
-    while keepGoing:
-        thickThinWedgesRing.draw()
-        cueRing.draw()
-        myWin.flip()
-        for key in event.getKeys():       #check if pressed abort-type key
-              if key in ['escape','q']:
-                  keepGoing = False
-                  respcount = 1
-              else: #key in [
-                print('key =', key)
-    myWin.close()

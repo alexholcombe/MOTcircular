@@ -241,16 +241,17 @@ NextRemindPctDoneText = visual.TextStim(myWin,pos=(-.1, -.4),colorSpace='rgb',co
 NextRemindCountText = visual.TextStim(myWin,pos=(.1, -.5),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
 
 stimList = []
-speeds =  [ 0.5 ]     #dont want to go faster than 2 because of blur problem
+speeds = np.array( [ 0.5 ]  )   #dont want to go faster than 2 because of blur problem
 #Set up the factorial design (list of all conditions)
-for numCuesEachRing in [ [1,0] ]:
- for numObjsEachRing in [ [1,8] ]: #First entry in each sub-list is num objects in the first ring, second entry is num objects in the second ring
+for numCuesEachRing in [ [1] ]:
+ for numObjsEachRing in [ [8] ]: #First entry in each sub-list is num objects in the first ring, second entry is num objects in the second ring
   for cueLeadTime in [.4]: # [.160, .700]:  #How long is the cue on prior to the eyeballs appearing
       for speed in speeds:
           for direction in [-1.0,1.0]:
             for targetAngleOffset in [-8,8]:
+                for objToCueQuadrant in range(4):
                     stimList.append( {'numCuesEachRing':numCuesEachRing,'numObjsEachRing':numObjsEachRing,'targetAngleOffset':targetAngleOffset,
-                                                'cueLeadTime':cueLeadTime,'speed':speed, 'direction':direction} )
+                                                'cueLeadTime':cueLeadTime,'speed':speed,'objToCueQuadrant':objToCueQuadrant,'direction':direction} )
 #set up record of proportion correct in various conditions
 trials = data.TrialHandler(stimList,trialsPerCondition, #constant stimuli method
                                         extraInfo= {'subject':subject} )  #will be included in each row of dataframe and wideText
@@ -401,6 +402,7 @@ def collectResponses(expStop): #Kristjansson&Holcombe cuing experiment
               if key in ['ESCAPE','Q']:
                   expStop = True
                   respcount += 1
+                  responses.append('X') #dummy response so dont' get error when try to record in datafile before quitting
               elif key.upper() in ['A','L']: #A for anticlockwise, L for clockwise
                    responses.append( key.upper() )
                    respcount += 1
@@ -427,6 +429,16 @@ if eyetracking:
 
 while trialNum < trials.nTotal and expStop==False:
     accelerateComputer(1,process_priority, disable_gc) #speed up
+    numObjects = thisTrial['numObjsEachRing'][0] #haven't implemented additional rings yet
+    objsPerQuadrant = numObjects / 4
+    if numObjects % 4 != 0:
+        msg = 'numObjects not evenly divisible by 4, therefore cannot randomise quadrant. Therefore picking object to cue completely randomly'
+        logging.error(msg); print(msg)
+        objToCue = np.random.random_integers(0, numObjects-1, size=1)
+    else:
+        quadrantObjectToCue =  np.random.random_integers(0, objsPerQuadrant-1, size=1)
+        objToCue = thisTrial['objToCueQuadrant']*objsPerQuadrant + quadrantObjectToCue
+    print('objToCue=',objToCue)
     colorRings=list();
     preDrawStimToGreasePipeline = list()
     isReversed= list([1]) * numRings #always takes values of -1 or 1
@@ -439,9 +451,7 @@ while trialNum < trials.nTotal and expStop==False:
     
     #Task will be to judge which thick wedge has the thin wedge offset within it
     #Set up parameters to construct the thick,thin wedges, target, and cue
-    numObjects = 8
     gratingTexPix= 1024
-    blobToCue= 1
     radius = 25
     visibleWedge = [0,360]
     patchAngleThickWedges = 360/numObjects/2
@@ -473,7 +483,7 @@ while trialNum < trials.nTotal and expStop==False:
     print('cueOuterArcDesiredFraction = ',cueOuterArcDesiredFraction, ' actual = ', outerArcCenterPos*1.0/len(cueRadialMask) )
     thickThinWedgesRing, target, cue =  \
         constructThickThinWedgeRingsTargetAndCue(myWin,radii[0],radialMask,cueRadialMask,visibleWedge,numObjects,patchAngleThickWedges,
-                            thinWedgesAngleSubtend,bgColor,thickWedgeColor,thinWedgeColor,thisTrial['targetAngleOffset'],gratingTexPix,cueColor,blobToCue,ppLog=logging)
+                            thinWedgesAngleSubtend,bgColor,thickWedgeColor,thinWedgeColor,thisTrial['targetAngleOffset'],gratingTexPix,cueColor,objToCue,ppLog=logging)
     core.wait(.1)
     myMouse.setVisible(False)
     if eyetracking: 
@@ -539,7 +549,7 @@ while trialNum < trials.nTotal and expStop==False:
     myMouse.setVisible(True)
     passThisTrial=False
     
-    # ####### response set up
+    # ####### set up and collect responses
     responses = list();  responsesAutopilot = list()
     responses,responsesAutopilot, expStop =  \
             collectResponses(expStop)  #collect responses!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#####
@@ -550,25 +560,29 @@ while trialNum < trials.nTotal and expStop==False:
         expStop=True
     #Handle response, calculate whether correct, ########################################
     if autopilot:responses = responsesAutopilot
-    if True: #not expStop: #if short on responses, too hard to write code to handle it so don't even try
-        correct=-99;  #FIX
-        for l in range(numRings):
-            correct = -99
-            
-        #end if statement for if not expStop
-    if passThisTrial: correct = -1    #indicate for data analysis that observer opted out of this trial, because think they moved their eyes
-
+    if not expStop: #if short on responses, too hard to write code to handle it so don't even try
+        #score response
+        if thisTrial['targetAngleOffset'] >0:
+            answer = 'L'
+        else:
+            answer = 'A'
+        if responses[0] == answer:
+            correct = 1
+        else: correct = 0            
+    if passThisTrial: 
+        correct = -1    #indicate for data analysis that observer opted out of this trial, because think they moved their eyes
+    
     #header print('trialnum\tsubject\tbasicShape\tnumObjects\tspeed\tdirection\tangleIni
+    trials.data.add('objToCue', trialDurTotal)
     trials.data.add('trialDurTotal', trialDurTotal)
+    trials.data.add('response', responses[0]) #switching to using psychopy-native ways of storing, saving data 
     trials.data.add('correct', correct) #switching to using psychopy-native ways of storing, saving data 
     trials.data.add('timingBlips', numCasesInterframeLong)
-    
     numTrialsCorrect += (correct >0)  #so count -1 as 0
     speedIdxs = np.where(thisTrial['speed']==speeds)[0]
     if len(speedIdxs) ==0:
-        print('Apparently current speed= ',thisTrial['speed'],' is not in list of speeds=',speeds)
-        STOP
-    else: speedIdx = speedIdx[0]  #extract index, where returns a list with first element array of the indexes
+        print('Apparently current speed= ',thisTrial['speed'],' is not in list of speeds=',speeds, '. Please make sure speeds is a numpy array')
+    else: speedIdx = speedIdxs[0]  #extract index, where returns a list with first element array of the indexes
     numRightWrongEachSpeedOrder[ speedIdx, (correct >0) ] +=1  #if right, add to 1th column, otherwise add to 0th column count
     dataFile.flush(); logF.flush(); 
     
