@@ -639,12 +639,12 @@ if  trialNum >0:
     fileNamePickle = fileNameWithPath #.psydat will automatically be appended
     trials.saveAsPickle(fileNamePickle) #.psydat
     print("Most Psychopy-ic method: trials trialHandler has been saved as", fileNamePickle+'.psydat', " and should include copy of code")
-    #datFile = fromFile(filenamePicke+'.psydat')
-    #print datFile.data     #doing this to have a dataframe to test plotDataAndPsychometricCurve with in analyzeData.py
-                      
+    #import psychopy.tools.filetools
+
+    #see analyzeTest.py
+
     #df.dtypes in my case are  "objects". you can't take the mean
     df = dfFromPP
-    print('dataframe returned from saveAsWideText df.dtypes=\n',df.dtypes)
 
 if eyetracking:
     tracker.closeConnectionToEyeTracker(eyeMoveFile)
@@ -662,8 +662,10 @@ if quitFinder:
         os.system(shellCmd)
 
 #Fit and plot data
-fig = plotDataAndPsychometricCurve(df, dataFileName=None)
-figFnameWithPath = os.path.join('figures/', fName + '.png')
-pylab.savefig( figFnameWithPath ) #, bbox_inches='tight')
-print('The plot has been saved, as', figFnameWithPath)
-pylab.show() #pauses until window manually closed. Have to save before calling this, because closing the window loses the figure
+if trialNum >0:
+    import plotHelpers
+    fig = plotHelpers.plotDataAndPsychometricCurve(df, dataFileName=None)
+    figFnameWithPath = os.path.join('figures/', fName + '.png')
+    pylab.savefig( figFnameWithPath ) #, bbox_inches='tight')
+    print('The plot has been saved, as', figFnameWithPath)
+    pylab.show() #pauses until window manually closed. Have to save before calling this, because closing the window loses the figure
