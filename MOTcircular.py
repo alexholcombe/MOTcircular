@@ -844,7 +844,7 @@ print(np.around( numRightWrongEachSpeedOrder[:,1] / ( numRightWrongEachSpeedOrde
 print('\t\t\t\tnum trials each speed =', numRightWrongEachSpeedOrder[:,0] + numRightWrongEachSpeedOrder[:,1])
 logging.flush(); dataFile.close(); logF.close()
 
-if eyetracking 
+if eyetracking:
   if eyetrackFileGetFromEyelinkMachine:
     eyetrackerFileWaitingText = visual.TextStim(myWin,pos=(-.1,0),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
     eyetrackerFileWaitingText.setText('Waiting for eyetracking file from Eyelink computer. Do not abort eyetracking machine or file will not be saved?')
