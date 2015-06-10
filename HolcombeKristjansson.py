@@ -660,4 +660,10 @@ if quitFinder:
         applescript="\'tell application \"Finder\" to launch\'" #turn Finder back on
         shellCmd = 'osascript -e '+applescript
         os.system(shellCmd)
-core.quit()
+
+#Fit and plot data
+fig = plotDataAndPsychometricCurve(df, dataFileName=None)
+figFnameWithPath = os.path.join('figures/', fName + '.png')
+pylab.savefig( figFnameWithPath ) #, bbox_inches='tight')
+print('The plot has been saved, as', figFnameWithPath)
+pylab.show() #pauses until window manually closed. Have to save before calling this, because closing the window loses the figure
