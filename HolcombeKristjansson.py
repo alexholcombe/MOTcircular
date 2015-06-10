@@ -24,7 +24,7 @@ disable_gc = True
 subject='test'#'test'
 autoLogging = False
 demo = False
-autopilot=True
+autopilot=False
 if autopilot:  subject='auto'
 feedback=True
 exportImages= False #quits after one trial / output image
@@ -241,7 +241,7 @@ speeds = np.array( [ 0.5 ]  )   #dont want to go faster than 2 because of blur p
 #Set up the factorial design (list of all conditions)
 for numCuesEachRing in [ [1] ]:
  for numObjsEachRing in [ [8] ]: #First entry in each sub-list is num objects in the first ring, second entry is num objects in the second ring
-  for cueLeadTime in [.16]: # [.160, .700]:  #How long is the cue on prior to the eyeballs appearing
+  for cueLeadTime in [.160, .700]:  #How long is the cue on prior to the eyeballs appearing
       for speed in speeds:
           for direction in [1.0]: # [-1.0,1.0]:
             for targetAngleOffset in [-8,8]:
@@ -639,10 +639,7 @@ if  trialNum >0:
     fileNamePickle = fileNameWithPath #.psydat will automatically be appended
     trials.saveAsPickle(fileNamePickle) #.psydat
     print("Most Psychopy-ic method: trials trialHandler has been saved as", fileNamePickle+'.psydat', " and should include copy of code")
-    #import psychopy.tools.filetools
-
-    #see analyzeTest.py
-
+    #see analysis/analyzeTest.py
     #df.dtypes in my case are  "objects". you can't take the mean
     df = dfFromPP
 
@@ -665,7 +662,9 @@ if quitFinder:
 if trialNum >0:
     import plotHelpers
     fig = plotHelpers.plotDataAndPsychometricCurve(df, dataFileName=None)
-    figFnameWithPath = os.path.join('figures/', fName + '.png')
+    figName = 'pythonFig'
+    figFnameWithPath = os.path.join('analysis/figs/', figName + '.png')
+    import pylab
     pylab.savefig( figFnameWithPath ) #, bbox_inches='tight')
     print('The plot has been saved, as', figFnameWithPath)
     pylab.show() #pauses until window manually closed. Have to save before calling this, because closing the window loses the figure
