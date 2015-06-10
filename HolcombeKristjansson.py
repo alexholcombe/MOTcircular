@@ -24,7 +24,7 @@ disable_gc = True
 subject='test'#'test'
 autoLogging = False
 demo = False
-autopilot=False
+autopilot=True
 if autopilot:  subject='auto'
 feedback=True
 exportImages= False #quits after one trial / output image
@@ -38,7 +38,6 @@ gratingTexPix=1024#numpy textures must be a power of 2. So, if numColorsRoundThe
 
 numRings=2
 radii=[25]   #Need to encode as array for those experiments wherein more than one ring presented 
-offsets = np.array([[0,0],[-5,0],[-10,0]])
 
 respRadius=radii[0] #deg
 refreshRate= 60 *1.0;  #160 #set to the framerate of the monitor
@@ -231,6 +230,13 @@ else:
     fixationBlank= visual.PatchStim(myWin,tex='none',colorSpace='rgb',color=(-1,-1,-1),mask='circle',units='pix',size=fixSizePix,autoLog=autoLogging)
 fixationPoint = visual.PatchStim(myWin,colorSpace='rgb',color=(1,1,1),mask='circle',units='pix',size=2,autoLog=autoLogging) #put a point in the center
 
+#create noise post-mask
+checkSizeOfFixatnTexture = 10
+nearestPowerOfTwo = round( sqrt(checkSizeOfFixatnTexture) )**2 #Because textures (created on next line) must be a power of 2
+whiteNoiseTexture = np.round( np.random.rand(nearestPowerOfTwo,nearestPowerOfTwo) ,0 )   *2.0-1 #Can counterphase flicker  noise texture to create salient flicker if you break fixation
+noiseMask= visual.PatchStim(myWin, tex=whiteNoiseTexture, size=(widthPix,heightPix), units='pix', interpolate=False, autoLog=autoLogging)
+
+
 respText = visual.TextStim(myWin,pos=(0, -.8),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
 NextText = visual.TextStim(myWin,pos=(0, 0),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
 NextRemindPctDoneText = visual.TextStim(myWin,pos=(-.1, -.4),colorSpace='rgb',color= (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
@@ -241,10 +247,10 @@ speeds = np.array( [ 0.5 ]  )   #dont want to go faster than 2 because of blur p
 #Set up the factorial design (list of all conditions)
 for numCuesEachRing in [ [1] ]:
  for numObjsEachRing in [ [8] ]: #First entry in each sub-list is num objects in the first ring, second entry is num objects in the second ring
-  for cueLeadTime in [.160, .700]:  #How long is the cue on prior to the eyeballs appearing
+  for cueLeadTime in [.160,.700]:  #How long is the cue on prior to the eyeballs appearing
       for speed in speeds:
           for direction in [1.0]: # [-1.0,1.0]:
-            for targetAngleOffset in [-8,8]:
+            for targetAngleOffset in [-3,3]:
                 for objToCueQuadrant in range(4):
                     stimList.append( {'numCuesEachRing':numCuesEachRing,'numObjsEachRing':numObjsEachRing,'targetAngleOffset':targetAngleOffset,
                                                 'cueLeadTime':cueLeadTime,'speed':speed,'objToCueQuadrant':objToCueQuadrant,'direction':direction} )
@@ -373,7 +379,7 @@ def oneFrameOfStim(thisTrial,currFrame,cues,stimRings,target,clock,useClock,offs
           return cueCurrAngle
 # #######End of function definition that displays the stimuli!!!! #####################################
 
-respPromptText = visual.TextStim(myWin,pos=(0, -.2),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
+respPromptText = visual.TextStim(myWin,height=0.09, pos=(0, -.8),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
 respPromptText.setText('Press A if the thin wedge is offset anticlockwise, or L if clockwise')
 
 def collectResponses(expStop): #Kristjansson&Holcombe cuing experiment
@@ -640,9 +646,12 @@ if  trialNum >0:
     trials.saveAsPickle(fileNamePickle) #.psydat
     print("Most Psychopy-ic method: trials trialHandler has been saved as", fileNamePickle+'.psydat', " and should include copy of code")
     #see analysis/analyzeTest.py
-    #df.dtypes in my case are  "objects". you can't take the mean
-    df = dfFromPP
-
+    df = dfFromPP[:trialNum] #delete trials for which don't have response etc. yet, as that will otherwise cause error when averaging, plotting
+    if trialNum < trials.nTotal: #When you abort early, correct and other columns are not numeric because have value of "-"
+        #converting to numeric
+        df = df.convert_objects(convert_numeric=True)
+        print('df.dtypes=', df.dtypes) #df.dtypes in my case are  "objects". you can't take the mean
+        print('dfFromPP =', df)
 if eyetracking:
     tracker.closeConnectionToEyeTracker(eyeMoveFile)
 print('finishing at ',timeAndDateStr, file=logF)
