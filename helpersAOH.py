@@ -230,7 +230,7 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,cueRadialMa
     targetCorrectedForRingReversal = numObjects-1 - objToCue #grating seems to be laid out in opposite direction than blobs, this fixes postCueNumBlobsAway so positive is in direction of motion
     visibleAngleStart = targetCorrectedForRingReversal*segmentAngle + (segmentAngle-patchAngleThick)/2
     visibleAngleEnd = visibleAngleStart + patchAngleThick
-    print('targetCorrectedForRingReversal = ',targetCorrectedForRingReversal,' visibleAngleStart=',visibleAngleStart,' visibleAngleEnd=',visibleAngleEnd)
+    #print('targetCorrectedForRingReversal = ',targetCorrectedForRingReversal,' visibleAngleStart=',visibleAngleStart,' visibleAngleEnd=',visibleAngleEnd)
     if targetAngleOffset >= 0:
         visibleAngleEnd -= targetAngleOffset #don't show the part of the thick wedge that would be displaced
     else: #shifted the other way, towards the start, so spillover on that side needs to be avoided by not drawing it
@@ -261,7 +261,7 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,cueRadialMa
         objToCueCorrectdForRingReversal = numObjects-1 - objToCue #grating seems to be laid out in opposite direction than blobs, this fixes postCueNumBlobsAway so positive is in direction of motion
         visibleAngleStart = objToCueCorrectdForRingReversal*segmentAngle + (segmentAngle-patchAngleThick)/2
         visibleAngleEnd = visibleAngleStart + patchAngleThick
-        print('objToCueCorrectdForRingReversal = ',objToCueCorrectdForRingReversal,' visibleAngleStart=',visibleAngleStart,' visibleAngleEnd=',visibleAngleEnd)
+        #print('objToCueCorrectdForRingReversal = ',objToCueCorrectdForRingReversal,' visibleAngleStart=',visibleAngleStart,' visibleAngleEnd=',visibleAngleEnd)
 
     cueRing = visual.RadialStim(myWin, tex=cueTex, color=[1,1,1],size=radius, #cueTexInner is white. Only one sector of it shown by mask
                     visibleWedge=[visibleAngleStart,visibleAngleEnd],

@@ -98,7 +98,7 @@ myWin = openMyStimWindow(mon,widthPix,heightPix,bgColor,allowGUI,units,fullscr,s
 myMouse = event.Mouse(visible = 'true',win=myWin)
 myWin.setRecordFrameIntervals(False)
 
-trialsPerCondition = 2 #default value
+trialsPerCondition = 1 #default value
 
 refreshMsg2 = ''
 if not checkRefreshEtc:
@@ -167,16 +167,14 @@ else:
     print('"dataRaw" directory does not exist, so saving data in present working directory')
     dataDir='.'
 expname = ''
-fileName = dataDir+'/'+subject+ '_' + expname+timeAndDateStr
+fileNameWithPath = dataDir+'/'+subject+ '_' + expname+timeAndDateStr
 if not demo and not exportImages:
-    dataFile = open(fileName+'.txt', 'w')  # sys.stdout  #StringIO.StringIO() 
-    saveCodeCmd = 'cp \'' + sys.argv[0] + '\' '+ fileName + '.py'
+    saveCodeCmd = 'cp \'' + sys.argv[0] + '\' '+ fileNameWithPath + '.py'
     os.system(saveCodeCmd)  #save a copy of the code as it was when that subject was run
-    logF = logging.LogFile(fileName+'.log', 
+    logF = logging.LogFile(fileNameWithPath+'.log', 
         filemode='w',#if you set this to 'a' it will append instead of overwriting
         level=logging.INFO)#errors, data and warnings will be sent to this logfile
 if demo or exportImages: 
-  dataFile = sys.stdout
   logging.console.setLevel(logging.ERROR)  #only show this level  messages and higher
 logging.console.setLevel(logging.WARNING) #DEBUG means set the console to receive nearly all messges, INFO is for everything else, INFO, EXP, DATA, WARNING and ERROR 
 if refreshRateWrong:
@@ -245,17 +243,16 @@ for numCuesEachRing in [ [1] ]:
  for numObjsEachRing in [ [8] ]: #First entry in each sub-list is num objects in the first ring, second entry is num objects in the second ring
   for cueLeadTime in [.16]: # [.160, .700]:  #How long is the cue on prior to the eyeballs appearing
       for speed in speeds:
-          for direction in [-1.0,1.0]:
+          for direction in [1.0]: # [-1.0,1.0]:
             for targetAngleOffset in [-8,8]:
                 for objToCueQuadrant in range(4):
                     stimList.append( {'numCuesEachRing':numCuesEachRing,'numObjsEachRing':numObjsEachRing,'targetAngleOffset':targetAngleOffset,
                                                 'cueLeadTime':cueLeadTime,'speed':speed,'objToCueQuadrant':objToCueQuadrant,'direction':direction} )
 #set up record of proportion correct in various conditions
-trials = data.TrialHandler(stimList,trialsPerCondition, #constant stimuli method
-                                        extraInfo= {'subject':subject} )  #will be included in each row of dataframe and wideText
+trials = data.TrialHandler(stimList,trialsPerCondition) #constant stimuli method
+                                #        extraInfo= {'subject':subject} )  #will be included in each row of dataframe and wideText. Not working in v1.82.01
 
-numRightWrongEachSpeedOrder = np.zeros([ len(speeds), 2 ]); #summary results to print out at end
-numRightWrongEachSpeedIdent = deepcopy(numRightWrongEachSpeedOrder)
+numRightWrongEachSpeed = np.zeros([ len(speeds), 2 ]); #summary results to print out at end
 #end setup of record of proportion correct in various conditions
 
 timeAndDateStr = time.strftime("%d%b%Y_%H-%M", time.localtime()) 
@@ -327,8 +324,6 @@ def oneFrameOfStim(thisTrial,currFrame,cues,stimRings,target,clock,useClock,offs
           
           if n<rampUpFrames:
                 contrast = cos( -pi+ pi* n/rampUpFrames  ) /2. +.5 #starting from -pi trough of cos, and scale into 0->1 range
-          elif rampDownFrames>0 and n > rampDownStart:
-                contrast = cos(pi* (n-rampDownStart)/rampDownFrames ) /2.+.5 #starting from peak of cos, and scale into 0->1 range
           else: contrast = 1
           if n%2:
             fixation.draw()#flicker fixation on and off at framerate to see when skip frame
@@ -414,7 +409,6 @@ def collectResponses(expStop): #Kristjansson&Holcombe cuing experiment
            
     return responses,responsesAutopilot, expStop
 
-print('timingBlips', file=dataFile)
 trialNum=0; numTrialsCorrect=0; expStop=False; framesSaved=0;
 print('Starting experiment of',trials.nTotal,'trials. Current trial is trial ',trialNum)
 NextRemindCountText.setText( str(trialNum) + ' of ' + str(trials.nTotal)     )
@@ -442,7 +436,7 @@ while trialNum < trials.nTotal and expStop==False:
     else:
         quadrantObjectToCue =  np.random.random_integers(0, objsPerQuadrant-1, size=1)
         objToCue = thisTrial['objToCueQuadrant']*objsPerQuadrant + quadrantObjectToCue
-    print('objToCue=',objToCue)
+    #print('objToCue=',objToCue)
     colorRings=list();
     preDrawStimToGreasePipeline = list()
     isReversed= list([1]) * numRings #always takes values of -1 or 1
@@ -464,9 +458,9 @@ while trialNum < trials.nTotal and expStop==False:
     cueColor=[0,1,1]
     radialMask =   np.array( [0,0,0,0,0,0,0,1,0,0,0] )
     wedgeRadiusFraction = np.where(radialMask)[0][0]*1.0 / len(radialMask)
-    print('wedgeRadiusFraction = ',wedgeRadiusFraction)
+    #print('wedgeRadiusFraction = ',wedgeRadiusFraction)
     wedgeThicknessFraction = len( np.where(radialMask)[0] )*1.0 / len(radialMask)
-    print('wedgeThickness = ',wedgeThicknessFraction*radius)
+    #print('wedgeThickness = ',wedgeThicknessFraction*radius)
     wedgeCenterFraction = wedgeRadiusFraction + wedgeThicknessFraction/2.
     desiredArcDistanceFractionRadius = .23
     cueInnerArcDesiredFraction = wedgeCenterFraction - desiredArcDistanceFractionRadius
@@ -556,7 +550,6 @@ while trialNum < trials.nTotal and expStop==False:
     responses = list();  responsesAutopilot = list()
     responses,responsesAutopilot, expStop =  \
             collectResponses(expStop)  #collect responses!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#####
-    print("responses=",responses) #debugOFF
     core.wait(.1)
     if exportImages:  #maybe catch one frame of response
         myWin.saveMovieFrames('exported/frame.png')    
@@ -576,8 +569,10 @@ while trialNum < trials.nTotal and expStop==False:
         correct = -1    #indicate for data analysis that observer opted out of this trial, because think they moved their eyes
     
     #header print('trialnum\tsubject\tbasicShape\tnumObjects\tspeed\tdirection\tangleIni
-    trials.data.add('objToCue', objToCue)
-    trials.data.add('trialDurTotal', trialDurTotal)
+    trials.data.add('subject', subject) #because extraInfo not working
+    trials.data.add('objToCueRing0', objToCue[0])
+    trials.data.add('numObjsRing0', numObjsEachRing[0])
+    trials.data.add('numCuesRing0', numCuesEachRing[0])
     trials.data.add('response', responses[0]) #switching to using psychopy-native ways of storing, saving data 
     trials.data.add('correct', correct) #switching to using psychopy-native ways of storing, saving data 
     trials.data.add('timingBlips', numCasesInterframeLong)
@@ -586,8 +581,7 @@ while trialNum < trials.nTotal and expStop==False:
     if len(speedIdxs) ==0:
         print('Apparently current speed= ',thisTrial['speed'],' is not in list of speeds=',speeds, '. Please make sure speeds is a numpy array')
     else: speedIdx = speedIdxs[0]  #extract index, where returns a list with first element array of the indexes
-    numRightWrongEachSpeedOrder[ speedIdx, (correct >0) ] +=1  #if right, add to 1th column, otherwise add to 0th column count
-    dataFile.flush(); logF.flush(); 
+    numRightWrongEachSpeed[ speedIdx, (correct >0) ] +=1  #if right, add to 1th column, otherwise add to 0th column count
     
     if feedback and not expStop:
         if correct:
@@ -639,28 +633,29 @@ if expStop == True:
 else: 
     print("Experiment finished")
 if  trialNum >0:
-    print("Data was saved on each trial to", fileNameWithPath+'MANUAL.txt')
-    fileNamePP = fileNameWithPath
+    fileNamePP = fileNameWithPath + '.txt'
     dfFromPP = trials.saveAsWideText(fileNamePP)
-    print("Psychopy's wideText has been saved as", fileNamePP)
-    #dfFromPP.to_pickle(fileNameWithPath+"_DataFrame.pickle") #doing this to have a dataframe to test plotDataAndPsychometricCurve with in analyzeData.py
+    print("Psychopy wideText has been saved as", fileNamePP)
     fileNamePickle = fileNameWithPath #.psydat will automatically be appended
-    trials.saveAsPickle(fileNamePickle)
-    print("Most Psychopy-ic method: trials trialHandler has been saved as", fileNamePickle, "should include copy of code")
+    trials.saveAsPickle(fileNamePickle) #.psydat
+    print("Most Psychopy-ic method: trials trialHandler has been saved as", fileNamePickle+'.psydat', " and should include copy of code")
+    #datFile = fromFile(filenamePicke+'.psydat')
+    #print datFile.data     #doing this to have a dataframe to test plotDataAndPsychometricCurve with in analyzeData.py
                       
     #df.dtypes in my case are  "objects". you can't take the mean
     df = dfFromPP
-    print('df.dtypes=\n',df.dtypes)
-   
+    print('dataframe returned from saveAsWideText df.dtypes=\n',df.dtypes)
 
 if eyetracking:
     tracker.closeConnectionToEyeTracker(eyeMoveFile)
 print('finishing at ',timeAndDateStr, file=logF)
-print('%corr order report= ', round( correct*1.0/trialNum*100., 2)  , '% of ',trialNum,' trials', end=' ')
+#print('%corr = ', round( correct*1.0/trialNum*100., 2)  , '% of ',trialNum,' trials', end=' ')
 print('%corr each speed: ', end=' ')
-print(np.around( numRightWrongEachSpeedOrder[:,1] / ( numRightWrongEachSpeedOrder[:,0] + numRightWrongEachSpeedOrder[:,1]), 2))
-print('\t\t\t\tnum trials each speed =', numRightWrongEachSpeedOrder[:,0] + numRightWrongEachSpeedOrder[:,1])
-logging.flush(); dataFile.close(); logF.close()
+print(np.around( numRightWrongEachSpeed[:,1] / ( numRightWrongEachSpeed[:,0] + numRightWrongEachSpeed[:,1]), 2))
+print('\t\t\t\tnum trials each speed =', numRightWrongEachSpeed[:,0] + numRightWrongEachSpeed[:,1])
+from psychopy.misc import fromFile
+
+logging.flush()
 if quitFinder:
         applescript="\'tell application \"Finder\" to launch\'" #turn Finder back on
         shellCmd = 'osascript -e '+applescript
