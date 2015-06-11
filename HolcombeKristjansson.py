@@ -27,7 +27,7 @@ demo = False
 autopilot=True
 if autopilot:  subject='auto'
 feedback=True
-exportImages= False #quits after one trial / output image
+exportImages= True #quits after one trial / output image
 screenshot= False; screenshotDone = False;allowGUI = False;waitBlank = False
 trackAllIdenticalColors = True#with tracking, can either use same colors as other task (e.g. 6 blobs but only 3 colors so have to track one of 2) or set all blobs identical color
 
@@ -62,7 +62,9 @@ refreshRate = infoFirst['Screen refresh rate']
 
 if demo: refreshRate = 60. 
 tokenChosenEachRing= [-999]*numRings
-targetDur = 0.1
+targetDur = 0.1;     targetDur = round(targetDur * refreshRate) / refreshRate #discretize to nearest integer number of refreshes
+logging.info(  'targetDur= '+str(targetDur)   )
+
 rampUpDur=0
 rampUpFrames = refreshRate*rampUpDur
 ballStdDev = 1.8
@@ -154,7 +156,7 @@ if myDlg.OK: #unpack information from dialogue box
          subject = name #change subject default name to what user entered
        trialsPerCondition = int( thisInfo[ dlgLabelsOrdered.index('trialsPerCondition') ] ) #convert string to integer
        print('trialsPerCondition=',trialsPerCondition)
-       logging.info('trialsPerCondition =',trialsPerCondition)
+       logging.info('trialsPerCondition ='+str(trialsPerCondition))
 else: 
    print('User cancelled from dialog box.')
    logging.flush()
@@ -172,7 +174,7 @@ if not demo and not exportImages:
     os.system(saveCodeCmd)  #save a copy of the code as it was when that subject was run
     logF = logging.LogFile(fileNameWithPath+'.log', 
         filemode='w',#if you set this to 'a' it will append instead of overwriting
-        level=logging.INFO)#errors, data and warnings will be sent to this logfile
+        level=logging.INFO)#info, data, warnings, and errors will be sent to this logfile
 if demo or exportImages: 
   logging.console.setLevel(logging.ERROR)  #only show this level  messages and higher
 logging.console.setLevel(logging.WARNING) #DEBUG means set the console to receive nearly all messges, INFO is for everything else, INFO, EXP, DATA, WARNING and ERROR 
@@ -181,8 +183,8 @@ if refreshRateWrong:
 else: logging.info(refreshMsg1+refreshMsg2)
 longerThanRefreshTolerance = 0.27
 longFrameLimit = round(1000./refreshRate*(1.0+longerThanRefreshTolerance),3) # round(1000/refreshRate*1.5,2)
-print('longFrameLimit=',longFrameLimit,' Recording trials where one or more interframe interval exceeded this figure ', file=logF)
-print('longFrameLimit=',longFrameLimit,' Recording trials where one or more interframe interval exceeded this figure ')
+msg = 'longFrameLimit='+ str(longFrameLimit) +' Recording trials where one or more interframe interval exceeded this figure '
+logging.info(msg); print(msg)
 if msgWrongResolution != '':
     logging.error(msgWrongResolution)
 
@@ -196,8 +198,8 @@ runInfo = psychopy.info.RunTimeInfo(
         verbose=True, ## True means report on everything 
         userProcsDetailed=True  ## if verbose and userProcsDetailed, return (command, process-ID) of the user's processes
         )
-print('second window opening runInfo mean ms=',runInfo["windowRefreshTimeAvg_ms"],file=logF)
-print('second window opening runInfo mean ms=',runInfo["windowRefreshTimeAvg_ms"])
+msg = 'second window opening runInfo mean ms='+ str( runInfo["windowRefreshTimeAvg_ms"] )
+logging.info(msg); print(msg)
 logging.info(runInfo)
 logging.info('gammaGrid='+str(mon.getGammaGrid()))
 logging.info('linearizeMethod='+str(mon.getLinearizeMethod()))
@@ -220,8 +222,8 @@ if blindspotFill:
 fixatnNoise = True
 fixSizePix = 20 #make fixation big so flicker more conspicuous
 if fixatnNoise:
-    checkSizeOfFixatnTexture = fixSizePix/4
-    nearestPowerOfTwo = round( sqrt(checkSizeOfFixatnTexture) )**2 #Because textures (created on next line) must be a power of 2
+    numChecksAcross = fixSizePix/4
+    nearestPowerOfTwo = round( sqrt(numChecksAcross) )**2 #Because textures (created on next line) must be a power of 2
     fixatnNoiseTexture = np.round( np.random.rand(nearestPowerOfTwo,nearestPowerOfTwo) ,0 )   *2.0-1 #Can counterphase flicker  noise texture to create salient flicker if you break fixation
     fixation= visual.PatchStim(myWin, tex=fixatnNoiseTexture, size=(fixSizePix,fixSizePix), units='pix', mask='circle', interpolate=False, autoLog=autoLogging)
     fixationBlank= visual.PatchStim(myWin, tex=-1*fixatnNoiseTexture, colorSpace='rgb',mask='circle',size=fixSizePix,units='pix',autoLog=autoLogging)
@@ -231,11 +233,10 @@ else:
 fixationPoint = visual.PatchStim(myWin,colorSpace='rgb',color=(1,1,1),mask='circle',units='pix',size=2,autoLog=autoLogging) #put a point in the center
 
 #create noise post-mask
-checkSizeOfFixatnTexture = 10
-nearestPowerOfTwo = round( sqrt(checkSizeOfFixatnTexture) )**2 #Because textures (created on next line) must be a power of 2
+numChecksAcross = 128
+nearestPowerOfTwo = round( sqrt(numChecksAcross) )**2 #Because textures (created on next line) must be a power of 2
 whiteNoiseTexture = np.round( np.random.rand(nearestPowerOfTwo,nearestPowerOfTwo) ,0 )   *2.0-1 #Can counterphase flicker  noise texture to create salient flicker if you break fixation
 noiseMask= visual.PatchStim(myWin, tex=whiteNoiseTexture, size=(widthPix,heightPix), units='pix', interpolate=False, autoLog=autoLogging)
-
 
 respText = visual.TextStim(myWin,pos=(0, -.8),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
 NextText = visual.TextStim(myWin,pos=(0, 0),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
@@ -266,7 +267,7 @@ logging.info(  str('starting exp with name: "'+'MovingCue'+'" at '+timeAndDateSt
 logging.info( 'numtrials='+ str(trials.nTotal)+' refreshRate='+str(refreshRate)      )
 
 print(' numtrials=', trials.nTotal)
-print('rampUpDur=',rampUpDur, ' targetDur=', targetDur, ' secs', file=logF);  
+logging.info('rampUpDur='+str(rampUpDur)+ ' targetDur='+ str(targetDur) + ' secs')
 logging.info('task='+'track'+'   respType='+respType)
 logging.info(   'radii=' + str(radii)   )
 logging.flush()
@@ -320,7 +321,7 @@ def angleChangeThisFrame(thisTrial, moveDirection, numRing, thisFrameN, lastFram
     angleMove = moveDirection[numRing]*thisTrial['direction']*thisTrial['speed']*2*pi*(thisFrameN-lastFrameN)/refreshRate
     return angleMove
 
-def oneFrameOfStim(thisTrial,currFrame,cues,stimRings,target,clock,useClock,offsetXYeachRing):
+def oneFrameOfStim(thisTrial,currFrame,maskBegin,cues,stimRings,target,clock,useClock,offsetXYeachRing):
 #defining a function to draw each frame of stim. So can call second time for tracking task response phase
           if useClock: #Don't count on not missing frames. Use actual time.
             t = clock.getTime()
@@ -338,7 +339,7 @@ def oneFrameOfStim(thisTrial,currFrame,cues,stimRings,target,clock,useClock,offs
           fixationPoint.draw()
           #draw cue
           for numRing in range(len(cues)):
-            if n< thisTrial['cueLeadTime']: #keep cue moving
+            if n< thisTrial['cueLeadTime']*refreshRate: #keep cue moving
                 angleMove = angleChangeThisFrame(thisTrial, moveDirection, numRing, n, n-1)
                 cues[numRing].setOri(angleMove,operation='+',log=autoLogging)
             else: pass #Time for target, cue will now be stationary
@@ -373,7 +374,9 @@ def oneFrameOfStim(thisTrial,currFrame,cues,stimRings,target,clock,useClock,offs
 #                    x,y = xyThisFrameThisAngle('circle',radii, numRing,angleThisObject,n,thisTrial['speed']) ########################################################
 #                    x += offsetXYeachRing[numRing][0]
 #                    y += offsetXYeachRing[numRing][1]
-
+          if n >= maskBegin*refreshRate:
+            noiseMask.draw()
+            
           if blindspotFill:
               blindspotStim.draw()
           return cueCurrAngle
@@ -450,7 +453,9 @@ while trialNum < trials.nTotal and expStop==False:
     angleIniEachRing = list( np.random.uniform(0,2*pi,size=[numRings]) )
     cueCurrAngleEachRing = list([0]) * numRings
     moveDirection = list( np.random.random_integers(0,1,size=[numRings]) *2 -1 ) #randomise initial direction
-    trialDurTotal = thisTrial['cueLeadTime'] + targetDur
+    maskBegin = thisTrial['cueLeadTime'] + targetDur
+    maskDur = 0.25
+    trialDurTotal = maskBegin + maskDur
     trialDurFrames= int( trialDurTotal*refreshRate )
     
     #Task will be to judge which thick wedge has the thin wedge offset within it
@@ -511,7 +516,7 @@ while trialNum < trials.nTotal and expStop==False:
     for n in range(trialDurFrames): #this is the loop for this trial's stimulus!
             offsetXYeachRing=[[0,0],[0,0]]
             cueAngle = \
-                        oneFrameOfStim(thisTrial,n,[cue],[thickThinWedgesRing],target,stimClock,useClock,offsetXYeachRing) #actual drawing of stimuli
+                        oneFrameOfStim(thisTrial,n,maskBegin,[cue],[thickThinWedgesRing],target,stimClock,useClock,offsetXYeachRing) #actual drawing of stimuli
             if exportImages:
                 myWin.getMovieFrame(buffer='back') #for later saving
                 framesSaved +=1
@@ -537,8 +542,8 @@ while trialNum < trials.nTotal and expStop==False:
            longFramesStr += ' apparently screen refreshes skipped, interframe durs were:'+\
                     str( np.around(  interframeIntervs[idxsInterframeLong] ,1  ) )+ ' and was these frames: '+ str(idxsInterframeLong)
        if longFramesStr != None:
-                print('trialnum=',trialNum,'  ',longFramesStr)
-                print('trialnum=',trialNum,'  ',longFramesStr, file=logF)
+                msg = 'trialnum=' + str(trialNum) +  longFramesStr
+                print(msg);  logging.info(msg)
                 if not demo:
                     flankingAlso=list()
                     for idx in idxsInterframeLong: #also print timing of one before and one after long frame
@@ -547,7 +552,7 @@ while trialNum < trials.nTotal and expStop==False:
                         flankingAlso.append(idx)
                         if idx+1<len(interframeIntervs):  flankingAlso.append(idx+1)
                         else: flankingAlso.append(np.NaN)
-                    #print >>logF, 'flankers also='+str( np.around( interframeIntervs[flankingAlso], 1) )
+                    logging.info( 'flankers also=' + str( np.around( interframeIntervs[flankingAlso], 1) ))
             #end timing check
     myMouse.setVisible(True)
     passThisTrial=False
@@ -558,7 +563,7 @@ while trialNum < trials.nTotal and expStop==False:
             collectResponses(expStop)  #collect responses!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#####
     core.wait(.1)
     if exportImages:  #maybe catch one frame of response
-        myWin.saveMovieFrames('exported/frame.png')    
+        myWin.saveMovieFrames('exportedImages/frame.png')    
         expStop=True
     #Handle response, calculate whether correct, ########################################
     if autopilot:
@@ -634,8 +639,8 @@ while trialNum < trials.nTotal and expStop==False:
     core.wait(.1); time.sleep(.1)
     #end trials loop  ###########################################################
 if expStop == True:
-    print('user aborted experiment on keypress with trials trialNum=', trialNum, file=logF)
-    print('user aborted experiment on keypress with trials trialNum=', trialNum)
+    msg = 'user aborted experiment on keypress with trials trialNum=' + str(trialNum)
+    logging.info(msg);  print(msg)
 else: 
     print("Experiment finished")
 if  trialNum >0:
@@ -654,14 +659,13 @@ if  trialNum >0:
         print('dfFromPP =', df)
 if eyetracking:
     tracker.closeConnectionToEyeTracker(eyeMoveFile)
-print('finishing at ',timeAndDateStr, file=logF)
+logging.info('finishing at '+timeAndDateStr)
 #print('%corr = ', round( correct*1.0/trialNum*100., 2)  , '% of ',trialNum,' trials', end=' ')
 print('%corr each speed: ', end=' ')
 print(np.around( numRightWrongEachSpeed[:,1] / ( numRightWrongEachSpeed[:,0] + numRightWrongEachSpeed[:,1]), 2))
 print('\t\t\t\tnum trials each speed =', numRightWrongEachSpeed[:,0] + numRightWrongEachSpeed[:,1])
-from psychopy.misc import fromFile
-
 logging.flush()
+myWin.close()
 if quitFinder:
         applescript="\'tell application \"Finder\" to launch\'" #turn Finder back on
         shellCmd = 'osascript -e '+applescript
