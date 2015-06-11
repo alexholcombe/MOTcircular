@@ -20,3 +20,5 @@ Contrast some conditions
 
 
 * Arni: why do the stimuli come on later rather than the eyeball displacing? Well, the eyeball displacement would be a transient that would grab attention.
+
+[Movie of trial](../../exportedImages/out.webm)
