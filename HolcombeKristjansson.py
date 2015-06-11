@@ -24,10 +24,10 @@ disable_gc = True
 subject='test'#'test'
 autoLogging = False
 demo = False
-autopilot=True
+autopilot=False
 if autopilot:  subject='auto'
 feedback=True
-exportImages= True #quits after one trial / output image
+exportImages= False #quits after one trial / output image
 screenshot= False; screenshotDone = False;allowGUI = False;waitBlank = False
 trackAllIdenticalColors = True#with tracking, can either use same colors as other task (e.g. 6 blobs but only 3 colors so have to track one of 2) or set all blobs identical color
 
@@ -465,8 +465,8 @@ while trialNum < trials.nTotal and expStop==False:
     visibleWedge = [0,360]
     patchAngleThickWedges = 360/numObjects/2
     thickWedgeColor = [0,-1,-1]
-    thinWedgeColor=[0,1,1]
-    cueColor=[0,1,1]
+    thinWedgeColor=[0,0,1]
+    cueColor=[1,1,1]
     radialMask =   np.array( [0,0,0,0,0,0,0,1,0,0,0] )
     wedgeRadiusFraction = np.where(radialMask)[0][0]*1.0 / len(radialMask)
     #print('wedgeRadiusFraction = ',wedgeRadiusFraction)
