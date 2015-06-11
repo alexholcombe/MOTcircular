@@ -56,8 +56,8 @@ for (expi in 1:length(expFolders)) {
       fileNameLen = nchar(file)
       withoutSuffix<-substr(file,1,fileNameLen-4) 
       eyetrackFileNameShouldBe<- paste0(withoutSuffix,"EyetrackingReport.txt")
-      row <- grep(eyetrackFileNameShouldBe, eyetrackFiles)
-      eyetrackFileFound = ( length(row) >0 )
+      whichFileIsEyetrack <- grep(eyetrackFileNameShouldBe, eyetrackFiles)
+      eyetrackFileFound = ( length(whichFileIsEyetrack) >0 )
       numTrials<- length(rawDataLoad$trialnum)
       msg=''
       rawDataThis<- rawDataLoad
@@ -76,6 +76,9 @@ for (expi in 1:length(expFolders)) {
       	eyeTrackOneRowPerTrial$trialnum = eyeTrackOneRowPerTrial$trial-1 #psychopy starts with zero, Eyelink with 1
       	proportnTrialsOutOfCentralArea = sum(eyeTrackOneRowPerTrial$outOfCentralArea != 0) / nrow(eyeTrackOneRowPerTrial)
       	msg=paste0(" fixation broken on ",as.character(round(proportnTrialsOutOfCentralArea*100,1)), "% of trials")
+      	if (nrow(rawDataLoad) != nrow(eyeTrackOneRowPerTrial)) {  
+      		stop( paste0('eyeTrackingFile ',trackFname," does not have same number of trials as behavioral data file:",file) )	
+      	}
       	rawDataWithEyetrack<- merge(rawDataLoad, eyeTrackOneRowPerTrial, by=c("trialnum"))
       	rawDataThis<- rawDataWithEyetrack
     	  }

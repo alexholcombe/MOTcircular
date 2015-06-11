@@ -22,6 +22,6 @@ Contrast some conditions
 
 * Why do the stimuli come on later rather than them being on throughout with the eyeball displacing at target time? Well, the eyeball displacement would be a transient that would grab attention. Could avoid this by having all the eyeballs displace, just in random directions.
 
-* The cue provides a frame itself to judge the offset of the target relative to. Esp. because currently the cue and thin wedge are more similar in brightness than are the thick wedge and thin wedge.
+* The cue provides a frame itself to judge the offset of the target relative to. Esp. because currently the cue and thin wedge are more similar in brightness than are the thick wedge and thin wedge. So the cue "physically" helps boost performance, not just attentionally. To avoid, I guess would have to jitter its exact location.
 
 [Movie of trial](../../exportedImages/out.webm)
