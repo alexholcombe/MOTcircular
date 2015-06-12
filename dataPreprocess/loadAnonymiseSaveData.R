@@ -13,7 +13,7 @@ destinatnDir<-"dataAnonymized/" #where the anonymized data will be exported to
 anonymiseData <- TRUE
 
 #Eyemovement exclusion zone numbers
-exclusionDeg = 0.2
+exclusionDeg = 1 #in any direction from fixation
 widthPix = 800
 heightPix = 600
 monitorWidth = 39.5 #cm
@@ -184,15 +184,16 @@ checkCombosOccurEqually(d, c("numObjects","numTargets","speedRank") )
 
 sanityCheckEyeTracking=TRUE
 if (sanityCheckEyeTracking) {
+  library(ggplot2)
   h<-ggplot(filter(dat,exp=="circleOrSquare_twoTargets",subject=="LT"),
             aes(x=maxXdev,y=maxYdev,color=file)) + geom_point()  #Have a look at fixation positions
-  quartz(); h
+  quartz(); show(h)
   h<-ggplot(filter(dat,exp=="circleOrSquare_twoTargets",subject=="LT"),
             aes(x=meanX,y=meanY,color=file)) + geom_point()  #Have a look at fixation positions
-  quartz(); h
+  quartz(); show(h)
   h<-ggplot(filter(dat,exp=="offCenter"),
             aes(x=maxXdev)) + geom_histogram()+ facet_grid(~subject) #Have a look at fixation positions
-  quartz(); h
+  quartz(); show(h)
 }
 dat$correct = dat$orderCorrect /3
 dat$chanceRate= 1 / dat$numObjects

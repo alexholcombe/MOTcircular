@@ -90,7 +90,11 @@ eyelinkReportSummarise<- function(df,widthPix,heightPix,centralZoneWidthPix,cent
 
 TESTME = FALSE #Unfortunately no equivalent in R of python __main__. Would have to use testhat I guess
 if (TESTME) {
-  inputFilename<-"WN_26May2015_13-44Eyetracking.txt"# "TrackingExperimentEyetrackingLN"
+  setwd(
+    "/Users/alexh/Documents/attention_tempresltn/multiple\ object\ tracking/newTraj/newTraj_repo/dataPreprocess/eyetracking"
+  )
+  inputFilename<-"ANON_26May2015_13-44Eyetracking.txt"
+  inputFilename<- "CF_10Jun2015_12-14EyetrackingReport.txt"
   inputDir<-"./dataForTestingOfCode/"
   files <- dir(path=inputDir)  #find all data files in this directory
   if (!(inputFilename %in% files)) {
@@ -105,7 +109,7 @@ if (TESTME) {
     } )
 
   #Calculating the exclusion zone numbers
-  exclusionDeg = 0.2 #if participant's eye is ever more than exclusionDeg away from fixation, Exclusion=1
+  exclusionDeg = 1.0 #if participant's eye is ever more than exclusionDeg away from fixation, Exclusion=1
   widthPix = 800
   heightPix = 600
   monitorWidth = 39.5 #cm
@@ -116,8 +120,11 @@ if (TESTME) {
   centralZoneWidthPix = exclusionPixels*2
   centralZoneHeightPix = exclusionPixels*2
     
-  whatIwantToKnowEachTrialAboutEye<- 
+  whatIwantToKnowEachTrial<- 
      eyelinkReportSummarise(df,widthPix,heightPix,centralZoneWidthPix,centralZoneHeightPix)
-  head(whatIwantToKnowEachTrialAboutEye)
+  head(whatIwantToKnowEachTrial)
+  proportnTrialsOutOfCentralArea = sum(whatIwantToKnowEachTrial$outOfCentralArea != 0) / nrow(whatIwantToKnowEachTrial)
+  msg=paste0(" fixation broken on ",as.character(round(proportnTrialsOutOfCentralArea*100,1)), "% of trials")
+  print(msg)
   #write.table(whatIwantToKnowEachTrialAboutEye, paste0(inputDir, outputFilename,".txt"), sep="\t", row.names=FALSE)
 }
