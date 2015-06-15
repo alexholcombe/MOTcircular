@@ -5,3 +5,4 @@ dataRaw/
 *.Rhistory
 .Rapp.history
 exportedImages/fr*
+.Rproj.user

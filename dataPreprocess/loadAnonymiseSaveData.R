@@ -185,11 +185,8 @@ checkCombosOccurEqually(d, c("numObjects","numTargets","speedRank") )
 sanityCheckEyeTracking=TRUE
 if (sanityCheckEyeTracking) {
   library(ggplot2)
-  h<-ggplot(filter(dat,exp=="circleOrSquare_twoTargets",subject=="LT"),
-            aes(x=maxXdev,y=maxYdev,color=file)) + geom_point()  #Have a look at fixation positions
-  quartz(); show(h)
-  h<-ggplot(filter(dat,exp=="circleOrSquare_twoTargets",subject=="LT"),
-            aes(x=meanX,y=meanY,color=file)) + geom_point()  #Have a look at fixation positions
+  h<-ggplot(filter(dat,exp=="circleOrSquare_twoTargets"),
+            aes(x=maxXdev,y=maxYdev,color=file)) + geom_point() +facet_grid(~subject)  #Have a look at fixation positions
   quartz(); show(h)
   h<-ggplot(filter(dat,exp=="offCenter"),
             aes(x=maxXdev)) + geom_histogram()+ facet_grid(~subject) #Have a look at fixation positions
@@ -211,10 +208,13 @@ if (anonymiseData) {
   }
   linesFromFile= readLines(keyFile,warn=FALSE)
   key = as.numeric(linesFromFile[1]) #the key to encrypt the data with
-  dat$subject <- rotX(dat$subject,key) #anonymise subject initials by rotating them by key characters
+  subjectNotanonymised<- dat$subject
+  dat$subject <- rotX(subjectNotanonymised,key) #anonymise subject initials by rotating them by key characters
+  print('Mapping from name to anonymised:')
+  table(subjectNotanonymised,dat$subject)
 }
 	
-table(d$speedRank,d$numObjects,d$numTargets,d$subject)
+#table(d$speedRank,d$numObjects,d$numTargets,d$subject)
 
 #Save anonymised data for loading by doAllAnalyses.R
 fname=paste(destinatnDir,destinationName,sep="")

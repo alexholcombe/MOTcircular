@@ -55,8 +55,9 @@ if (useQuickpsy) {
   #Create decreasing function to fit
   negCumNormal<-function(x,p) { cum_normal_fun(-x,p) } 
   fit <- quickpsy(datThis, speed, correct, grouping=.(condName,subject,ringToQuery), bootstrap='none',
+                  xmin=.5, xmax=2.2,
                   fun=negCumNormal, guess=0.5, parini = c(1.5,10)) 
-  plot1 <- plotcurves(fit)
+  plot1 <- plotcurves(fit) + theme_bw()
   quartz(); show(plot1)
 }
 if (useQuickpsy) {
@@ -85,7 +86,6 @@ if (useQuickpsy) {
                   bootstrap='none') 
   #Problems:
   #how to change threshold criterion
-  #How to draw threshold line all the way down to vertical axis bottom
   #Need to run Lizzy again at very slow speed
   plot1 <- plotcurves(fit)
   plot1=plot1+theme_bw()
