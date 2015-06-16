@@ -43,7 +43,7 @@ for (expi in 1:length(expFolders)) {
     files<- files[nonEyetrackIdxs] #don't include eyetracking ones
     #allFilesStr <- paste(files,collapse=",") #print(allFilesStr)
     for (j in 1:length(files)) { #read in sessions of this subject
-    	file = files[j]
+      file = files[j]
       fname = paste0(thisSubjectDir,"/",file)
 	    rawDataLoad=tryCatch( 
       	    		read.table(fname,sep='\t',header=TRUE), 
@@ -82,7 +82,7 @@ for (expi in 1:length(expFolders)) {
       	rawDataWithEyetrack<- merge(rawDataLoad, eyeTrackOneRowPerTrial, by=c("trialnum"))
       	rawDataThis<- rawDataWithEyetrack
     	  }
-     print(paste0("Loaded file ",file,msg))
+      print(paste0("Loaded file ",file,msg))
       #omit first trial is total trials are odd, last probably a repeat. And first trial people often discombobulated      
       msg=""
       removeFirstTrialIfOdd = TRUE
@@ -108,9 +108,9 @@ for (expi in 1:length(expFolders)) {
           print( paste(newCols,collapse=','))
           for (n in 1:length(newCols)) {#add newCol to old data.frame with dummy value
             newCol = newCols[n]
-            if (is.numeric(rawDataThis[newCol])) 
-              rawData[newCol] <- -999 #dummy value
-            else rawData[newCol] <- NA #dummy value            
+            rawData[,newCol] <- NA 
+            #if (is.numeric(rawDataThis[,newCol]))   #This seems too risky, might forget have -999 values
+            #  rawData[,newCol] <- -999 #dummy value
           }
         }
         if (length(oldColsNotInNew) >0)
@@ -120,9 +120,9 @@ for (expi in 1:length(expFolders)) {
               print( paste(oldColsNotInNew,collapse=',') )
             }
             oldCol = oldColsNotInNew[n]
-            if (is.numeric(rawData[oldCol])) 
-              rawDataThis[oldCol] <- -999 #dummy value
-            else rawDataThis[oldCol]<- NA #dummy value
+            rawDataThis[,oldCol]<- NA #dummy value
+            #if (is.numeric(rawData[,oldCol]))  #seems too risky- might forget it is -999
+            #  rawDataThis[,oldCol] <- -999 #dummy value
           }
         #Try to merge new data file with already-loaded
         colnamesNew <- colnames(rawDataThis)
