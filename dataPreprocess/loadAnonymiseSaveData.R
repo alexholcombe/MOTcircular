@@ -56,8 +56,9 @@ for (expi in 1:length(expFolders)) {
       fileNameLen = nchar(file)
       withoutSuffix<-substr(file,1,fileNameLen-4) 
       eyetrackFileNameShouldBe<- paste0(withoutSuffix,"EyetrackingReport.txt")
-      whichFileIsEyetrack <- grep(eyetrackFileNameShouldBe, eyetrackFiles)
+      whichFileIsEyetrack <- grep(toupper(eyetrackFileNameShouldBe), toupper(eyetrackFiles)) #allow for capitalisation diffs
       eyetrackFileFound = ( length(whichFileIsEyetrack) >0 )
+      #print(paste0("Looked for eyetrack file ",eyetrackFileNameShouldBe," and found=", eyetrackFileFound))
       numTrials<- length(rawDataLoad$trialnum)
       msg=''
       rawDataThis<- rawDataLoad
@@ -82,6 +83,7 @@ for (expi in 1:length(expFolders)) {
       	rawDataWithEyetrack<- merge(rawDataLoad, eyeTrackOneRowPerTrial, by=c("trialnum"))
       	rawDataThis<- rawDataWithEyetrack
     	  }
+    	  else { msg = ' NO eyetracking file found'}
       print(paste0("Loaded file ",file,msg))
       #omit first trial is total trials are odd, last probably a repeat. And first trial people often discombobulated      
       msg=""

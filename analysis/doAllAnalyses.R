@@ -13,6 +13,7 @@ if (useQuickpsy) {
   library('quickpsy')
 }
 datWithFixatnViolations = dat #save for possible future use
+#somehow CF eyetracking data not included for offCenter
 if (excludeFixationViolations) {
   datFixatnGood<- subset(dat,dat$outOfCentralArea==0)
   nEyemovementsUnknown<- sum(is.na(datWithFixatnViolations$outOfCentralArea))
@@ -21,7 +22,7 @@ if (excludeFixationViolations) {
                                 (nrow(datWithFixatnViolations)-nEyemovementsUnknown))*100)
   pctExcludedNoEyemoveData<-round(100*nEyemovementsUnknown/nrow(datWithFixatnViolations))
   print(paste0(pctExcludedNoEyemoveData,"% excluded for not having eyetracking data. Further ",
-                pctExcludedBrokeFixatn,"% excluded for breaking fixation."))
+                pctExcludedBrokeFixatn,"% of remaining excluded for breaking fixation."))
   dat<-datFixatnGood
 }
 iv= 'speed'
@@ -54,8 +55,8 @@ if (!excludeFixationViolations) {
 datThis<-subset(dat,exp==expThis)
 datAnalyze<-datThis
 #factorsForBreakdownForAnalysis[ length(factorsForBreakdownForAnalysis)+1 ]<- "exp"
-source('analyzeMakeReadyForPlot.R') #returns fitParms, psychometrics, and function calcPctCorrThisSpeed
 if (!useQuickpsy) {
+  source('analyzeMakeReadyForPlot.R') #returns fitParms, psychometrics, and function calcPctCorrThisSpeed
   source('individDataWithPsychometricCurves.R') #for plotIndividDataAndCurves()
   plotIndividDataAndCurves(expThis,datThis,psychometrics,factorsForBreakdownForAnalysis,xmin=1,xmax=2.5)
 }
@@ -67,13 +68,40 @@ if (useQuickpsy) {
                   xmin=.5, xmax=2.2,
                   fun=negCumNormal, guess=0.5, parini = c(1.5,10))
   plot1 <- plotcurves(fit) + theme_bw()
-  quartz(); show(plot1)
+  quartz(tit); show(plot1)
+  
+  tit<- paste0(expThis,"NotToPublish_ThreshesIncludingRingToQuery")
+  #because ringToQuery is not relevant, don't publish this graph
+  quartz(title=tit,width=4.3,height=3.7) #create graph of thresholds
+  g=ggplot(fit$thresholds, 
+           aes(x=factor(condName), y=thre))   + theme_bw()
+  dodgeAmt=.4
+  g<-g+stat_summary(fun.data="mean_cl_boot",geom="errorbar",width=.3,conf.int=.95,
+                    width=5,size=1) 
+  g<-g+geom_point(  aes(x=factor(condName), y=thre, 
+                        shape=factor(subject), color=factor(ringToQuery)), 
+                    position=position_dodge(dodgeAmt), size =2.9   )
+  g<-g+geom_line(aes(group=interaction(subject,factor(ringToQuery))),
+                 position=position_dodge(width=dodgeAmt))
+  show(g)
+  ggsave( paste('figs/',tit,'.png',sep='') )
+  
+  #threshes plot to publish
+  tit<- paste0(expThis,"_threshes")
+  quartz(title=tit,width=4.3,height=3.7) #create graph of thresholds
+  g=ggplot(fit$thresholds, 
+           aes(x=factor(condName), y=thre))   + theme_bw()
+  dodgeAmt=.4
+  g<-g+stat_summary(fun.data="mean_cl_boot",geom="errorbar",conf.int=.95,
+                    width=.4,size=1)
+  g<-g+stat_summary(fun.y=mean,geom="point",size=5) #confidence interval point at centre
+  g<-g+ stat_summary(fun.y=mean, geom="point",aes(shape=factor(subject)),
+                        position=position_dodge(dodgeAmt))
+  #g<-g+geom_line(aes(group=interaction(subject,factor(ringToQuery))),
+  #               position=position_dodge(width=dodgeAmt))
+  show(g)
+  ggsave( paste('figs/',tit,'.png',sep='') )
 }
-if (useQuickpsy) {
-  plotpar(fit) #need to customise these plots http://www.dlinares.org/basicsquickpsy.html
-  plotthresholds(fit)
-}
-
 if (!useQuickpsy) {
 source("extractThreshesAndPlot.R") #provides threshes, thresh plots
 }
@@ -88,7 +116,7 @@ if (!useQuickpsy) {
   plotIndividDataAndCurves(expThis,datThis,psychometrics,factorsForBreakdownForAnalysis,xmin=1,xmax=2.5)
 }
 if (useQuickpsy) {
-  datDani<-datThis  # datDani$speed = -1*datDani$speed
+  #datDani<-datThis; datDani$speed = -1*datDani$speed
   #Create decreasing function to fit
   negCumNormal<-function(x,p) { cum_normal_fun(-x,p) }
   fit <- quickpsy(datThis, speed, correct, grouping=.(condName,subject,leftOrRight),
@@ -108,11 +136,38 @@ if (useQuickpsy) {
     return (plot1)
   }
  plot1=plotJittered(fit)+theme_bw()
- quartz(); show(plot1)
+ quartz(expThis); show(plot1)
+ #find my code from last paper for plotting threshes?
+ #plotthresholds(fit,color=condName)
+ offCtrThreshes = fit$thresholds
 }
 
-#MAYBE TO BE USED IN FUTURE, BUT PRESENTLY OFF-CENTER EXPERIMENT ANALYZED BY
-#PRE-REPOSITORY R FILES
+#LO's threshold for centered could not be estimated. 
+#Anyway point is if anything, people better for centered than for other conditions.
+tit<- paste0(expThis,"Threshes")
+quartz(title=tit,width=4.3,height=3.7) #create graph of thresholds
+g=ggplot(offCtrThreshes, 
+         aes(x=factor(condName), y=thre))   + theme_bw()
+dodgeAmt=.25
+#g<-g+stat_summary(fun.data="SEerrorbar",geom="errorbar",color="black",width=.3)
+g<-g+stat_summary(fun.data="mean_cl_boot",geom="errorbar",width=.3,conf.int=.95,
+                  width=5,size=1,position=position_dodge(width=dodgeAmt)) 
+
+g<-g+geom_point(  aes(x=factor(condName), y=thre, color=factor(leftOrRight),
+                      shape=factor(subject)), 
+                  position=position_dodge(dodgeAmt), size =2.9   )
+#g<-g+geom_line(aes(group=interaction(subject,factor(leftOrRight))),
+#               position=position_dodge(width=dodgeAmt))
+g<-g+geom_line(aes(group=interaction(subject,factor(leftOrRight)),color=factor(leftOrRight)),
+               position=position_dodge(width=dodgeAmt))
+g<-g+stat_summary(fun.data="SEerrorbar",geom="point",color="black")
+g
+#g<-g+ coord_cartesian( ylim=c(1.0,2.5), xlim=c(0.6,2.4))
+#g<-g+ theme(axis.title.y=element_text(vjust=0.22))
+show(g)
+ggsave( paste('figs/',tit,'.png',sep='') )
+
+#PRESENTLY OLD EXPERIMENTS ANALYSED BY PRE-REPOSITORY FILES
 # expName="postVSS_13targets2349objects"
 # anonDataFname= paste(dataDir,expName,".Rdata",sep="") #data/postVSS_13targets2349objects.RData
 # load(anonDataFname,verbose=TRUE) #returns dat
