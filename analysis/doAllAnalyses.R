@@ -26,7 +26,7 @@ if (excludeFixationViolations) {
   dat<-datFixatnGood
 }
 iv= 'speed'
-#need to add offsetXYeachRing to factors analysed
+#need to translate offsetXYeachRing to verbal condName label
 assignCondName <- function(df) {
   df$condName='nothing'
   whichSquareExp = df$exp=='circleOrSquare_twoTargets'
@@ -110,8 +110,8 @@ source("extractThreshesAndPlot.R") #provides threshes, thresh plots
 expThis= "offCenter"
 factorsForBreakdownForAnalysis <- factorsEachExpForBreakdown[[1]]
 datThis<-subset(dat,exp==expThis)
-source('analyzeMakeReadyForPlot.R') #returns fitParms, psychometrics, and function calcPctCorrThisSpeed
 if (!useQuickpsy) {
+  source('analyzeMakeReadyForPlot.R') #returns fitParms, psychometrics, and function calcPctCorrThisSpeed
   source('individDataWithPsychometricCurves.R') #for plotIndividDataAndCurves()
   plotIndividDataAndCurves(expThis,datThis,psychometrics,factorsForBreakdownForAnalysis,xmin=1,xmax=2.5)
 }
@@ -127,23 +127,34 @@ if (useQuickpsy) {
   #how to change threshold criterion
   #Need to run Lizzy again at very slow speed
   #plot1 <- plotcurves(fit)
-  plotJittered<-function(fit) {
-    plot1<-ggplot() +facet_grid(leftOrRight~subject) +
+  plotDodged<-function(fit) {
+    p<-ggplot() +facet_grid(leftOrRight~subject) +
       geom_point(data = fit$averages, aes(x = speed, y = y, color = condName), 
                  position=position_dodge(width=.15)) 
-    plot1<-plot1+ geom_line(data = fit$curves, 
+    p<-p+ geom_line(data = fit$curves, 
                   aes(x = x, y = y, color = condName))
-    return (plot1)
+    #fit$thresholds[[color]] <- factor(fit$thresholds[[color]])
+    colorForThreshes <- fit$groups[[1]]
+    # get present axis limits
+    axisYrange <- ggplot_build(p)$panel$ranges[[1]]$y.range
+    p <- p + geom_linerange(data = fit$thresholds,
+                            aes_string(x = 'thre', 
+                                       ymin = axisYrange[1] - .2, #make sure extends below axis line
+                                       ymax = fit$thresholds$prob, color = colorForThreshes))
+    #Because threshline extended below axis limit, axis automatically scaled below it.
+    #Restore it to its former values
+    p <- p + coord_cartesian(ylim=axisYrange)
+    return (p)
   }
- plot1=plotJittered(fit)+theme_bw()
+ plot1=plotDodged(fit)+theme_bw()
  quartz(expThis); show(plot1)
  #find my code from last paper for plotting threshes?
  #plotthresholds(fit,color=condName)
  offCtrThreshes = fit$thresholds
 }
-
+#PLOT THRESHES for off-center
 #LO's threshold for centered could not be estimated. 
-#Anyway point is if anything, people better for centered than for other conditions.
+#But point is if anything, people better for centered than for other conditions.
 tit<- paste0(expThis,"Threshes")
 quartz(title=tit,width=4.3,height=3.7) #create graph of thresholds
 g=ggplot(offCtrThreshes, 

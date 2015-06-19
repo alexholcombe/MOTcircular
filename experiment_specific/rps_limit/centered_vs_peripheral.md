@@ -25,11 +25,14 @@ Seem to need more cuingTime because gotta get oneself stably fixating even when 
 
 When results finished, point been made that neurons-per-unit time theory is false.
 
+### Figures
+[Generate vector images that show the trajectories tested. While we're at it, also circle versus diamond.](stimSchematics.Rmd)
+
+
 ### To-do
 
 - Still need to figure out screwed-up resolution thing on Alex's computer (new problem). SwitchResX resolutions not showing up, or after selection in SwitchResX, resolution picked up by PsychoPy seems different than what it is.
 - Need a 4th participant
-- get Honours' friend
 
 
 
