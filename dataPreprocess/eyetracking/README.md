@@ -27,15 +27,7 @@ Get the EDF file off the eyetracking machine (reboot eyetracking machine, select
 
 RECORDING_SESSION_LABEL TRIAL_LABEL TRIAL_INDEX	CURRENT_FIX_BLINK_AROUND	CURRENT_FIX_X CURRENT_FIX_Y
 
-This results in a file that begins with two lines like:
-
-`
-RECORDING_SESSION_LABEL	TRIAL_LABEL	CURRENT_FIX_BLINK_AROUND	CURRENT_FIX_X
-
-LN_20Apr2015_14-22	Trial: 1	NONE	403.80
-
-LN_20Apr2015_14-22	Trial: 2	AFTER	400.00
-`
+This results in a text file in wide format, that should name e.g. CF_10Jun2015_12-14EyetrackingReport.txt  
 
 TRIAL_INDEX is better because than TRIAL_LABEL because not spit out the "Trial: " part.
 

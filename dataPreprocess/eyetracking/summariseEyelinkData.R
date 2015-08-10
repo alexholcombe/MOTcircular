@@ -7,7 +7,7 @@
 #LN_20Apr2015_14-22	Trial: 1	NONE	403.80
 #LN_20Apr2015_14-22	Trial: 2	AFTER	400.00
 
-#The job of this program is to examine each fixation event designated by Eyelink and check whether
+#The job of this function, eyelinkReportSummarise, is to examine each fixation event designated by Eyelink and check whether
 #all the fixations for each trial is within the desired fixation zone.
 #It also outputs whether the subject blinked on each trial.
 library(stringr)
