@@ -73,7 +73,8 @@ for (expi in 1:length(expFolders)) {
       	msg=paste0(" and loaded Eyetracking file. ")
     	    #Eyetracker begins trials with 1, whereas python and psychopy convention is 0
       	#So to match the eyetracker file with the psychopy file, subtract one from trial num
-      	eyeTrackOneRowPerTrial<- eyelinkReportSummarise(eyeTrackInfo,widthPix,heightPix,centralZoneWidthPix,centralZoneHeightPix)
+      	eyeTrackOneRowPerTrial<- 
+      		eyelinkReportSummarise(trackFname,eyeTrackInfo,widthPix,heightPix,centralZoneWidthPix,centralZoneHeightPix)
       	eyeTrackOneRowPerTrial$trialnum = eyeTrackOneRowPerTrial$trial-1 #psychopy starts with zero, Eyelink with 1
       	proportnTrialsOutOfCentralArea = sum(eyeTrackOneRowPerTrial$outOfCentralArea != 0) / nrow(eyeTrackOneRowPerTrial)
       	msg=paste0(" fixation broken on ",as.character(round(proportnTrialsOutOfCentralArea*100,1)), "% of trials")
@@ -189,10 +190,10 @@ if (sanityCheckEyeTracking) {
   library(ggplot2)
   h<-ggplot(filter(dat,exp=="circleOrSquare_twoTargets"),
             aes(x=maxXdev,y=maxYdev,color=file)) + geom_point() +facet_grid(~subject)  #Have a look at fixation positions
-  quartz(); show(h)
+  quartz("circleOrSquare_twoTargets"); show(h)
   h<-ggplot(filter(dat,exp=="offCenter"),
             aes(x=maxXdev)) + geom_histogram()+ facet_grid(~subject) #Have a look at fixation positions
-  quartz(); show(h)
+  quartz("offCenter"); show(h)
 }
 dat$correct = dat$orderCorrect /3
 dat$chanceRate= 1 / dat$numObjects

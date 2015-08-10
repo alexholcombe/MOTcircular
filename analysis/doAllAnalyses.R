@@ -24,6 +24,7 @@ if (excludeFixationViolations) {
   print(paste0(pctExcludedNoEyemoveData,"% excluded for not having eyetracking data. Further ",
                 pctExcludedBrokeFixatn,"% of remaining excluded for breaking fixation."))
   dat<-datFixatnGood
+  #WRITE CODE TO EXCLUDE PARTICIPANTS WITH <60% trials good
 }
 iv= 'speed'
 #need to translate offsetXYeachRing to verbal condName label

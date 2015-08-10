@@ -13,7 +13,7 @@
 library(stringr)
 library(plyr); library(dplyr) #must be done in this order
 
-eyelinkReportSummarise<- function(df,widthPix,heightPix,centralZoneWidthPix,centralZoneHeightPix) {
+eyelinkReportSummarise<- function(inputFilename,df,widthPix,heightPix,centralZoneWidthPix,centralZoneHeightPix) {
   #df is dataframe gotten by using read.table to read in the Eyelink DataViewer report
   #trial num should be contained in either TRIAL_LABEL or TRIAL_INDEX
   #widthPix is width of screen. Used to calculate center of screen 
@@ -121,7 +121,7 @@ if (TESTME) {
   centralZoneHeightPix = exclusionPixels*2
     
   whatIwantToKnowEachTrial<- 
-     eyelinkReportSummarise(df,widthPix,heightPix,centralZoneWidthPix,centralZoneHeightPix)
+     eyelinkReportSummarise(inputFilename,df,widthPix,heightPix,centralZoneWidthPix,centralZoneHeightPix)
   head(whatIwantToKnowEachTrial)
   proportnTrialsOutOfCentralArea = sum(whatIwantToKnowEachTrial$outOfCentralArea != 0) / nrow(whatIwantToKnowEachTrial)
   msg=paste0(" fixation broken on ",as.character(round(proportnTrialsOutOfCentralArea*100,1)), "% of trials")
