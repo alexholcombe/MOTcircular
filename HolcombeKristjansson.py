@@ -40,9 +40,10 @@ numRings=2
 radii=[25]   #Need to encode as array for those experiments wherein more than one ring presented 
 
 respRadius=radii[0] #deg
-refreshRate= 60 *1.0;  #160 #set to the framerate of the monitor
+refreshRate= 72 *1.0;  #160 #set to the framerate of the monitor
 useClock = True #as opposed to using frame count, which assumes no frames are ever missed
-fullscr=0; scrn=0
+fullscr=1; #show in small window (0) or full screen (1) 
+scrn=0 #which screen to display the stimuli. 0 is home screen, 1 is second screen
 # create a dialog from dictionary 
 infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':False, 'Screen to use':scrn, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': refreshRate }
 OK = gui.DlgFromDict(dictionary=infoFirst, 
@@ -62,7 +63,8 @@ refreshRate = infoFirst['Screen refresh rate']
 
 if demo: refreshRate = 60. 
 tokenChosenEachRing= [-999]*numRings
-targetDur = 0.1;     targetDur = round(targetDur * refreshRate) / refreshRate #discretize to nearest integer number of refreshes
+targetDur = 0.6; #duration of target     
+targetDur = round(targetDur * refreshRate) / refreshRate #discretize to nearest integer number of refreshes
 logging.info(  'targetDur= '+str(targetDur)   )
 
 rampUpDur=0
@@ -552,7 +554,10 @@ while trialNum < trials.nTotal and expStop==False:
                         flankingAlso.append(idx)
                         if idx+1<len(interframeIntervs):  flankingAlso.append(idx+1)
                         else: flankingAlso.append(np.NaN)
-                    logging.info( 'flankers also=' + str( np.around( interframeIntervs[flankingAlso], 1) ))
+                    if np.NaN in flankingAlso: #was the first or last frame
+                        logging.info('was first or last frame')
+                    else:
+                        logging.info( 'flankers also=' + str( np.around(interframeIntervs[flankingAlso],1) ))
             #end timing check
     myMouse.setVisible(True)
     passThisTrial=False
@@ -672,7 +677,8 @@ if quitFinder:
         os.system(shellCmd)
 
 #Fit and plot data
-if trialNum >0:
+plotData = False
+if trialNum >0 and plotData:
     import plotHelpers
     fig = plotHelpers.plotDataAndPsychometricCurve(df, dataFileName=None)
     figName = 'pythonFig'

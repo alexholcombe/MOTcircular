@@ -25,17 +25,19 @@ Get the EDF file off the eyetracking machine (reboot eyetracking machine, select
 - choose Analysis->Reports-> and then if you are only interested in when fixation was broken, choose ->Fixation Report.
 - Choose which variables you want in the Output Report. In the case of checking whether fixation was broken, they are
 
-RECORDING_SESSION_LABEL 	TRIAL_LABEL	CURRENT_FIX_BLINK_AROUND	CURRENT_FIX_X
+RECORDING_SESSION_LABEL TRIAL_LABEL TRIAL_INDEX	CURRENT_FIX_BLINK_AROUND	CURRENT_FIX_X CURRENT_FIX_Y
 
 This results in a file that begins with two lines like:
 
 `
 RECORDING_SESSION_LABEL	TRIAL_LABEL	CURRENT_FIX_BLINK_AROUND	CURRENT_FIX_X
+
 LN_20Apr2015_14-22	Trial: 1	NONE	403.80
+
 LN_20Apr2015_14-22	Trial: 2	AFTER	400.00
 `
 
-However, TRIAL_INDEX might be better because might not spit out the "Trial: " part.
+TRIAL_INDEX is better because than TRIAL_LABEL because not spit out the "Trial: " part.
 
 #### summariseEyelinkData.R started by Chris Fajou
 summariseEyelinkData.R takes the Fixation Report and goes through all the rows (events reported by Eyelink) for a given trial and works out whether the trial should be discarded.

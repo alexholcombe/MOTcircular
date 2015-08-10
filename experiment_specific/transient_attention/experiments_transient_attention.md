@@ -15,7 +15,6 @@ Contrast some conditions
 - Have to be able to test attention both at final destination and at other locations, such as earlier in trajectory.
 - Basic condition is for cue to stop cold when target appears, stationary. Also have to try having target appear in motion, cue continuing to move with it.
 
-- Downside: adds temporal uncertainty to when target will appear.
 - Downside: endogenous attention may have time to get there, so need to make sure there's really a transient-attention bump there
 
 ## Concerns
@@ -25,3 +24,17 @@ Contrast some conditions
 * The cue provides a frame itself to judge the offset of the target relative to. Esp. because currently the cue and thin wedge are more similar in brightness than are the thick wedge and thin wedge. So the cue "physically" helps boost performance, not just attentionally. To avoid, I guess would have to jitter its exact location.
 
 [Movie of trial](../../exportedImages/out.webm)
+
+## meeting with Arni
+
+* Why plotHelpers.py was not included online
+
+* Lines of code about NaN
+
+* Add stdev of refresh rate test
+
+* Arni agrees we should jitter the cue's exact location
+
+* Add 4-alternative
+
+* Add 
