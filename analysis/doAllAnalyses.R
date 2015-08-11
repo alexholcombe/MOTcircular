@@ -20,11 +20,14 @@ if (excludeFixationViolations) {
                        mean(outOfCentralArea, na.rm = FALSE))
   subjectsToExclude <- filter( pOutCentralArea, pOut>(1-proportnTrialsMustFixate) )
   if (nrow(subjectsToExclude) > 0) {
+    subjectsToExclude<- subjectsToExclude$subject
     cat("Excluding Ss for fixatn failure in >",100*(1-proportnTrialsMustFixate),
-              "% of trials:",subjectsToExclude$subject,'\n',sep='')
+              "% of trials:",subjectsToExclude,'\n',sep='')
+    dat<- filter(dat, !(subject %in% subjectsToExclude))
   } else { 
     cat("No participants excluded for breaking fixatn in >",100*(1-proportnTrialsMustFixate),"% of trials\n",sep='')
   }
+  
   datFixatnGood<- subset(dat,dat$outOfCentralArea==0)
   nEyemovementsUnknown<- sum(is.na(datWithFixatnViolatns$outOfCentralArea))
   #datNoFixatnViolatn<- dat[,dat$outOfCentralArea==0  &  !is.na(dat$outOfCentralArea)]
@@ -73,12 +76,22 @@ if (!useQuickpsy) {
 }
 if (useQuickpsy) {
   datDani<-datThis  # datDani$speed = -1*datDani$speed
+  tit<- paste0(expThis,"vanilla")
   #Create decreasing function to fit
-  tit<- paste0(expThis,"not sure")
-  
   negCumNormal<-function(x,p) { cum_normal_fun(-x,p) }
-  fit <- quickpsy(datThis, speed, correct, grouping=.(condName,subject,ringToQuery), 
+  fit <- quickpsy(datThis, speed, correct, grouping=.(condName,subject), 
                   bootstrap='none', xmin=.5, xmax=2.2,
+                  fun=negCumNormal, guess=0.5, parini = c(1.5,10))
+  plot1 <- plotcurves(fit) + theme_bw()
+  quartz(tit); show(plot1)
+
+  #test new error
+  fit <- quickpsy(datThis, speed, correct, grouping=.(condName,subject,ringToQuery), 
+                  bootstrap='none', xmin=.5, xmax=2.2, thresholds=TRUE,
+                  fun=negCumNormal, guess=0.5, parini = c(1.5,10))
+  tit<- paste0(expThis,"not enough data from first-years to fit ringToQuery")
+  fit <- quickpsy(datThis, speed, correct, grouping=.(condName,subject,ringToQuery), 
+                  bootstrap='none', xmin=.5, xmax=2.2, thresholds=FALSE,
                   fun=negCumNormal, guess=0.5, parini = c(1.5,10))
   plot1 <- plotcurves(fit) + theme_bw()
   quartz(tit); show(plot1)
