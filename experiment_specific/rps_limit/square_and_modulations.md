@@ -11,7 +11,8 @@ Circular speed the limiting factor?
 
 Results
 - Critical issue is speed limit of smaller-radius one when not concentric. Smaller one is always ringToQuery=0. Speed limit for me is lower by about 0.4rps.
-- Need to run 3 more participants
+- 18 August have 11 participants in total. One (anonymised as "NS") thrown out for fixation failure in >40% of trials. Two more, including me, thrown out for not having eyetracking data.
+- To-do. Get quickpsy plot of data to work even when psychometric function is flat.
 
 ## Experiment: Modulate radius
 

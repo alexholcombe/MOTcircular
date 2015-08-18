@@ -10,7 +10,10 @@ load(anonDataFilename,verbose=TRUE)  #returns dat
 excludeFixationViolations = TRUE; proportnTrialsMustFixate = .6
 useQuickpsy = TRUE
 if (useQuickpsy) {
-  library('quickpsy')
+  library(devtools) #So can load from Alex's local quickpsy package repository
+  #install_github('danilinares/quickpsy')
+  load_all("/Users/alexh/Documents/softwareStatsEquipment/programming_psychophysics/quickpsy/quickpsy")
+  #library('quickpsy')
 }
 datWithFixatnViolatns = dat #save for possible future use
 #somehow CF eyetracking data not included for offCenter
@@ -85,14 +88,22 @@ if (useQuickpsy) {
   plot1 <- plotcurves(fit) + theme_bw()
   quartz(tit); show(plot1)
 
-  #test new error
-  fit <- quickpsy(datThis, speed, correct, grouping=.(condName,subject,ringToQuery), 
-                  bootstrap='none', xmin=.5, xmax=2.2, thresholds=TRUE,
+  #test whether can fit data broken down all the way including ringToQuery
+  tit<-paste(expThis,"including ringQuery")
+  result = tryCatch({ 
+    calcThreshes = TRUE
+    fit <- quickpsy(datThis, speed, correct, grouping=.(condName,subject,ringToQuery), 
+                  bootstrap='none', xmin=.5, xmax=2.2, thresholds=calcThreshes,
                   fun=negCumNormal, guess=0.5, parini = c(1.5,10))
-  tit<- paste0(expThis,"not enough data from first-years to fit ringToQuery")
-  fit <- quickpsy(datThis, speed, correct, grouping=.(condName,subject,ringToQuery), 
-                  bootstrap='none', xmin=.5, xmax=2.2, thresholds=FALSE,
-                  fun=negCumNormal, guess=0.5, parini = c(1.5,10))
+  }, error = function(e) {
+    msg="Not enough data from first-years to always get non-flat curve for ringToQuery 0 and 1"
+    cat(msg,"\n")
+    tit <- paste0(expThis,msg)
+    calcThreshes = FALSE #dont try to fit curves
+    fit <- quickpsy(datThis, speed, correct, grouping=.(condName,subject,ringToQuery), 
+                    bootstrap='none', xmin=.5, xmax=2.2, thresholds=calcThreshes,
+                    fun=negCumNormal, guess=0.5, parini = c(1.5,10))  
+  })
   plot1 <- plotcurves(fit) + theme_bw()
   quartz(tit); show(plot1)
   
@@ -123,6 +134,13 @@ if (useQuickpsy) {
   g<-g+stat_summary(fun.y=mean,geom="point",size=3) #confidence interval point at centre
   g<-g+stat_summary(fun.y=mean, geom="point",aes(color=factor(subject)),
                         position=position_dodge(dodgeAmt))
+  ylims<-c(0.5,2.2)
+  ylimsCurr <- ggplot_build(g)$panel$ranges[[1]]$y.range 
+  if ((ylims[1] < ylimsCurr[1]) & (ylims[2] > ylimsCurr[2])) {
+    g<-g+ coord_cartesian( ylim=ylims)
+    
+  }
+  
   #g<-g+geom_line(aes(color=factor(subject)))
   #g<-g+geom_line(aes(group=subject))
   #g<-g+geom_line(aes(group=interaction(subject,factor(ringToQuery))),
