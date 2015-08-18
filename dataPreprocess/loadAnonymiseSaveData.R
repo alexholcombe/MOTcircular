@@ -85,7 +85,7 @@ for (expi in 1:length(expFolders)) {
       	rawDataThis<- rawDataWithEyetrack
     	  }
     	  else { msg = ' NO eyetracking file found'}
-      print(paste0("Loaded file ",file,msg))
+      cat(paste0("Loaded file ",file,msg))
       #omit first trial is total trials are odd, last probably a repeat. And first trial people often discombobulated      
       msg=""
       removeFirstTrialIfOdd = TRUE
@@ -99,7 +99,7 @@ for (expi in 1:length(expFolders)) {
 	  if (rawDataThis$file[1] == "WN_26May2015_13-44.txt") { #Will's first session and needed practice,
 	 	rawDataThis <- subset(rawDataThis, trialnum > 7) #so omit first several trials
 	  } 
-      print(paste0(", now contains ",length(rawDataThis$trialnum)," trials ",msg))
+      cat(paste0(", now contains ",length(rawDataThis$trialnum)," trials ",msg))
       if (expi==1 & i==1 & j==1) { #first file of the first subject
         rawData<- rawDataThis
       } else {  #not the first file of the first subject, so combine it with previously-loaded data

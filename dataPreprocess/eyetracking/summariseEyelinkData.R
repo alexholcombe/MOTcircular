@@ -48,7 +48,7 @@ eyelinkReportSummarise<- function(inputFilename,df,widthPix,heightPix,centralZon
   colsPresentNotExpected<- setdiff( colnames(df), colsExpected )
   if (length(colsPresentNotExpected) >0) {
     cat("These columns are in the file",inputFilename," but were not expected:")
-    print( paste(colsPresentNotExpected,collapse=',') )
+    cat( paste(colsPresentNotExpected,collapse=',') )
   }
   
   #File is formatted with potentially many rows for each trial. Multiple events in each trial according to Eyelink
@@ -56,7 +56,7 @@ eyelinkReportSummarise<- function(inputFilename,df,widthPix,heightPix,centralZon
   dg<-mutate(df,blink=(CURRENT_FIX_BLINK_AROUND!="NONE")) #"NONE", "AFTER", or "BEFORE"
   
   #Go through every event for all trials and indicate whether each event falls within the designated limits
-  print(paste0("leftLimitPixel=",leftLimitPixel))
+  cat(paste0("leftLimitPixel=",leftLimitPixel))
   dg<-mutate(dg, outOfCentralArea= 
                (CURRENT_FIX_X<leftLimitPixel) | (CURRENT_FIX_X>rightLimitPixel) )
   
