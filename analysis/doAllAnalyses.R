@@ -29,13 +29,13 @@ if (excludeFixationViolations) {
   }
   
   datFixatnGood<- subset(dat,dat$outOfCentralArea==0)
-  nEyemovementsUnknown<- sum(is.na(datWithFixatnViolatns$outOfCentralArea))
+  eyeMovementsUnknown<- subset(datWithFixatnViolatns, is.na(datWithFixatnViolatns$outOfCentralArea))
   #datNoFixatnViolatn<- dat[,dat$outOfCentralArea==0  &  !is.na(dat$outOfCentralArea)]
+  cat("Excluded for not having eyetracking data:",unique(eyeMovementsUnknown$subject))
   pctExcludedBrokeFixatn<-round((1-nrow(datFixatnGood) / 
-                                (nrow(datWithFixatnViolatns)-nEyemovementsUnknown))*100)
-  pctExcludedNoEyemoveData<-round(100*nEyemovementsUnknown/nrow(datWithFixatnViolatns))
-  cat(paste0(pctExcludedNoEyemoveData,"% trials excluded for not having eyetracking data. Further ",
-                pctExcludedBrokeFixatn,"% of remaining excluded for breaking fixation."))
+                                (nrow(datWithFixatnViolatns)-nrow(eyeMovementsUnknown)))*100)
+  pctExcludedNoEyemoveData<-round(100*nrow(eyeMovementsUnknown)/nrow(datWithFixatnViolatns))
+  cat("Of remainder, further ",pctExcludedBrokeFixatn,"% excluded for breaking fixation.")
   dat<-datFixatnGood
 
 }
@@ -120,9 +120,11 @@ if (useQuickpsy) {
   dodgeAmt=.4
   g<-g+stat_summary(fun.data="mean_cl_boot",geom="errorbar",conf.int=.95,
                     width=.4,size=1)
-  g<-g+stat_summary(fun.y=mean,geom="point",size=5) #confidence interval point at centre
-  g<-g+ stat_summary(fun.y=mean, geom="point",aes(shape=factor(subject)),
+  g<-g+stat_summary(fun.y=mean,geom="point",size=3) #confidence interval point at centre
+  g<-g+stat_summary(fun.y=mean, geom="point",aes(color=factor(subject)),
                         position=position_dodge(dodgeAmt))
+  #g<-g+geom_line(aes(color=factor(subject)))
+  #g<-g+geom_line(aes(group=subject))
   #g<-g+geom_line(aes(group=interaction(subject,factor(ringToQuery))),
   #               position=position_dodge(width=dodgeAmt))
   show(g)

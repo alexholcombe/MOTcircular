@@ -45,7 +45,8 @@ eyelinkReportSummarise<- function(inputFilename,df,widthPix,heightPix,centralZon
       stop( paste0("The file ",inputFilename," does not have the expected columns  :",colsExpectedNotPresent) )
     }
   }
-  colsPresentNotExpected<- setdiff( colnames(df), colsExpected )
+  colsKindaExpected <- c(colsExpected,"TRIAL_INDEX")
+  colsPresentNotExpected<- setdiff( colnames(df), colsKindaExpected )
   if (length(colsPresentNotExpected) >0) {
     cat("These columns are in the file",inputFilename," but were not expected:")
     cat( paste(colsPresentNotExpected,collapse=',') )
@@ -56,7 +57,7 @@ eyelinkReportSummarise<- function(inputFilename,df,widthPix,heightPix,centralZon
   dg<-mutate(df,blink=(CURRENT_FIX_BLINK_AROUND!="NONE")) #"NONE", "AFTER", or "BEFORE"
   
   #Go through every event for all trials and indicate whether each event falls within the designated limits
-  cat(paste0("leftLimitPixel=",leftLimitPixel))
+  cat(paste0("leftLimitPixel=",leftLimitPixel,"\n"))
   dg<-mutate(dg, outOfCentralArea= 
                (CURRENT_FIX_X<leftLimitPixel) | (CURRENT_FIX_X>rightLimitPixel) )
   
