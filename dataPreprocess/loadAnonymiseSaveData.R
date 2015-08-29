@@ -93,7 +93,7 @@ for (expi in 1:length(expFolders)) {
       	msg=paste0(" Odd number of trials (",numTrials,"); was session incomplete, or extra trial at end?")  
         if (removeFirstTrialIfOdd) {
       	  rawDataThis <- subset(rawDataThis, !trialnum %in% c(0))
-      	  cat("Removed first trial- assuming it's a repeat")
+      	  cat("\tRemoved first trial- assuming it's a repeat")
         }
       }
 	  if (rawDataThis$file[1] == "WN_26May2015_13-44.txt") { #Will's first session and needed practice,
@@ -214,7 +214,7 @@ if (anonymiseData) {
   subjectNotanonymised<- dat$subject
   dat$subject <- rotX(subjectNotanonymised,key) #anonymise subject initials by rotating them by key characters
   print('Mapping from name to anonymised:')
-  table(subjectNotanonymised,dat$subject)
+  print(table(subjectNotanonymised,dat$subject))
 }
 	
 #table(d$speedRank,d$numObjects,d$numTargets,d$subject)
