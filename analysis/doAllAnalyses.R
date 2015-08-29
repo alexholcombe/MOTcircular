@@ -226,33 +226,12 @@ if (useQuickpsy) {
  quartz(title="breakDownByLeftOrRight_notForPublication",expThis); show(plot1)
  #find my code from last paper for plotting threshes?
  #plotthresholds(fit,color=condName)
- offCtrThreshes = fit$thresholds
+ offCtrLeftRightThreshes = fit$thresholds
 }
 #LO's threshold for centered could not be estimated, he's too fast. 
 #But point is if anything, people better for centered than for other conditions.
-tit<- paste0(expThis,"Threshes")
-quartz(title=tit,width=4.3,height=3.7) #create graph of thresholds, left vs. Right
-g=ggplot(offCtrThreshes, aes(x=factor(condName), y=thre))   + theme_bw()
-dodgeAmt=.25
-#g<-g+stat_summary(fun.data="SEerrorbar",geom="errorbar",color="black",width=.3)
-g<-g+stat_summary(fun.data="mean_cl_boot",geom="errorbar",width=.3,conf.int=.95,
-                  width=5,size=1,position=position_dodge(width=dodgeAmt)) 
-
-g<-g+geom_point(  aes(x=factor(condName), y=thre, color=factor(leftOrRight),
-                      shape=factor(subject)), 
-                  position=position_dodge(dodgeAmt), size =2.9   )
-#g<-g+geom_line(aes(group=interaction(subject,factor(leftOrRight))),
-#               position=position_dodge(width=dodgeAmt))
-g<-g+geom_line(aes(group=interaction(subject,factor(leftOrRight)),color=factor(leftOrRight)),
-               position=position_dodge(width=dodgeAmt))
-g<-g+stat_summary(fun.data="SEerrorbar",geom="point",color="black")
-g
-#g<-g+ coord_cartesian( ylim=c(1.0,2.5), xlim=c(0.6,2.4))
-#g<-g+ theme(axis.title.y=element_text(vjust=0.22))
-show(g)
-ggsave( paste('figs/',tit,'.png',sep='') )
 #Compare percent correct for left versus right
-notCentered<- filter(datThis,condName!="centered")
+notCentered<- filter(datThis,condName!="centered") #centered condition doesnt have left vs right
 leftRightSubj<-dplyr::summarise(group_by(notCentered, subject,leftOrRight),
                  corr=mean(correct))
 left<- filter(leftRightSubj,leftOrRight==0)$corr
@@ -264,30 +243,30 @@ paste0("Mean left=",round(mean(left),2),
 #No sig advantage of left or right side, so collapse but need ANOVA test to justify
 ANOVA
 #Dont break down by left or right this time
-tit<- paste0(expThis,"_psychometricsForPublication")
+tit<- paste0(expThis,"_psychometrics")
 quartz(title=tit,width=7,height=3.) #create graph of thresholds, left vs. Right
 fit <- quickpsy(datThis, speed, correct, grouping=.(condName,subject),
                 xmin=.8, xmax=2.6,
                 fun=negCumNormal, guess=0.5, parini = c(1.5,10),
                 bootstrap='none')
+offCtrThreshes <- fit$thresholds
 plot2=plotDodged(fit)+theme_bw() +facet_grid(.~subject)
 show(plot2)
 ggsave( paste('figs/',tit,'.png',sep='') )
 
 tit<-paste0(expThis,"_threshes")
 quartz(title=tit,width=4.3,height=3.7) #create graph of thresholds
-g=ggplot(offCtrThreshes, aes(x=factor(condName), y=thre))   + theme_bw()
+g=ggplot(offCtrThreshes, aes(x=factor(condName), y=thre, color=subject,shape=subject))   + theme_bw()
 dodgeAmt=.25
 g<-g+stat_summary(fun.data="mean_cl_boot",geom="errorbar",width=.3,conf.int=.95,
                   width=5,size=1,position=position_dodge(width=dodgeAmt)) 
-g<-g+geom_point(  aes(x=factor(condName), y=thre, shape=factor(subject)), 
+g<-g+geom_point(  aes(x=factor(condName), y=thre), 
                   position=position_dodge(dodgeAmt), size =2.9   )
-#g<-g+geom_line(aes(group=interaction(subject,factor(leftOrRight))),
+g<-g+geom_line(aes(group=subject),position=position_dodge(dodgeAmt))
+#g<-g+geom_line(aes(group=interaction(subject,factor(leftOrRight)),color=factor(leftOrRight)),
 #               position=position_dodge(width=dodgeAmt))
-g<-g+geom_line(aes(group=interaction(subject,factor(leftOrRight)),color=factor(leftOrRight)),
-               position=position_dodge(width=dodgeAmt))
-g<-g+stat_summary(fun.data="SEerrorbar",geom="point",color="black")
-
+show(g)
+ggsave( paste('figs/',tit,'.png',sep='') )
 
 #PRESENTLY OLD EXPERIMENTS ANALYSED BY PRE-REPOSITORY FILES
 # expName="postVSS_13targets2349objects"
