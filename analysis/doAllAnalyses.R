@@ -237,10 +237,10 @@ leftRightSubj<-dplyr::summarise(group_by(notCentered, subject,leftOrRight),
 left<- filter(leftRightSubj,leftOrRight==0)$corr
 right<- filter(leftRightSubj,leftOrRight==1)$corr
 t<- t.test(left,right,paired=TRUE)
+#No sig advantage of left or right side, so collapse but need ANOVA test to justify
 paste0("Mean left=",round(mean(left),2),
        " right=",round(mean(right),2),
        ", t(",t$parameter["df"],")=",round(t$statistic,3),", p=",round(t$p.value,3))
-#No sig advantage of left or right side, so collapse but need ANOVA test to justify
 ANOVA
 #Dont break down by left or right this time
 tit<- paste0(expThis,"_psychometrics")
@@ -251,6 +251,8 @@ fit <- quickpsy(datThis, speed, correct, grouping=.(condName,subject),
                 bootstrap='none')
 offCtrThreshes <- fit$thresholds
 plot2=plotDodged(fit)+theme_bw() +facet_grid(.~subject)
+plot2$labels$colour<-"condition" #http://stackoverflow.com/questions/14622421/how-to-change-legend-title-in-ggplot-density#
+plot2<-plot2+ylab('correct')
 show(plot2)
 ggsave( paste('figs/',tit,'.png',sep='') )
 
@@ -260,13 +262,43 @@ g=ggplot(offCtrThreshes, aes(x=factor(condName), y=thre, color=subject,shape=sub
 dodgeAmt=.25
 g<-g+stat_summary(fun.data="mean_cl_boot",geom="errorbar",width=.3,conf.int=.95,
                   width=5,size=1,position=position_dodge(width=dodgeAmt)) 
-g<-g+geom_point(  aes(x=factor(condName), y=thre), 
-                  position=position_dodge(dodgeAmt), size =2.9   )
+g<-g+geom_point( position=position_dodge(dodgeAmt), size =2.9   )
 g<-g+geom_line(aes(group=subject),position=position_dodge(dodgeAmt))
-#g<-g+geom_line(aes(group=interaction(subject,factor(leftOrRight)),color=factor(leftOrRight)),
-#               position=position_dodge(width=dodgeAmt))
+g<-g+ylab("threshold (rps)")
 show(g)
 ggsave( paste('figs/',tit,'.png',sep='') )
+#Stats COMPARE CENTRED TO FAR
+noPat<- filter(offCtrThreshes,subject!="LO")
+centeredNoPat<- filter(noPat,condName=="centered")$thre
+farNoPat<- filter(noPat,condName=="far")$thre
+t<- t.test(centeredNoPat,farNoPat,paired=TRUE)
+#No sig diff between centered and far
+paste0("Mean centered=",round(mean(centeredNoPat),2),
+       " far=",round(mean(farNoPat),2),
+       ", t(",t$parameter["df"],")=",round(t$statistic,3),", p=",round(t$p.value,3))
+ratioPredictn<-1.82 #Receptive fields theory predicts 82% faster for far condition
+ratioObs<- farNoPat/centeredNoPat
+t<-t.test(ratioObs,mu=ratioPredictn)
+paste0("Observed ratio=",round(mean(ratioObs),2),
+       " comparing to ",round(mean(ratioPredictn),2),
+       ", t(",t$parameter["df"],")=",round(t$statistic,3),", p=",round(t$p.value,3))
+#Also should do Bayesian test because have both null (ratio=1) and alternative (1.82) hypothesis
+#Sent a tweet to Daniel Lakens asking whether his thing does a one-sample (z) test
+#COMPARE CENTRED TO NEAR
+nearNoPat<- filter(noPat,condName=="near")
+#get list of participatns who did near, get their centered threshold
+centeredAlsoTestedOnNear<- subset(noPat, subject %in% unique(nearNoPat)$subject)
+centeredAlsoTestedOnNear<- filter(centeredAlsoTestedOnNear, condName=="centered")$thre
+nearNoPat<- nearNoPat$thre
+#No sig diff between centered and near
+t<- t.test(centeredAlsoTestedOnNear,nearNoPat,paired=TRUE)
+paste0("Among the ",length(nearNoPat)," besides LO tested on near, mean centered=",
+        round(mean(centeredAlsoTestedOnNear),2),
+       " near=",round(mean(nearNoPat),2),
+       ", t(",t$parameter["df"],")=",round(t$statistic,3),", p=",round(t$p.value,3))
+
+#Do stats to disprove the absurd theory
+
 
 #PRESENTLY OLD EXPERIMENTS ANALYSED BY PRE-REPOSITORY FILES
 # expName="postVSS_13targets2349objects"

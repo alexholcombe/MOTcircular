@@ -3,7 +3,8 @@ Neurons-per-unit-time theory
 
 - The speed limit is caused by a minimum time required to deselect neurons corresponding to old locations and select neurons corresponding to new locations.
 
-- explains why the rps speed limit is approximately the same for higher eccentricity. The # of neurons one needs to select/deselect per degree of visual angle decreases by 2*pi for every unit increase in deg of visual angle. In other words, neurons at 5 deg ecc are spaced 2pi further apart than are neurons at 4 deg ecc. 
+## Speed limit = 2*pi*x*e, where x is the limit in rps and e is the eccentricity
+- explains why the rps speed limit is approximately the same for higher eccentricity. The # of neurons one needs to select/deselect per degree of visual angle decreases by `2*pi` for every unit increase in deg of visual angle. In other words, neurons at 5 deg ecc are spaced 2pi further apart than are neurons at 4 deg ecc. 
 - makes a prediction for what will happen when we move a circular trajectory from being centred on fixation into the periphery. When we move something from a mean eccentricity of 2.5 to a mean eccentricity of 6.7, that's an increase of 4.2 deg. So we'd have to increase the distance traveled by 8.4pi to have the same level of performance.
 - By simply shifting the whole trajectory to be more eccentric, we instead didn't increase the distance traveled at all. That means that the speed limit should now be much higher. I guess it should be 8.4pi times higher.
 - Speed limit in deg/sec (e) = `4*pi*e`   which is always equal to 2 rps
@@ -38,6 +39,12 @@ To predict the speed limit according to the neurons per unit time theory, we mus
  - my function calcMeanEccentricityOfCircle in theory.R approximates it in R. Then plot the average eccentricity as a function of d and r. Because near the fovea, Bouma's law again would err on side of caution. Increases with r and d. D has to be less than r to ensure that crosses the vertical meridian.
  - calcMeanEccentricityOfCircle(6, 5, .001) / 6 #1.18   An 18% boost in speed limit predicted.
 
+## Ended up using radius=6, 
+centered on eccentricity= 5 (*near* condition) and =10 (*far* condition)
+
+See theory.R
+
+calcMeanEccentricityOfCircle(6, 5, .001) / 6 #1.18   An 18% boost in speed limit predicted.
  
 
 
