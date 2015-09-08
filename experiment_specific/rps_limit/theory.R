@@ -35,22 +35,22 @@ exp$meanAlong[2] = calcMeanEccentricityAlongCircle(r, eccUsedInExp[2], .001)
 exp$predictedRatio = exp$meanAlong/r
 #An 18% boost and 82% in speed limit predicted.
 
-#So idea is that for larger eccentricity, receptive fields are 2*pi bigger
+#Calculate in a different direction to make sure I'm right. See https://github.com/alexholcombe/MOTcircular/blob/master/experiment_specific/rps_limit/theory.md
+speedLimDva <- function(x,e) {
+	#x is limit in revolutions per second
+	#e is eccentricity
+	dvaPerSecond = 2*pi*x*e
+	return (dvaPerSecond)
+}
 
-# calcMeanEccentricityAlongCircle <- function(radius,eccentricity,epsilonTheta) {
-#   #numerically integrate as at https://github.com/alexholcombe/MOTcircular/blob/master/analysis/theory.md
-#   #for each theta of the circle, calculate distance from origin to that point
-#   r = radius
-#   e = eccentricity
-#   thetas = seq(from=0,to=2*pi-epsilonTheta,by=epsilonTheta)
-#   avg = 0
-#   for (i in 1:length(thetas)) {
-#     ecc = sqrt( (e + r*cos(thetas[i]))^2 + (r*sin(thetas[i]))^2 )
-#     avg = avg + ecc / length(thetas)
-#   }
-# 
-#   return (avg)
-# }
-# 
-# calcMeanEccentricityAlongCircle(3, 10, .001)  #Should equal 10
-# 
+exampleRpsLimit = 1 #by using 1, the increase will show the ratio
+exp$dvaPerSec = speedLimDva(exampleRpsLimit,exp$meanAlong)
+exp$rps = exp$dvaPerSec / (2*pi*6)
+exp
+
+#Check that both ways of doing the calculation give the same answer
+if (sum(exp$rps - exp$speedUp) < .00001) {
+	cat("Both ways of calculating coincide")
+} else {
+	cat("The ways of calculating do not coincide")
+}

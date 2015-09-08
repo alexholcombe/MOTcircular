@@ -14,14 +14,3 @@ Results
 - 18 August have 11 participants in total. One (anonymised as "NS") thrown out for fixation failure in >40% of trials. Two more, including me, thrown out for not having eyetracking data.
 - To-do. Get quickpsy plot of data to work even when psychometric function is flat.
 
-## Experiment: Modulate radius
-
-- Modulation of radius as function of time. Radius calls function to determine its value at each time.
-- Spatial modulation of radius, yielding a radial frequency pattern. Something added to radius as function of angle.
-
-### Theory
-- Under pure spatial modulation, distractor traverses same locations as target. At any one time, radius might help distinguish target from distractor. Also if know trajectory, can predict future radius which helps for re-acquisition of target.
-- Under pure temporal modulation of radius, can't use radius to distinguish target from distractor. But, distractor can end up 
-
-Should also be a function of time? But if the idea is to know/determine individual objects' trajectories, then reversals will mess it up.
-Is it about individual object paths or not?
