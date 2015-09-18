@@ -1,7 +1,7 @@
 Circular speed the limiting factor?
 ==============
 
-## Experiment: Square vs. circle
+## Experiment: Diamond vs. circle
 
 - Adding modulations to the trajectory has little effect, in other words rotational speed is the determinant.  
 - First, blast the annoying speed limit people with a square trajectory. This finally helps answer those interested in linear speed limit
@@ -14,3 +14,9 @@ Results
 - 18 August have 11 participants in total. One (anonymised as "NS") thrown out for fixation failure in >40% of trials. Two more, including me, thrown out for not having eyetracking data.
 - To-do. Get quickpsy plot of data to work even when psychometric function is flat.
 
+### Diamonds calculations
+- https://twitter.com/rabihalameddine/status/634491712149291009
+- I am using constant speed in dva, not constant rps. Therefore worked out from theta how far along trajectory should be (theta/360) and calculated length of the four sides to calculate which side I should be on and how far along it.
+- Seems it circumscribed the circle because used a unit square and then multiplied by radius. So the perimeter instead of being 2*pi*2.5 = 15.7 deg, was 2*2.5*4= 20 deg.
+-- Therefore the average speed in dva per second was 20/15.7 = 1.27 or 27% faster.
+-  What is the average eccentricity of a diamond? Think of it as a square, which is fine thanks to rotational symmetry, 

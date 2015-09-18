@@ -340,7 +340,7 @@ def diamondShape(constSpeedOrConstRps,angle):
             print("Unexpected angle below 0!"); logging.error("Unexpected angle below 0!")
         #how do I go from proportnTraj either to x,y or to theta?
         #Analytic method is that as increase theta deviates from 4 points that touches circle, theta change is smaller for equal change in proportnTraj
-        #Brute force method is to divide into 4 segments.
+        #Brute force method is to divide into 4 segments, below.
         zeroToFour = proportnTraj*4
         if zeroToFour < 1: #headed NW up the first quadrant
             x = 1 - (zeroToFour-0)
@@ -355,6 +355,8 @@ def diamondShape(constSpeedOrConstRps,angle):
             x = (zeroToFour-3)
             y = -1+(zeroToFour-3)
         else: logging.error("Unexpected zeroToFour="+ str(zeroToFour))
+        #Max x is 1, meaning that it will be the diamond that circumscribes the unit circle.
+        #Otherwise need to adjust by calculating the average eccentricity of such a diamond and compensating, which I never did.
         return x,y
 
 ampTemporalRadiusModulation = 0.0 # 1.0/3.0
