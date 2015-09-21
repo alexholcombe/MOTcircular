@@ -24,18 +24,24 @@ motionPerceptnHzLimit = 25 #according to Verstraten et al. 2000
 
 winT = expand.grid( distractors = seq(1,ceiling(bouma),1), targets = seq(1,3,1), limit=c("speed","tf") )
 winT$thresh=-1
-#Calculate intersection point where speed limit meets tf limit
-for (target in c(1,2,3)) {
-  distractrs = winT[ winT$targets==target & winT$limit=="tf", ]$distractors  
-  winT[ winT$targets==target & winT$limit=="tf", ]$thresh = tfLimitCalc(target,distractrs)
-  winT[ winT$targets==target & winT$limit=="speed", ]$thresh = speedLimit1_2_3targets[target]
-  #intersection is where tfLimit1_2_3targets[target] / (distractrs+1) = speedLimit
-  intersectionPoint[target] = tfLimit1_2_3targets[target] / speedLimit1_2_3targets[target]  -1
+calcWinLimitsAndIntersection<-function(winT,speedLimit1_2_3targets) {
+  #Calculate intersection point where speed limit meets tf limit
+  for (target in c(1,2,3)) {
+    distractrs = winT[ winT$targets==target & winT$limit=="tf", ]$distractors  
+    winT[ winT$targets==target & winT$limit=="tf", ]$thresh = tfLimitCalc(target,distractrs)
+    winT[ winT$targets==target & winT$limit=="speed", ]$thresh = speedLimit1_2_3targets[target]
+    #intersection is where tfLimit1_2_3targets[target] / (distractrs+1) = speedLimit
+    intersectionPoint[target] = tfLimit1_2_3targets[target] / speedLimit1_2_3targets[target]  -1
+  }
+  return (list(intersectPts=intersectionPoint,winT=winT))
 }
+l<-calcWinLimitsAndIntersection(winT,speedLimit1_2_3targets)
+intersectPoints<-l$intersectPts
+winT<-l$winT 
 
-#calculate speed threshold corresponding to lower limit for this num distractors
-constrainingLimit<-function(targetNum,distractorNum) {
-  if (distractorNum <= intersectionPoint[targetNum]) {
+#calculate speed threshold corresponding to lowest (constraini) limit for this num distractors
+constrainingLimit<-function(intersectPoints,targetNum,distractorNum) {
+  if (distractorNum <= intersectPointo[targetNum]) {
     return (speedLimit1_2_3targets[targetNum])
   }
   else { return (tfLimitCalc(targetNum,distractorNum)) }
