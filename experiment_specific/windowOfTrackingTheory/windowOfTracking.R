@@ -39,13 +39,14 @@ l<-calcWinLimitsAndIntersection(winT,speedLimit1_2_3targets)
 intersectPoints<-l$intersectPts
 winT<-l$winT 
 
-#calculate speed threshold corresponding to lowest (constraini) limit for this num distractors
+#calculate speed threshold corresponding to lowest (constraining) limit for this num distractors
 constrainingLimit<-function(intersectPoints,targetNum,distractorNum) {
   if (distractorNum <= intersectPoints[targetNum]) {
     return (speedLimit1_2_3targets[targetNum])
   }
   else { return (tfLimitCalc(targetNum,distractorNum)) }
 }
+
 #create shading inside intersection of limits. 
 calcPolygonXYs<-function(targets) {
   uniqDistractrs = unique(winT$distractors)
@@ -63,7 +64,7 @@ calcPolygonXYs<-function(targets) {
   return (list(xs=xs,ys=ys))
 }
 tst=calcPolygonXYs(1) #test the function
-#vertices of the constraining polygon for tracking window
+#vertices of the polygon of the tracking window
 positions <- data.frame( #vertices of the polygon
   targets = rep(c(1), each = length(calcPolygonXYs(1)$x)), #targetsID
   limit = "tf",
@@ -122,6 +123,18 @@ positions <- data.frame( #vertices of the polygons for 1, 2, and 3 target limits
   y= c(OneTargYs, calcPolygonXYs(2)$ys, calcPolygonXYs(3)$ys)
 )
 
+#Also create a polygon pretending that the 2-target and 3-target speed limits are not worse than 1 target
+#This is for the manuscript figure that visualises the question being asked
+speedLimit1targetThrice<- c(speedLimit1_2_3targets[1],speedLimit1_2_3targets[1],speedLimit1_2_3targets[1])
+l<-calcWinLimitsAndIntersection(winT,speedLimit1targetThrice)
+intersectPointsSpeedLimSimple<-l$intersectPts
+positions <- data.frame( #vertices of the polygons for 1, 2, and 3 target limits
+  targets = rep(c(1,2,3), each = length(calcPolygonXYs(3)$xs)), #targetsID
+  limit = "tf",
+  x= c(OneTargXs, calcPolygonXYs(2)$xs, calcPolygonXYs(3)$xs),
+  y= c(OneTargYs, calcPolygonXYs(2)$ys, calcPolygonXYs(3)$ys)
+)
+
 #Show 1,2,3-target trackable regions. 
 tit="windowOfTracking_123targets"
 if (!includeAnnotatns) tit<-paste0(tit,"_noText")
@@ -131,7 +144,7 @@ quartz(tit,width=6.4,height=3.5)
 g=ggplot(subset(winTlo,targets==1), 
          aes( x=distractors,y=thresh, color=factor(targets), fill=factor(targets), linetype=factor(limit)) )
 g=g+geom_line(size=.75)
-g=g+scale_linetype_manual(values=c(2,3)) #make them both dashed, then make solid the lowest limit
+g=g+scale_linetype_manual(values=c(1,1))#values=c(2,3)) #make them both dashed, then make solid the lowest limit
 g=g+scale_fill_manual(values=c("pink","green","dodgerblue3")) #make them both dashed, then make solid the lowest limit
 g=g+coord_cartesian(xlim=c(min(winTlo$distractors),max(winTlo$distractors)),ylim=c(0,max(winT$thresh)+.1))
 g=g+scale_x_continuous(breaks=seq(min(winTlo$distractors), max(winTlo$distractors), 1))
