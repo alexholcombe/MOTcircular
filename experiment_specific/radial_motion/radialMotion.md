@@ -25,6 +25,10 @@ Need to look at pictures to work this out, see
 Should also be a function of time? But if the idea is to know/determine individual objects' trajectories, then reversals will mess it up.
 Is it about individual object paths or not?
 
+### Decomposing motion into radial and circular components
+
+- schematic_radialCircularSpeed.key contains a schematic.
+
 ## Radial motion with exchange positions with distractor 
 
 - [ ] Have multiple radii and occasionally have corresponding objects
