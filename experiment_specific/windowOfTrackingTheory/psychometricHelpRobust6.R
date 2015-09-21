@@ -7,7 +7,7 @@ library(plyr)
 #library(Cairo) #for windows
 #Alex Holcombe, started November 2010
 #previous versions of this file were called things like lapseRateSearchDataSeparate
-source('helpers/psychometricRobustify4.R') #load my custom version of binomfit_lims
+source('psychometricRobustify4.R') #load my custom version of binomfit_lims
 
 #global variables this code expects:  
 #threshCriterion, 

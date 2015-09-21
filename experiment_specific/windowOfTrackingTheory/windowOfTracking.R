@@ -1,7 +1,6 @@
 #This is a stand-alone file for making plots of speed-tf tracking region
 #working directory set by starting Rstudio via .Rproj file
-#setwd("/Users/alexh/Documents/attention_tempresltn/multiple object tracking/ExperimentsWithWing/speedLimitsAndTargetLoad/allAnalysisForPosting/speed-tf-VSS14")
-
+setwd("/Users/alexh/Documents/attention_tempresltn/multiple\ object\ tracking/newTraj/newTraj_repo/experiment_specific/windowOfTrackingTheory")
 source('psychometricHelpRobust6.R') #Notice there's another version in analysis/ #for makeMyPsychoCorr, 
 themeAxisTitleSpaceNoGridLinesLegendBox = theme_classic() + #Remove gridlines, show only axes, not plot enclosing lines
   theme(axis.line = element_line(size=.3, color = "grey"), 
@@ -74,7 +73,7 @@ g=ggplot(subset(winT,targets==1),
 g=g+geom_line(size=.75)
 g=g+scale_linetype_manual(values=c(2,3)) #make them both dashed, then make solid the lowest limit
 #g=g+scale_linetype_manual(values=c(2,2)) #make them both dashed, then make solid the lowest limit
-
+includeAnnotatns<- FALSE #sometimes FALSE so that can add prettier in Keynote
 g=g+scale_x_continuous(breaks=seq(min(winT$distractors), floor(bouma), 1))
 g=g+geom_polygon(data = positions, aes(x, y, targets), fill="pink", color="transparent", alpha=.7)
 g=g+annotate("text",x=6,y=1,label=paste(toString(tfLimit1_2_3targets[1]),"Hz"), angle=-6,size=4 )
@@ -89,11 +88,13 @@ g=g+annotate("text",x=bouma+.25,y=4,label="crowded (Bouma rule)", color="black",
 g=g+geom_line(data=data.frame(x=winT$distractors,
                                y=motionPerceptnHzLimit/(winT$distractors+1), limit="tf"), 
                                aes(x,y),color="grey",linetype=1, size=1.5)
-g=g+annotate("text",x=3,y=motionPerceptnHzLimit/4.3,label="motion perception", color="black", size=4, angle=-55)
+if (includeAnnotatns) {
+  g=g+annotate("text",x=3,y=motionPerceptnHzLimit/4.3,label="motion perception", color="black", size=4, angle=-55)
+}
 g=g+annotate("text",x=6,y=3.6,label=paste(toString(motionPerceptnHzLimit),"Hz"), angle=-22,size=4 )
 g=g+themeAxisTitleSpaceNoGridLinesLegendBox
 show(g)
-ggsave( paste('figs/windowOfTracking/',tit,'.png',sep=''), bg="transparent")
+ggsave( paste('figs/',tit,'.png',sep=''), bg="transparent")
 
 
 OneTargXs = c( calcPolygonXYs(1)$xs[1], calcPolygonXYs(1)$xs) #make it longer by 1. Kludge because diff
@@ -162,7 +163,8 @@ g=g+ylab('speed threshold (rps)')
 g=g+coord_cartesian(xlim=c(min(winT$distractors),ceiling(bouma)+.2),
                     ylim=c(0,max(winT$thresh)+.1))
 g=g+geom_vline(xintercept=bouma,color="grey")
-g=g+annotate("text",x=bouma+.3,y=1.35,label="crowded (Bouma rule)", size=4, angle=90)
+g=g+annotate("text",x=bouma+.3,y=1.35,label="crowded", size=4, angle=90)
+#Maybe add a pale blue region for crowded, 
 g=g+themeAxisTitleSpaceNoGridLinesLegendBox
 #g=g+facet_grid(targets~.) #facet_grid(targets~criterion)
 show(g)
