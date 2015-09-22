@@ -152,10 +152,13 @@ g=g+themeAxisTitleSpaceNoGridLinesLegendBox
 if (includeAnnotatns) {
   g=g+annotate("text", x=6,y=1, label=paste(toString(tfLimit1_2_3targets[1]),"Hz"), size=4, angle=-15 )
   g=g+annotate("text", x=6,y=.60, label=paste(toString(tfLimit1_2_3targets[2]),"Hz"), size=4, angle=-8 )
-  g=g+annotate("text", x=6,y=.34, label=paste(toString(tfLimit1_2_3targets[3]),"Hz"), size=4, angle=-5 )
-  g=g+annotate("text", x=3, y=1.4, label="1 target", fontface=3, angle=-30,size=4) #italics
-  g=g+annotate("text", x=3, y=0.85, label="2 targets", fontface=3, angle=-15,size=4) #italics
-  g=g+annotate("text", x=3, y=0.32, label="3 targets", fontface=3, angle=-8,size=4) #italics
+  g=g+annotate("text", x=5.94,y=.34, label=paste(toString(tfLimit1_2_3targets[3]),"Hz"), size=4, angle=-5 )
+  targetsOnlyInLegend <- TRUE
+  if (!targetsOnlyInLegend) {
+    g=g+annotate("text", x=3, y=1.4, label="1 target", fontface=3, angle=-30,size=4) #italics
+    g=g+annotate("text", x=3, y=0.85, label="2 targets", fontface=3, angle=-15,size=4) #italics
+    g=g+annotate("text", x=3, y=0.32, label="3 targets", fontface=3, angle=-8,size=4) #italics
+  }
 }
 show(g)
 ggsave( paste('figs/',tit,'.png',sep=''), bg="transparent")
