@@ -48,28 +48,28 @@ constrainingLimit<-function(intersectPoints,targetNum,distractorNum) {
 }
 
 #create shading inside intersection of limits. 
-calcPolygonXYs<-function(targets) {
+calcPolygonXYs<-function(targets,winT,intersectionPoints) {
   uniqDistractrs = unique(winT$distractors)
-  tfLimitedDistractrs = uniqDistractrs[ uniqDistractrs>intersectionPoint[targets] ]
+  tfLimitedDistractrs = uniqDistractrs[ uniqDistractrs>intersectionPoints[targets] ]
   #cut off right end at crowding limit
   numTfLimitedBeforeCrowdingCutoff = length(tfLimitedDistractrs)
   tfLimitedDistractrs = tfLimitedDistractrs[ tfLimitedDistractrs < bouma ]
   if (length(tfLimitedDistractrs) < numTfLimitedBeforeCrowdingCutoff) { #if was cut off by crowding limit
     tfLimitedDistractrs[length(tfLimitedDistractrs)+1] = bouma #will only work if only one was cut off
   }
-  xs= c(min(uniqDistractrs),intersectionPoint[targets], tfLimitedDistractrs, #top edge of polygon
+  xs= c(min(uniqDistractrs),intersectionPoints[targets], tfLimitedDistractrs, #top edge of polygon
         bouma, min(uniqDistractrs)) #bottom edge of polygon  
-  ys= unlist( lapply(xs[1:(length(xs)-2)],FUN=constrainingLimit,intersectPoints=intersectPoints,targetNum=targets) ) #top edge
+  ys= unlist( lapply(xs[1:(length(xs)-2)],FUN=constrainingLimit,intersectPoints=intersectionPoints,targetNum=targets) ) #top edge
   ys = c(ys,0,0) #adding bottom edge
-  return (list(xs=xs,ys=ys))
+  return (list(x=xs,y=ys))
 }
-tst=calcPolygonXYs(1) #test the function
+tst=calcPolygonXYs(1,winT,intersectPoints) #test the function
 #vertices of the polygon of the tracking window
 positions <- data.frame( #vertices of the polygon
-  targets = rep(c(1), each = length(calcPolygonXYs(1)$x)), #targetsID
+  targets = rep(c(1), each = length(calcPolygonXYs(1,winT,intersectPoints)$x)), #targetsID
   limit = "tf",
-  x= calcPolygonXYs(1)$xs,
-  y= calcPolygonXYs(1)$ys
+  x= calcPolygonXYs(1,winT,intersectPoints)$x,
+  y= calcPolygonXYs(1,winT,intersectPoints)$y
 )
 
 #Show motion perception limit and 1-target limit. 
@@ -112,28 +112,54 @@ g=g+themeAxisTitleSpaceNoGridLinesLegendBox
 show(g)
 ggsave( paste('figs/',tit,'.png',sep=''), bg="transparent")
 
-
 #calcPolygonXYs not perfect, for 1 target, need to make it longer by 1 because different length
-OneTargXs = c( calcPolygonXYs(1)$xs[1], calcPolygonXYs(1)$xs)
-OneTargYs = c( calcPolygonXYs(1)$ys[1], calcPolygonXYs(1)$ys) 
+oneTargXs = c( calcPolygonXYs(1,winT,intersectPoints)$x[1], calcPolygonXYs(1,winT,intersectPoints)$x)
+oneTargYs = c( calcPolygonXYs(1,winT,intersectPoints)$y[1], calcPolygonXYs(1,winT,intersectPoints)$y) 
 positions <- data.frame( #vertices of the polygons for 1, 2, and 3 target limits
-  targets = rep(c(1,2,3), each = length(calcPolygonXYs(3)$xs)), #targetsID
+  targets = rep(c(1,2,3), each = length(calcPolygonXYs(3,winT,intersectPoints)$x)), #targetsID
   limit = "tf",
-  x= c(OneTargXs, calcPolygonXYs(2)$xs, calcPolygonXYs(3)$xs),
-  y= c(OneTargYs, calcPolygonXYs(2)$ys, calcPolygonXYs(3)$ys)
+  x= c(oneTargXs, calcPolygonXYs(2,winT,intersectPoints)$x, calcPolygonXYs(3,winT,intersectPoints)$x),
+  y= c(oneTargYs, calcPolygonXYs(2,winT,intersectPoints)$y, calcPolygonXYs(3,winT,intersectPoints)$y)
 )
 
 #Also create a polygon pretending that the 2-target and 3-target speed limits are not worse than 1 target
 #This is for the manuscript figure that visualises the question being asked
 speedLimit1targetThrice<- c(speedLimit1_2_3targets[1],speedLimit1_2_3targets[1],speedLimit1_2_3targets[1])
 l<-calcWinLimitsAndIntersection(winT,speedLimit1targetThrice)
-intersectPointsSpeedLimSimple<-l$intersectPts
-positions <- data.frame( #vertices of the polygons for 1, 2, and 3 target limits
-  targets = rep(c(1,2,3), each = length(calcPolygonXYs(3)$xs)), #targetsID
-  limit = "tf",
-  x= c(OneTargXs, calcPolygonXYs(2)$xs, calcPolygonXYs(3)$xs),
-  y= c(OneTargYs, calcPolygonXYs(2)$ys, calcPolygonXYs(3)$ys)
-)
+interPtsSpeedLimSimple<-l$intersectPts
+one<-data.frame(targets=1, limit="tf", x=oneTargXs, y=oneTargYs)
+two<-data.frame(targets=2, limit="tf", calcPolygonXYs(2,winT,interPtsSpeedLimSimple))
+three<-data.frame(targets=3, limit="tf", calcPolygonXYs(3,winT,interPtsSpeedLimSimple))
+positionsSimple<-rbind(one,two,three)
+
+#Show 1,2,3-target trackable regions assuming same *speed* limit for all. For introductory figure. 
+tit="windowOfTracking_123targets_1targSpeedLim"
+includeAnnotatns<-TRUE
+if (!includeAnnotatns) tit<-paste0(tit,"_noText")
+winTlo<-subset(winT,distractors<9) #Show only up to 8 distractors to avoid crowding limit and
+#because only test up to 8 distractors
+quartz(tit,width=6.4,height=3.5)
+g=ggplot(subset(winTlo,targets==1), 
+         aes( x=distractors,y=thresh, color=factor(targets), fill=factor(targets), linetype=factor(limit)) )
+g=g+geom_line(size=.75)
+g=g+scale_linetype_manual(values=c(1,1))#values=c(2,3)) #make them both dashed, then make solid the lowest limit
+g=g+scale_fill_manual(values=c("pink","green","dodgerblue3")) #make them both dashed, then make solid the lowest limit
+g=g+coord_cartesian(xlim=c(min(winTlo$distractors),max(winTlo$distractors)),ylim=c(0,max(winT$thresh)+.1))
+g=g+scale_x_continuous(breaks=seq(min(winTlo$distractors), max(winTlo$distractors), 1))
+g=g+geom_polygon(dat=positionsSimple, aes(x,y,targets), alpha=.4)
+g=g+ylab('threshold (rps)')
+g=g+themeAxisTitleSpaceNoGridLinesLegendBox
+if (includeAnnotatns) {
+  g=g+annotate("text", x=6,y=1, label=paste(toString(tfLimit1_2_3targets[1]),"Hz"), size=4, angle=-15 )
+  g=g+annotate("text", x=6,y=.60, label=paste(toString(tfLimit1_2_3targets[2]),"Hz"), size=4, angle=-8 )
+  g=g+annotate("text", x=6,y=.34, label=paste(toString(tfLimit1_2_3targets[3]),"Hz"), size=4, angle=-5 )
+  g=g+annotate("text", x=3, y=1.4, label="1 target", fontface=3, angle=-30,size=4) #italics
+  g=g+annotate("text", x=3, y=0.85, label="2 targets", fontface=3, angle=-15,size=4) #italics
+  g=g+annotate("text", x=3, y=0.32, label="3 targets", fontface=3, angle=-8,size=4) #italics
+}
+show(g)
+ggsave( paste('figs/',tit,'.png',sep=''), bg="transparent")
+
 
 #Show 1,2,3-target trackable regions. 
 tit="windowOfTracking_123targets"
