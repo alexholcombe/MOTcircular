@@ -300,63 +300,44 @@ paste0("Among the ",length(nearNoPat)," besides LO tested on near, mean centered
 #Do stats to disprove the absurd theory
 
 
-#PRESENTLY OLD EXPERIMENTS ANALYSED BY PRE-REPOSITORY FILES
-# expName="postVSS_13targets2349objects"
-# anonDataFname= paste(dataDir,expName,".Rdata",sep="") #data/postVSS_13targets2349objects.RData
-# load(anonDataFname,verbose=TRUE) #returns dat
-# dat$expName = expName
-# colsNotInE1 = setdiff(colnames(dat),colnames(datE1))
-# datE1[,colsNotInE1] = -999 #dummy value
-# colsNotInThisOne = setdiff(colnames(datE1),colnames(dat))
-# dat[,colsNotInThisOne] = -999 #dummy value
-# dat = rbind(dat,datE1)
-#
-# dat$tf = dat$speed*dat$numObjects
-# for (iv in c("speed","tf")) {
-#   cat('Fitting data, extracting threshes, plotting with iv=',iv)
-#   source('analyzeMakeReadyForPlot.R') #returns fitParms, psychometrics, and function calcPctCorrThisSpeed
-#   if (iv=="speed") { #if not, don't bother
-#     source('plotIndividDataWithPsychometricCurves.R')
-#   }
-#   #should also do it normalizing by subjects' speed limits
-#   source("extractThreshesAndPlot.R") #provides threshes, thresh plots
-#
-#   varName=paste("threshes_",iv,"_",expName,sep='') #combine threshes
-#   assign(varName,threshes)
-#   save(list=varName,file=paste(dataDir,varName,".Rdata",sep='')) #e.g. threshes_tf_123targets269objects.Rdata
-# }
-#
-# #CRT_spinzter experiment#######################################################################
-# load( paste0(dataDir,"E2_CRT_spinzter.RData"),verbose=TRUE) #E2
-# E2<-dat
-# #For CRT data, I need to take mean across trials. Spinzter already is
-# meanThreshold<-function(df) {
-#   thresh<-mean(df$thresh)
-#   df= data.frame(thresh)
-#   return(df)
-# }
-# factorsPlusSubject=c("numObjects","subject","direction","ecc","device")
-#
-# E2threshes<- ddply(E2, factorsPlusSubject,meanThreshold) #average over trialnum,startSpeed
-#
-# #then plot
-# tit<-"E2threshesSpeed"
-# quartz(title=tit,width=2.8,height=2.9) #create graph of thresholds
-# g=ggplot(E2threshes, aes(x=numObjects-1, y=thresh, color=device, shape=factor(ecc)))
-# g<-g + xlab('Distractors')+ylab('threshold speed (rps)')
-# dodgeAmt=0.35
-# SEerrorbar<-function(x){ SEM <- sd(x) / (sqrt(length(x))); data.frame( y=mean(x), ymin=mean(x)-SEM, ymax=mean(x)+SEM ) }
-# g<-g+ stat_summary(fun.data="SEerrorbar",geom="point",size=2.5,position=position_dodge(width=dodgeAmt))
-# #g<-g+ stat_summary(fun.y=mean,geom="point",size=2.5,position=position_dodge(width=dodgeAmt))
-# g<-g+stat_summary(fun.data="SEerrorbar",geom="errorbar",width=.25,position=position_dodge(width=dodgeAmt))
-# g=g+theme_bw() #+ facet_wrap(~direction)
-# g<-g+ coord_cartesian( ylim=c(1.0,2.5), xlim=c(0.6,2.4))
-# g<-g+ scale_x_continuous(breaks=c(1,2))
-# g<-g+ theme(axis.title.y=element_text(vjust=0.22))
-# g<-g+theme(panel.grid.minor=element_blank(),panel.grid.major=element_blank())# hide all gridlines.
-# show(g)
-# ggsave( paste('figs/',tit,'.png',sep='') )
-#
-# #source ( model limits) ??
-# #source analyseSlopes?
-#
+#CRT_spinzter experiment#######################################################################
+load( paste0(dataDir,"E2_CRT_spinzter.RData"),verbose=TRUE) #E2
+E2<-dat
+#For CRT data, I need to take mean across trials. Spinzter already is
+meanThreshold<-function(df) {
+  thresh<-mean(df$thresh)
+  df= data.frame(thresh)
+  return(df)
+}
+factorsPlusSubject=c("numObjects","subject","direction","ecc","device")
+E2threshes<- ddply(E2, factorsPlusSubject,meanThreshold) #average over trialnum,startSpeed
+#plot
+tit<-"E2threshesSpeed"
+quartz(title=tit,width=2.8,height=3.1) #create graph of thresholds
+E2threshes$eccentricity<- as.factor(E2threshes$ecc)
+#reorder device so that legend aligns with height of data points
+E2threshes$device <- factor(E2threshes$device, levels = unique(E2threshes$device)[2:1])
+g=ggplot(E2threshes, aes(x=numObjects, y=thresh, fill=device, shape=eccentricity))
+dodgeAmt=0.35
+SEerrorbar<-function(x){ SEM <- sd(x) / (sqrt(length(x))); data.frame( y=mean(x), ymin=mean(x)-SEM, ymax=mean(x)+SEM ) }
+g<-g+ stat_summary(fun.data="SEerrorbar",geom="point",size=2.5,position=position_dodge(width=dodgeAmt))
+g<-g+scale_fill_manual(values=c("black","white"))+scale_shape_manual(values=c(21,22))
+g<-g+ guides(fill = guide_legend(override.aes = list(shape = c(21,21)))) #http://stackoverflow.com/questions/12488905/why-wont-the-ggplot2-legend-combine-manual-fill-and-scale-values
+g<-g+ guides(shape = guide_legend(override.aes = list(fill = c("grey")))) #http://stackoverflow.com/questions/12488905/why-wont-the-ggplot2-legend-combine-manual-fill-and-scale-values
+g<-g + xlab('objects')+ylab('threshold (rps)')
+#g<-g+ stat_summary(fun.y=mean,geom="point",size=2.5,position=position_dodge(width=dodgeAmt))
+g<-g+stat_summary(fun.data="SEerrorbar",geom="errorbar",width=.25,position=position_dodge(width=dodgeAmt))
+g=g+theme_bw() #+ facet_wrap(~direction)
+g<-g+theme(panel.grid.minor=element_blank(),panel.grid.major=element_blank())# hide all gridlines.
+g<-g+ coord_cartesian( ylim=c(1.25,2.53), xlim=c(1.6,3.4))
+g<-g+ scale_x_continuous(breaks=c(2,3))
+g<-g+ scale_y_continuous(breaks=c(1.5,2,2.5))
+g<-g+ theme(axis.title.y=element_text(vjust=0.66))
+g<-g+theme(axis.ticks.margin=unit(.03,'cm')) #Move tick labels closer to axis
+g<-g+theme(legend.key = element_blank()) #remove internal lines in legend
+show(g)
+ggsave( paste('figs/',tit,'.png',sep='') )
+
+#source ( model limits) ??
+#source analyseSlopes?
+

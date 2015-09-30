@@ -29,7 +29,7 @@ Contrast some conditions
 
 * Why plotHelpers.py was not included online
 
-* Lines of code about NaN
+* Lines of code about NaN were changed, prevent running multiple trials with some timing configurations.
 
 * Add stdev of refresh rate test
 
