@@ -5,10 +5,13 @@ In the Oscillator Model (details below), it takes time to shift all the oscillat
 
 In the spiking model (details below), the pointer field is updated at a particular frequency, like 10 Hz. So if the target leaves the pointer field and is replaced by a distractor before the next sampling, then model ends up tracking the distractor.
 
-# Borisyuk et al. (2008, Neural Network World) technical notes
+# Borisyuk et al. (2008, Neural Network World) models technical notes
 
 ## Oscillator model
 
+![KazanovichBorisyuk2006](KazanovichBorisyuk2006.png
+ "KazanovichBorisyuk2006")
+ 
 The peripheral oscillators, retinotopic.
 
 Central oscillator (CO) has feedforward and feedback connections to the peripheral oscillators (PO).
