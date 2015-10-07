@@ -5,7 +5,7 @@ In the Oscillator Model (details below), it takes time to shift all the oscillat
 
 In the spiking model (details below), the pointer field is updated at a particular frequency, like 10 Hz. So if the target leaves the pointer field and is replaced by a distractor before the next sampling, then model ends up tracking the distractor.
 
-# Borisyuk et al. technical notes
+# Borisyuk et al. (2008, Neural Network World) technical notes
 
 ## Oscillator model
 
@@ -31,6 +31,6 @@ Phase-locking:
   - As the target moves, the location of the pointer field will be updated to catch up with the target. The updating process is assumed to be discrete (for example 10Hz). 
   - The new location of the pointer field is calculated by averaging the coordinates of active pixels inside the pointer field.
 - Attention formation module implements partial synchronization of "attended" neurons
-  - a single “central neuron”  inhibits distracters and synchronises the spikes of attended peripheral neurons
+  - a single “central neuron” (CN) inhibits distracters and synchronises the spikes of attended peripheral neurons. CN receives excitatory synaptic inputs from all peripheral neurons. Each PN receives strong inhibitory synaptic currents from the CN, and weak local excitatory synaptic currents from 8 neighbouring neurons.
   - neurons corresponding to the attended object have higher natural frequencies. They will be synchronised by the system. 
 
