@@ -27,6 +27,9 @@ Phase-locking:
 
 ## Spiking (Hodgkin-Huxley) element model
 
+![BorisyukNetwork](BorisyukEtAl2008Fig4.png
+ "")
+
 - Cognitive control module represents attention pointer fields, larger than each object
   - As the target moves, the location of the pointer field will be updated to catch up with the target. The updating process is assumed to be discrete (for example 10Hz). 
   - The new location of the pointer field is calculated by averaging the coordinates of active pixels inside the pointer field.
