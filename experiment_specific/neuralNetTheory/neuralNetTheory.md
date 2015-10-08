@@ -43,8 +43,3 @@ Phase-locking:
 # Questions
 
 - How to show load effect is temporally specific and not all performance falling due to less attention?
-
-# Mental rotation
-
-- Cooper et al. (1976). Figure 2 RT elevation is 320 ms for 180 deg or 640 ms for 360 deg or 1.6 rps. Similar in Figure 3.
-- Cooper (1975) Fig 2. Slope = 2.16 ms/deg.  1.29 rps.
