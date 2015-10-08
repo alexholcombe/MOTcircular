@@ -1,7 +1,11 @@
 - TF and speed limits. Window of tracking diagram
 - Demo vimeo.
 - Evidence of speed and TF limit - Figure 8
+- The effect of load Figure 2 p. 7 and oscillations.
 - WTF kind of speed limit is this?
   - Spinzter confirms not refresh artifact (picture p. 10, results p. 11)
   - Not a limit on RFs crossed per unit time.  Off-center, data p.14
   - Diamond versus circle, no apparent effect of straight-line paths
+- The dip, Figure 8
+- Modeling to recover speed limits at 2 and 3 targets. VSS poster, starting with Theory
+  - The modeling fail: VSS poster
