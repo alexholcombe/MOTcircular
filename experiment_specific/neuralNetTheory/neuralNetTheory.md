@@ -1,9 +1,9 @@
 network theory of speed and t.f. limit?
 ==============
 
-In the Oscillator Model (details below), it takes time to shift all the oscillators' activity to the new location, causing a speed limit. Normally it's ok if some oscillators are lingering on the old location. But if a distractor invades that space, well the oscillators have a tendency to synchronise with any stimulus that meets the current featural attention settings, so some will get stuck on it and tracking has a higher chance of failing.
+In the Oscillator Model (details below), it takes time to shift all the oscillators' activity to the new location, causing a *speed limit*. Normally it's ok if some oscillators are lingering on the old location. But if a distractor invades that space before those old locations are desynchronized (*tf limit*), well the oscillators have a tendency to synchronise with any stimulus that meets the current featural attention settings, so some will get stuck on it and tracking has a higher chance of failing.
 
-In the spiking model (details below), the pointer field is updated at a particular frequency, like 10 Hz. So if the target leaves the pointer field and is replaced by a distractor before the next sampling, then model ends up tracking the distractor.
+In the spiking model (details below), the pointer field is updated at a particular frequency, like 10 Hz (blinking spotlight). So if the target leaves the pointer field and is replaced by a distractor before the next sampling, then model ends up tracking the distractor. The effect of load: more targets means dividing the updating accordingly.
 
 # Borisyuk et al. (2008, Neural Network World) models technical notes
 
@@ -40,3 +40,11 @@ Phase-locking:
   - a single “central neuron” (CN) inhibits distracters and synchronises the spikes of attended peripheral neurons. CN receives excitatory synaptic inputs from all peripheral neurons. Each PN receives strong inhibitory synaptic currents from the CN, and weak local excitatory synaptic currents from 8 neighbouring neurons.
   - neurons corresponding to the attended object have higher natural frequencies. They will be synchronised by the system. 
 
+# Questions
+
+- How to show load effect is temporally specific and not all performance falling due to less attention?
+
+# Mental rotation
+
+- Cooper et al. (1976). Figure 2 RT elevation is 320 ms for 180 deg or 640 ms for 360 deg or 1.6 rps. Similar in Figure 3.
+- Cooper (1975) Fig 2. Slope = 2.16 ms/deg.  1.29 rps.
