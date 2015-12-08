@@ -55,7 +55,7 @@ OK = gui.DlgFromDict(dictionary=infoFirst,
             'Screen to use': '0 means primary screen, 1 means second screen'},
     )
 if not OK.OK:
-    print('User cancelled from dialog box'); core.quit()
+    print('User cancelled from dialog box'); logging.info('User cancelled from dialog box'); core.quit()
 autopilot = infoFirst['Autopilot']
 checkRefreshEtc = infoFirst['Check refresh etc']
 scrn = infoFirst['Screen to use']
@@ -149,7 +149,7 @@ msgWrongResolution = ''
 if checkRefreshEtc and (not demo) and (myWinRes != [widthPix,heightPix]).any():
     msgWrongResolution = 'Instead of desired resolution of '+ str(widthPix)+'x'+str(heightPix)+ ' pixels, screen apparently '+ str(myWinRes[0])+ 'x'+ str(myWinRes[1])
     myDlg.addText(msgWrongResolution, color='Red')
-    print(msgWrongResolution)
+    print(msgWrongResolution); logging.info(msgWrongResolution)
 myDlg.addText('Note: to abort press ESC at a trials response screen', color=[-1.,1.,-1.]) # color='DimGrey') color names stopped working along the way, for unknown reason
 myDlg.show()
 if myDlg.OK: #unpack information from dialogue box
@@ -162,14 +162,15 @@ if myDlg.OK: #unpack information from dialogue box
        print('trialsPerCondition=',trialsPerCondition)
        logging.info('trialsPerCondition ='+str(trialsPerCondition))
 else: 
-   print('User cancelled from dialog box.')
+   print('User cancelled from dialog box.'); logging.info('User cancelled from dialog box')
    logging.flush()
    core.quit()
 
 if os.path.isdir('.'+os.sep+'dataRaw'):
     dataDir='dataRaw'
 else:
-    print('"dataRaw" directory does not exist, so saving data in present working directory')
+    msg= 'dataRaw directory does not exist, so saving data in present working directory'
+    print(msg); logging.info(msg)
     dataDir='.'
 expname = ''
 fileNameWithPath = dataDir+'/'+subject+ '_' + expname+timeAndDateStr
@@ -193,9 +194,9 @@ if msgWrongResolution != '':
     logging.error(msgWrongResolution)
 
 myWin = openMyStimWindow(mon,widthPix,heightPix,bgColor,allowGUI,units,fullscr,scrn,waitBlank)
-print('Window opened')
+msg='Window opened'; print(msg); logging.info(msg)
 myMouse = event.Mouse(visible = 'true',win=myWin)
-print('Mouse enabled')
+msg='Mouse enabled'; print(msg); logging.info(msg)
 runInfo = psychopy.info.RunTimeInfo(
         win=myWin,    ## a psychopy.visual.Window() instance; None = default temp window used; False = no win, no win.flips()
         refreshTest='grating', ## None, True, or 'grating' (eye-candy to avoid a blank screen)
