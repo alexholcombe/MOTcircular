@@ -103,7 +103,7 @@ myWin = openMyStimWindow(mon,widthPix,heightPix,bgColor,allowGUI,units,fullscr,s
 myMouse = event.Mouse(visible = 'true',win=myWin)
 myWin.setRecordFrameIntervals(False)
 
-trialsPerCondition = 4 #default value
+trialsPerCondition = 8 #default value
 
 refreshMsg2 = ''
 if not checkRefreshEtc:
