@@ -42,7 +42,7 @@ numRings=2
 radii=[25]   #Need to encode as array for those experiments wherein more than one ring presented 
 
 respRadius=radii[0] #deg
-refreshRate= 60 *1.0;  #160 #set to the framerate of the monitor
+refreshRate= 85 *1.0;  #160 #set to the framerate of the monitor
 useClock = True #as opposed to using frame count, which assumes no frames are ever missed
 fullscr=1; #show in small window (0) or full screen (1) 
 scrn=0 #which screen to display the stimuli. 0 is home screen, 1 is second screen
@@ -79,8 +79,8 @@ timeTillReversalMax = 1.5# 1.3 #2.9
 colors_all = np.array([[1,-1,-1],[1,-1,-1]])
 cueColor = np.array([1,1,1])
 #monitor parameters
-widthPix = 800 #1440  #monitor width in pixels
-heightPix =600  #900 #monitor height in pixels
+widthPix = 1024 #1440  #monitor width in pixels
+heightPix =768  #900 #monitor height in pixels
 monitorwidth = 38.5 #28.5 #monitor width in centimeters
 viewdist = 57.; #cm
 pixelperdegree = widthPix/ (atan(monitorwidth/viewdist) /np.pi*180)
@@ -103,7 +103,7 @@ myWin = openMyStimWindow(mon,widthPix,heightPix,bgColor,allowGUI,units,fullscr,s
 myMouse = event.Mouse(visible = 'true',win=myWin)
 myWin.setRecordFrameIntervals(False)
 
-trialsPerCondition = 1 #default value
+trialsPerCondition = 4 #default value
 
 refreshMsg2 = ''
 if not checkRefreshEtc:
