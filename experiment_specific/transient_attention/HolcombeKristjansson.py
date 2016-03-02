@@ -44,8 +44,8 @@ radii=[25]   #Need to encode as array for those experiments wherein more than on
 respRadius=radii[0] #deg
 refreshRate= 85 *1.0;  #160 #set to the framerate of the monitor
 useClock = True #as opposed to using frame count, which assumes no frames are ever missed
-fullscr=1; #show in small window (0) or full screen (1) 
-scrn=0 #which screen to display the stimuli. 0 is home screen, 1 is second screen
+fullscr=0; #show in small window (0) or full screen (1) 
+scrn=1 #which screen to display the stimuli. 0 is home screen, 1 is second screen
 # create a dialog from dictionary 
 infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':False, 'Screen to use':scrn, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': refreshRate }
 OK = gui.DlgFromDict(dictionary=infoFirst, 
@@ -65,7 +65,7 @@ refreshRate = infoFirst['Screen refresh rate']
 
 if demo: refreshRate = 60. 
 tokenChosenEachRing= [-999]*numRings
-targetDur = 0.6; #duration of target     
+targetDur = 0.6; #duration of target  (in seconds) 
 targetDur = round(targetDur * refreshRate) / refreshRate #discretize to nearest integer number of refreshes
 logging.info(  'targetDur= '+str(targetDur)   )
 
@@ -249,11 +249,11 @@ NextRemindPctDoneText = visual.TextStim(myWin,pos=(-.1, -.4),colorSpace='rgb',co
 NextRemindCountText = visual.TextStim(myWin,pos=(.1, -.5),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
 
 stimList = []
-speeds = np.array( [ 0.5 ]  )   #dont want to go faster than 2 because of blur problem
+speeds = np.array( [ 2.0 ]  )   #dont want to go faster than 2 because of blur problem
 #Set up the factorial design (list of all conditions)
 for numCuesEachRing in [ [1] ]:
  for numObjsEachRing in [ [8] ]: #First entry in each sub-list is num objects in the first ring, second entry is num objects in the second ring
-  for cueLeadTime in [.160,.700]:  #How long is the cue on prior to the eyeballs appearing
+  for cueLeadTime in [1.400]:  #How long is the cue on prior to the eyeballs appearing
       for speed in speeds:
           for direction in [1.0]: # [-1.0,1.0]:
             for targetAngleOffset in [-3,3]:

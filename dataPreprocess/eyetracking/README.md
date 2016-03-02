@@ -60,5 +60,6 @@ EDF2ASC can do at least two different things. Split out different things.
 Search the SR Research support forums for EDFVIEW, which is mentioned here 
 "A sample analyzer using this toolkit has also been included. This is the source file sac_proc.c which processes the sample data file data.asc. These can be used as a template for your own analyzers."
 
-
 http://download.sr-support.com/dispdoc/page25.html
+
+EyetrackingR http://www.eyetracking-r.com/
