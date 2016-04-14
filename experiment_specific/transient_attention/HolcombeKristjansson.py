@@ -249,7 +249,7 @@ NextRemindPctDoneText = visual.TextStim(myWin,pos=(-.1, -.4),colorSpace='rgb',co
 NextRemindCountText = visual.TextStim(myWin,pos=(.1, -.5),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
 
 stimList = []
-speeds = np.array( [ 2.0 ]  )   #dont want to go faster than 2 because of blur problem
+speeds = np.array( [ 0.0 ]  )   #dont want to go faster than 2 because of blur problem
 #Set up the factorial design (list of all conditions)
 for numCuesEachRing in [ [1] ]:
  for numObjsEachRing in [ [8] ]: #First entry in each sub-list is num objects in the first ring, second entry is num objects in the second ring
@@ -464,13 +464,14 @@ while trialNum < trials.nTotal and expStop==False:
     trialDurFrames= int( trialDurTotal*refreshRate )
     
     #Task will be to judge which thick wedge has the thin wedge offset within it
-    #Set up parameters to construct the thick,thin wedges, target, and cue
+    
+    #Set up parameters to construct the thick,thin wedges
     gratingTexPix= 1024
     radius = 25
     visibleWedge = [0,360]
     patchAngleThickWedges = 360/numObjects/2
-    thickWedgeColor = [0,-1,-1]
-    thinWedgeColor=[0,0,1]
+    thickWedgeColor = [0,-1,-1] #dark red
+    thinWedgeColor=[0,0,1] #blue
     cueColor=[1,1,1]
     radialMask =   np.array( [0,0,0,0,0,0,0,1,0,0,0] )
     wedgeRadiusFraction = np.where(radialMask)[0][0]*1.0 / len(radialMask)
@@ -486,6 +487,8 @@ while trialNum < trials.nTotal and expStop==False:
         logging.error(msg); print(msg)
     fractionResolution = .02     #Quantisation of possible positions of cue arc
     binsNeeded = 1.0 / fractionResolution
+    
+    #setup cue parameters
     cueRadialMask = np.zeros( binsNeeded )
     #For the cueRadialMask, want everything zero except just inside and outside of the wedges.
     innerArcCenterPos = round( binsNeeded*cueInnerArcDesiredFraction )
@@ -500,6 +503,7 @@ while trialNum < trials.nTotal and expStop==False:
         print('cueInnerArcDesiredFraction of object radius = ',cueInnerArcDesiredFraction, ' actual = ', innerArcActualFraction, ' exceeding tolerance of ',closeEnough )
     if abs(cueOuterArcDesiredFraction - outerArcActualFraction) > closeEnough:
         print('cueOuterArcDesiredFraction of object radius = ',cueOuterArcDesiredFraction, ' actual = ', outerArcActualFraction, ' exceeding tolerance of ',closeEnough)
+        
     thickThinWedgesRing, target, cue =  \
             constructThickThinWedgeRingsTargetAndCue(myWin,radii[0],radialMask,cueRadialMask,visibleWedge,numObjects,patchAngleThickWedges,
                             thinWedgesAngleSubtend,bgColor,thickWedgeColor,thinWedgeColor,thisTrial['targetAngleOffset'],gratingTexPix,cueColor,objToCue,ppLog=logging)

@@ -46,6 +46,11 @@ See theory.R
 
 calcMeanEccentricityOfCircle(6, 5, .001) / 6 #1.18   An 18% boost in speed limit predicted.
  
+## Kind of related to Azadi, Holcombe, Edelman saccade hypometria
+
+Why the hypometria is greater for the larger linear speeds (as opposed to angular speeds) at larger eccentricities
+
+This depends on the eccentricity scaling factor of the superior colliculus. If the eccentricity scaling is such that every 1-deg increase in eccentricity results in more than a 2*pi increase in SC territory stimulated by a particular deg unit area of retina, even for equivalent rps at different eccentricities. In other words, more locations will be simultaneously active for the higher linear speeds  of larger eccentricities. In that case, the idea that having more locations simultaneously active screws up the mutual inhibition could explain the greater hypometria. We talked about what the eccentricity scaling factor was before for SC but I don’t remember what your answer was.
 
 
 

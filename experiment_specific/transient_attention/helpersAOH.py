@@ -213,6 +213,7 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,cueRadialMa
     segmentSizeTexture, thinWedgeSizeTexture, patchFlankSize = patchSizeForTexture(segmentAngle, patchAngleThin, oneCycleAngle, gratingTexPix)
     #First draw the entire segment in patchColr, then erase sides (flankers) leaving only the patchAngle
     start = patchFlankSize #identify starting texture position for this segment
+    print('start=',start,' end=',end, 'thinWedgeSizeTexture=',thinWedgeSizeTexture)
     end = round( start + thinWedgeSizeTexture ) #don't round until after do addition, otherwise can fall short
     ringTex[:, start:end, :] = thinWedgeColor[:]
 
