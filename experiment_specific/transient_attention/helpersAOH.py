@@ -211,11 +211,11 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,cueRadialMa
     
     #thin wedges. Create texture for visual.radialStim
     segmentSizeTexture, thinWedgeSizeTexture, patchFlankSize = patchSizeForTexture(segmentAngle, patchAngleThin, oneCycleAngle, gratingTexPix)
+    
     #First draw the entire segment in patchColr, then erase sides (flankers) leaving only the patchAngle
-    start = patchFlankSize #identify starting texture position for this segment
-    print('start=',start,' end=',end, 'thinWedgeSizeTexture=',thinWedgeSizeTexture)
-    end = round( start + thinWedgeSizeTexture ) #don't round until after do addition, otherwise can fall short
-    ringTex[:, start:end, :] = thinWedgeColor[:]
+    startThinWedge = patchFlankSize #identify starting texture position for this segment
+    endThinWedge = round( startThinWedge + thinWedgeSizeTexture ) #don't round until after do addition, otherwise can fall short
+    ringTex[:, startThinWedge:endThinWedge, :] = thinWedgeColor[:]
 
     angRes = 200 #100 is default. I have not seen an artifact at present when set to 100, two things drawn don't overlap exactly
     ringRadial= visual.RadialStim(myWin, tex=ringTex, color=[1,1,1],size=radius,#ringTex is the actual colored pattern. radial grating used to make it an annulus
@@ -284,18 +284,6 @@ if __name__ == "__main__": #do self-tests
     myWin = openMyStimWindow(mon,widthPix,heightPix,bgColor,allowGUI,units,fullscr,scrn,waitBlank)
     widthPix = myWin.size[0]; heightPix = myWin.size[1]
 
-#    radius= 22
-#    ringRadialMask=[0,0,0,0,1] #to mask off center part of cirle, all a part of creating arc
-#
-#    numObjects = 4
-#    blobToCue = 2
-#    patchAngle = 30
-#    gratingTexPix=1024#nump
-#    ring,cueRing,currentlyCuedBlob =  constructMulticolorRingAsGrating(myWin,
-#                        radius,ringRadialMask,numObjects,patchAngle,colors=[[1,0,0],[0,0,1]],stimColorIdxsOrder=[0,1],\
-#                        gratingTexPix=gratingTexPix,blobToCue=blobToCue,ppLog=logging)
-
-  
     #Task will be to judge which thick wedge has the thin wedge offset within it
     numObjects = 6
     gratingTexPix= 1024
@@ -306,7 +294,8 @@ if __name__ == "__main__": #do self-tests
     thickWedgeColor = [1,-1,-1]
     thinWedgeColor=[0,0,1]
     cueColor=[0,1,1]
-    radialMask =   np.array( [0,0,0,0,0,0,0,1,0,0,0] )
+    radialMask =   np.array( [0,0,0,0,0,0,0,1,0,0,0] )  #This is for the larger wedge that the TargetSliver is embedded in
+    radialMaskTargetSliver =   np.array( [0,0,0,0,1,1,1,1,0,0,0] ) #This is the sliver that's offset relative to the larger wedge, that you have to judge the offset of
     wedgeRadiusFraction = np.where(radialMask)[0][0]*1.0 / len(radialMask)
     print('wedgeRadiusFraction = ',wedgeRadiusFraction)
     wedgeThicknessFraction = len( np.where(radialMask)[0] )*1.0 / len(radialMask)
