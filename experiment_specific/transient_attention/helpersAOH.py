@@ -169,7 +169,7 @@ def constructRingsAsGratings(myWin,numRings,radii,ringRadialMaskEachRing,numObje
     ######### End constructRingAsGrating ###########################################################
 #########################################
 
-def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,cueRadialMask,visibleWedge,numObjects,patchAngleThick,patchAngleThin,bgColor,
+def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,radialMaskTargetSliver,cueRadialMask,visibleWedge,numObjects,patchAngleThick,patchAngleThin,bgColor,
                                             thickWedgeColor,thinWedgeColor,targetAngleOffset,gratingTexPix,cueColor,objToCue,ppLog):
     #Construct a grating formed of the colors in order of stimColorIdxsOrder
     #Also construct a similar cueRing grating with same colors, but one blob potentially highlighted. 
@@ -237,15 +237,16 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,cueRadialMa
     else: #shifted the other way, towards the start, so spillover on that side needs to be avoided by not drawing it
         visibleAngleStart -= targetAngleOffset
     
+    #DRAW THE TARGET RING, like the above ringRadial except displaced
     #Below call is identical to ringRadial except ori
-    targetRadial= visual.RadialStim(myWin, tex=ringTex, color=[1,1,1],size=radius,#ringTex is the actual colored pattern. radial grating used to make it an annulus
+    targetRadial= visual.RadialStim(myWin, tex=ringTex, color=[1,1,1],size=radius+2,#ringTex is the actual colored pattern. radial grating used to make it an annulus
             visibleWedge=[visibleAngleStart,visibleAngleEnd],
             ori = targetAngleOffset,
-            mask=radialMask, # this is a 1-D mask masking the centre, to create an annulus
+            mask=radialMaskTargetSliver, # this is a 1-D mask masking the centre, to create an annulus
             radialCycles=0, angularCycles=numObjects,
             angularRes=angRes, interpolate=antialiasGrating, autoLog=autoLogging)
             
-    #Creating cue texture
+    #CREATING CUE TEXTURE
     #Both inner and outer cue arcs can be drawn in one go via a radial mask
     #use visibleWedge so it only highlights a single thick wedge
     #draw texture for cueRing
@@ -294,13 +295,21 @@ if __name__ == "__main__": #do self-tests
     thickWedgeColor = [1,-1,-1]
     thinWedgeColor=[0,0,1]
     cueColor=[0,1,1]
-    radialMask =   np.array( [0,0,0,0,0,0,0,1,0,0,0] )  #This is for the larger wedge that the TargetSliver is embedded in
-    radialMaskTargetSliver =   np.array( [0,0,0,0,1,1,1,1,0,0,0] ) #This is the sliver that's offset relative to the larger wedge, that you have to judge the offset of
+    radialMask =   np.array( [0,0,0,0,1,0,0,0,0] )  #This is for the larger wedge that the TargetSliver is embedded in
+    radialMaskTargetSliver =   np.array( [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] ) #This is the sliver that's offset relative to the larger wedge, that you have to judge the offset of
     wedgeRadiusFraction = np.where(radialMask)[0][0]*1.0 / len(radialMask)
     print('wedgeRadiusFraction = ',wedgeRadiusFraction)
     wedgeThicknessFraction = len( np.where(radialMask)[0] )*1.0 / len(radialMask)
     print('wedgeThickness = ',wedgeThicknessFraction*radius)
     wedgeCenterFraction = wedgeRadiusFraction + wedgeThicknessFraction/2.
+    
+    targetSliverRadiusFraction = np.where(radialMaskTargetSliver)[0][0]*1.0 / len(radialMaskTargetSliver)
+    print('targetSliverRadiusFraction = ',targetSliverRadiusFraction)
+    targetSliverThicknessFraction = len( np.where(radialMaskTargetSliver)[0] )*1.0 / len(radialMaskTargetSliver)
+    print('targetSliverThickness = ',targetSliverThicknessFraction*radius)
+    targetSliverCenterFraction = targetSliverRadiusFraction + targetSliverThicknessFraction/2.
+    
+    #distance of cue arc
     desiredArcDistanceFractionRadius = .23
     cueInnerArcDesiredFraction = wedgeCenterFraction - desiredArcDistanceFractionRadius
     cueOuterArcDesiredFraction = wedgeCenterFraction + desiredArcDistanceFractionRadius
@@ -317,9 +326,9 @@ if __name__ == "__main__": #do self-tests
     cueRadialMask[ outerArcCenterPos ] = 1
     print('cueInnerArcDesiredFraction = ',cueInnerArcDesiredFraction, ' actual = ', innerArcCenterPos*1.0/len(cueRadialMask) )
     print('cueOuterArcDesiredFraction = ',cueOuterArcDesiredFraction, ' actual = ', outerArcCenterPos*1.0/len(cueRadialMask) )
-    targetAngleOffset = -6
+    targetAngleOffset = 6
     thickThinWedgesRing, targetRing, cueRing =  \
-        constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,cueRadialMask,visibleWedge,numObjects,patchAngleThickWedges,5,
+        constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,radialMaskTargetSliver,cueRadialMask,visibleWedge,numObjects,patchAngleThickWedges,5,
                             bgColor,thickWedgeColor,thinWedgeColor,targetAngleOffset,gratingTexPix,cueColor,objToCue,ppLog=logging)
 
     keepGoing = True
