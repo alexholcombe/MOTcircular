@@ -203,28 +203,19 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,radialMaskT
     segmentSizeTexture, patchSizeTexture, patchFlankSize = patchSizeForTexture(segmentAngle, patchAngleThick, oneCycleAngle, gratingTexPix)
     start = round( 0 ) #identify starting texture position for this segment
     end = round( start + segmentSizeTexture ) #don't round until after do addition, otherwise can fall short
-  
-    ringTex2 = np.zeros([gratingTexPix,gratingTexPix,3])+bgColor[0]  #start with all channels in all locs = bgColor
-    ringTex2[:, start:end, :] = thickWedgeColor[:]
-    #spaces in between objects are termed the flanks, should be bgColor,
-    ringTex2[:, start:start+patchFlankSize, :] = bgColor[:]  #one flank
-    ringTex2[:, end-1-patchFlankSize:end, :] = bgColor[:]  #other flank
     angRes = 200 #100 is default. I have not seen an artifact at present when set to 100, two things drawn don't overlap exactly
-    ringRadialThinWedges= visual.RadialStim(myWin, tex=ringTex2, color=[1,1,1],size=radius,#ringTex is the actual colored pattern. radial grating used to make it an annulus
-            visibleWedge=visibleWedge,
-            mask=radialMaskTargetSliver, # this is a 1-D mask masking the centre, to create an annulus
-            radialCycles=0, angularCycles=numObjects,
-            angularRes=angRes, interpolate=antialiasGrating, autoLog=autoLogging)
 
     #First draw the entire segment in patchColr, then erase sides (flankers) leaving only the patchAngle
     ringTex[:, start:end, :] = thickWedgeColor[:]
     #spaces in between objects are termed the flanks, should be bgColor,
     ringTex[:, start:start+patchFlankSize, :] = bgColor[:]  #one flank
     ringTex[:, end-1-patchFlankSize:end, :] = bgColor[:]  #other flank
-    
+
     #thin wedges. Create texture for visual.radialStim
-    segmentSizeTexture, thinWedgeSizeTexture, patchFlankSize = patchSizeForTexture(segmentAngle, patchAngleThin, oneCycleAngle, gratingTexPix)
-    
+    segmentSizeTexture, thinWedgeSizeTexture, patchFlankSizeThinWedge = patchSizeForTexture(segmentAngle, patchAngleThin, oneCycleAngle, gratingTexPix)
+
+
+
     #Instead of drawing the red and undisplaced blue with the same call to radialStim,
     #We will draw the red with one call to radialStim, then the thinner blue sliver on top, using radialMask so it's only the sliver and leaves the
     #remainder of the red showing.
@@ -242,6 +233,18 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,radialMaskT
     #spaces in between objects are termed the flanks, should be bgColor,
     thinRingTex[:, start:start+patchFlankSize, :] = bgColor[:]  #one flank
     thinRingTex[:, end-1-patchFlankSize:end, :] = bgColor[:]  #other flank    
+
+    ringTex2 = np.zeros([gratingTexPix,gratingTexPix,3])+bgColor[0]  #start with all channels in all locs = bgColor
+    ringTex2[:, start:end, :] = thinWedgeColor[:]
+    #spaces in between objects are termed the flanks, should be bgColor,
+    ringTex2[:, start:start+patchFlankSize, :] = bgColor[:]  #one flank
+    ringTex2[:, end-1-patchFlankSize:end, :] = bgColor[:]  #other flank
+    
+    ringRadialThinWedges= visual.RadialStim(myWin, tex=ringTex2, color=[1,1,1],size=radius,#ringTex is the actual colored pattern. radial grating used to make it an annulus
+            visibleWedge=visibleWedge,
+            mask=radialMaskTargetSliver, # this is a 1-D mask masking the centre, to create an annulus
+            radialCycles=0, angularCycles=numObjects,
+            angularRes=angRes, interpolate=antialiasGrating, autoLog=autoLogging)
 
 
     #Draw target (task is to judge offset of thin wedge relative to thick wedge.
@@ -348,8 +351,8 @@ if __name__ == "__main__": #do self-tests
     print('cueOuterArcDesiredFraction = ',cueOuterArcDesiredFraction, ' actual = ', outerArcCenterPos*1.0/len(cueRadialMask) )
     targetAngleOffset = 6
     thickWedgesRing, thinWedgesRing, targetRing, cueRing =  \
-        constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,radialMaskTargetSliver,cueRadialMask,visibleWedge,numObjects,patchAngleThickWedges,5,
-                            bgColor,thickWedgeColor,thinWedgeColor,targetAngleOffset,gratingTexPix,cueColor,objToCue,ppLog=logging)
+        constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,radialMaskTargetSliver,cueRadialMask,visibleWedge,numObjects,
+                            patchAngleThickWedges,patchAngleThickWedges,bgColor,thickWedgeColor,thinWedgeColor,targetAngleOffset,gratingTexPix,cueColor,objToCue,ppLog=logging)
 
     keepGoing = True
     while keepGoing:
