@@ -373,6 +373,12 @@ if __name__ == "__main__": #do self-tests
 
     keepGoing = True #draw target superposed
     while keepGoing:
+        #The thickWedgesRing, typically red, are drawn as a radial grating that occupies all 360 deg circular, with a texture to mask out everything else to create a ring
+        #The thinWedgesRing, typically blue, are centered in the red and one of these wedges will be later displaced to create a target.
+        #The targetRing is the displaced blue wedge. Actually a full circular radial grating, but visibleWedge set to subtend only the part where the target is.
+        #The thickWedgesRingCopy is to draw over the old, undisplaced blue wedge, only in the target area. It is thus a copy of the thickWedgesRing, 
+        # with visibleWedge set to show only the target part
+        #The cueRing is two white arcs to bring attention to the target area.
         thickWedgesRing.draw() #Draw red thick wedges
         thinWedgesRing.draw() #Draw thin blue wedge centered in thick red wedges
         #When time to draw target, draw over old position of target thin wedge and draw displaced version
