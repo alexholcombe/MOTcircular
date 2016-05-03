@@ -102,7 +102,7 @@ def constructRingsAsGratings(myWin,numRings,radii,ringRadialMaskEachRing,numObje
     patchSizeTexture = round(patchSizeTexture) #best is odd number, even space on either size
     patchFlankSize = (segmentSizeTexture-patchSizeTexture)/2.
     patchAngleActual = patchSizeTexture / gratingTexPix * oneCycleAngle
-    if abs(patchAngleActual - patchAngle) > .04:
+    if abs(patchAngleActual - patchAngle) > .01:
         msg = 'Desired patchAngle = '+str(patchAngle)+' but closest can get with '+str(gratingTexPix)+' gratingTexPix is '+str(patchAngleActual); 
         ppLog.warn(msg)
     
@@ -194,7 +194,7 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,radialMaskT
         patchSizeTexture = round(patchSizeTexture) #best is odd number, even space on either size
         patchFlankSize = (segmentSizeTexture-patchSizeTexture)/2. #this area will be drawn in bgColor
         patchAngleActual = patchSizeTexture*1.0 / gratingTexPix * oneCycleAngle
-        if abs(patchAngleActual - patchAngle) > .04:
+        if abs(patchAngleActual - patchAngle) > .01:
             msg = 'Desired patchAngle = '+str(patchAngle)+' but closest can get with '+str(gratingTexPix)+' gratingTexPix is '+str(patchAngleActual); 
             ppLog.warn(msg)
         return segmentSizeTexture, patchSizeTexture, patchFlankSize
@@ -244,7 +244,8 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,radialMaskT
     #I need to not show the part of the thick wedge that will be displaced, while showing enough of thick wedge to overdraw previous location of thin wedge
     targetCorrectedForRingReversal = numObjects-1 - objToCue #grating seems to be laid out in opposite direction than blobs, this fixes postCueNumBlobsAway so positive is in direction of motion
     visibleAngleStart = targetCorrectedForRingReversal*segmentAngle + (segmentAngle-patchAngleThick)/2
-    visibleAngleEnd = visibleAngleStart + patchAngleThick
+    kludgeFactor = 5
+    visibleAngleEnd = visibleAngleStart + patchAngleThick + kludgeFactor
     print('targetCorrectedForRingReversal = ',targetCorrectedForRingReversal,' visibleAngleStart=',visibleAngleStart,' visibleAngleEnd=',visibleAngleEnd)
     if targetAngleOffset >= 0:
         visibleAngleEnd -= targetAngleOffset #don't show the part of the thick wedge that would be displaced
@@ -253,13 +254,22 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,radialMaskT
     
     #DRAW THE TARGET RING, like the above ringRadial except displaced
     #Below call is identical to ringRadial except ori
-    targetRadial= visual.RadialStim(myWin, tex=thinRingTex, color=[1,1,1],size=radius+2,#ringTex is the actual colored pattern. radial grating used to make it an annulus
+    #set visibleWedge so it only highlights a single thick wedge
+    vernierOffset = -2
+    targetRadial= visual.RadialStim(myWin, tex=thinRingTex, color=[1,1,1],size=radius+vernierOffset,#ringTex is the actual colored pattern. radial grating used to make it an annulus
             visibleWedge=[visibleAngleStart,visibleAngleEnd],
             ori = targetAngleOffset, #Always zero in the new version where the task is to judge the radial offset of the blue thin wedge
             mask=radialMaskTarget, # this is a 1-D mask masking the centre, to create an annulus
             radialCycles=0, angularCycles=numObjects,
             angularRes=angRes, interpolate=antialiasGrating, autoLog=autoLogging)
-            
+
+    #MAKE A COPY of the thick red ring to draw over undisplaced blue
+    ringRadialThickWedgesCopy= visual.RadialStim(myWin, tex=ringTex, color=[1,1,1],size=radius,#ringTex is the actual colored pattern. radial grating used to make it an annulus
+            visibleWedge=  (visibleAngleStart,visibleAngleEnd),
+            mask=radialMask, # this is a 1-D mask masking the centre, to create an annulus
+            radialCycles=0, angularCycles=numObjects,
+            angularRes=angRes, interpolate=antialiasGrating, autoLog=autoLogging)
+
     #CREATING CUE TEXTURE
     #Both inner and outer cue arcs can be drawn in one go via a radial mask
     #use visibleWedge so it only highlights a single thick wedge
@@ -284,7 +294,7 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,radialMaskT
                     mask = cueRadialMask, radialCycles=0, angularCycles=1, #only one cycle because no pattern actually repeats- trying to highlight only one sector
                     angularRes=angRes, interpolate=antialiasGrating, autoLog=autoLogging)
     
-    return ringRadialThickWedges,ringRadialThinWedges,targetRadial,cueRing
+    return ringRadialThickWedges,ringRadialThickWedgesCopy,ringRadialThinWedges,targetRadial,cueRing
     ######### End constructRingAsGrating ###########################################################
 
 if __name__ == "__main__": #do self-tests
@@ -342,10 +352,10 @@ if __name__ == "__main__": #do self-tests
     print('cueInnerArcDesiredFraction = ',cueInnerArcDesiredFraction, ' actual = ', innerArcCenterPos*1.0/len(cueRadialMask) )
     print('cueOuterArcDesiredFraction = ',cueOuterArcDesiredFraction, ' actual = ', outerArcCenterPos*1.0/len(cueRadialMask) )
     targetAngleOffset = 0
-    thickWedgesRing, thinWedgesRing, targetRing, cueRing =  \
+    thickWedgesRing,thickWedgesRingCopy, thinWedgesRing, targetRing, cueRing =  \
         constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,radialMaskThinWedge,radialMaskTarget,cueRadialMask,visibleWedge,numObjects,
                             patchAngleThickWedges,patchAngleThickWedges,bgColor,thickWedgeColor,thinWedgeColor,targetAngleOffset,gratingTexPix,cueColor,objToCue,ppLog=logging)
-
+    
     keepGoing = True
     while keepGoing:
         thickWedgesRing.draw()
@@ -366,6 +376,7 @@ if __name__ == "__main__": #do self-tests
         thickWedgesRing.draw() #Draw red thick wedges
         thinWedgesRing.draw() #Draw thin blue wedge centered in thick red wedges
         #When time to draw target, draw over old position of target thin wedge and draw displaced version
+        thickWedgesRingCopy.draw()
         targetRing.draw() #this is the particular blue patch offset. And drawing the rest in red, so that the undisplaced doesn't show through.
         myWin.flip()
         for key in event.getKeys():       #check if pressed abort-type key
