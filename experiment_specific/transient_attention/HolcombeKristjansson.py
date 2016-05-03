@@ -495,7 +495,6 @@ while trialNum < trials.nTotal and expStop==False:
     outerArcCenterPos = round( binsNeeded*cueOuterArcDesiredFraction )
     cueRadialMask[ innerArcCenterPos ] = 1
     cueRadialMask[ outerArcCenterPos ] = 1
-    thinWedgesAngleSubtend = 2
     innerArcActualFraction = innerArcCenterPos*1.0/len(cueRadialMask)
     outerArcActualFraction = outerArcCenterPos*1.0/len(cueRadialMask)
     closeEnough = .01
@@ -503,10 +502,15 @@ while trialNum < trials.nTotal and expStop==False:
         print('cueInnerArcDesiredFraction of object radius = ',cueInnerArcDesiredFraction, ' actual = ', innerArcActualFraction, ' exceeding tolerance of ',closeEnough )
     if abs(cueOuterArcDesiredFraction - outerArcActualFraction) > closeEnough:
         print('cueOuterArcDesiredFraction of object radius = ',cueOuterArcDesiredFraction, ' actual = ', outerArcActualFraction, ' exceeding tolerance of ',closeEnough)
-        
-    thickThinWedgesRing, target, cue =  \
-            constructThickThinWedgeRingsTargetAndCue(myWin,radii[0],radialMask,cueRadialMask,visibleWedge,numObjects,patchAngleThickWedges,
-                            thinWedgesAngleSubtend,bgColor,thickWedgeColor,thinWedgeColor,thisTrial['targetAngleOffset'],gratingTexPix,cueColor,objToCue,ppLog=logging)
+
+constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,radialMaskTargetSliver,radialMaskTarget,cueRadialMask,visibleWedge,numObjects,patchAngleThick,
+patchAngleThin,bgColor,
+                                            thickWedgeColor,thinWedgeColor,targetAngleOffset,gratingTexPix,cueColor,objToCue,ppLog)
+
+    thickWedgesRing,thickWedgesRingCopy, thinWedgesRing, target, cue=  \ #radialMaskTargetSliver,radialMaskTarget
+            constructThickThinWedgeRingsTargetAndCue(myWin,radii[0],radialMask,radialMaskTargetSliver,radialMaskTarget,
+            cueRadialMask,visibleWedge,numObjects,patchAngleThickWedges,patchAngleThickWedges,
+                            bgColor,thickWedgeColor,thinWedgeColor,thisTrial['targetAngleOffset'],gratingTexPix,cueColor,objToCue,ppLog=logging)
     core.wait(.1)
     myMouse.setVisible(False)
     if eyetracking: 
