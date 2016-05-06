@@ -326,7 +326,7 @@ def angleChangeThisFrame(thisTrial, moveDirection, numRing, thisFrameN, lastFram
     angleMove = moveDirection[numRing]*thisTrial['direction']*thisTrial['speed']*2*pi*(thisFrameN-lastFrameN)/refreshRate
     return angleMove
 
-def oneFrameOfStim(thisTrial,currFrame,maskBegin,cues,stimRings,target,clock,useClock,offsetXYeachRing):
+def oneFrameOfStim(thisTrial,currFrame,maskBegin,cues,stimRings,targetRings,clock,useClock,offsetXYeachRing):
 #defining a function to draw each frame of stim. So can call second time for tracking task response phase
           if useClock: #Don't count on not missing frames. Use actual time.
             t = clock.getTime()
@@ -342,6 +342,7 @@ def oneFrameOfStim(thisTrial,currFrame,maskBegin,cues,stimRings,target,clock,use
           else:
             fixationBlank.draw()
           fixationPoint.draw()
+          numRing = 0
           #draw cue
           for numRing in range(len(cues)):
             if n< thisTrial['cueLeadTime']*refreshRate: #keep cue moving
@@ -349,7 +350,7 @@ def oneFrameOfStim(thisTrial,currFrame,maskBegin,cues,stimRings,target,clock,use
                 cues[numRing].setOri(angleMove,operation='+',log=autoLogging)
             else: pass #Time for target, cue will now be stationary
             cueCurrAngle = cues[numRing].ori
-            cue.draw()
+            for cue in cues: cue.draw()
           #draw eyeballs
           if n >= thisTrial['cueLeadTime']*refreshRate: #also draw rings
                for numRing in range(len(stimRings)):
@@ -360,8 +361,8 @@ def oneFrameOfStim(thisTrial,currFrame,maskBegin,cues,stimRings,target,clock,use
                 #stimRings[numRing].setOri(stimAngle,log=autoLogging)
                 stimRings[numRing].draw()
                 #target.setOri(angleMove,operation='+',log=autoLogging)
-                
-               target.draw()
+               for targetRing in targetRings:
+                    targetRing.draw()  #Probably just the new background (to replace the displaced target, and the target
 #                if reversalNumEachRing[numRing] <= len(reversalTimesEachRing[numRing]): #haven't exceeded  reversals assigned
 #                    reversalNum = int(reversalNumEachRing[numRing])
 #                    if len( reversalTimesEachRing[numRing] ) <= reversalNum:
@@ -474,6 +475,7 @@ while trialNum < trials.nTotal and expStop==False:
     thinWedgeColor=[0,0,1] #blue
     cueColor=[1,1,1]
     radialMask =   np.array( [0,0,0,0,0,0,0,1,0,0,0] )
+    radialMaskThinWedge =   np.array( [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] ) #This is the sliver that's offset relative to the larger wedge, that you have to judge the offset of
     wedgeRadiusFraction = np.where(radialMask)[0][0]*1.0 / len(radialMask)
     #print('wedgeRadiusFraction = ',wedgeRadiusFraction)
     wedgeThicknessFraction = len( np.where(radialMask)[0] )*1.0 / len(radialMask)
@@ -503,14 +505,16 @@ while trialNum < trials.nTotal and expStop==False:
     if abs(cueOuterArcDesiredFraction - outerArcActualFraction) > closeEnough:
         print('cueOuterArcDesiredFraction of object radius = ',cueOuterArcDesiredFraction, ' actual = ', outerArcActualFraction, ' exceeding tolerance of ',closeEnough)
 
-constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,radialMaskTargetSliver,radialMaskTarget,cueRadialMask,visibleWedge,numObjects,patchAngleThick,
-patchAngleThin,bgColor,
-                                            thickWedgeColor,thinWedgeColor,targetAngleOffset,gratingTexPix,cueColor,objToCue,ppLog)
-
-    thickWedgesRing,thickWedgesRingCopy, thinWedgesRing, target, cue=  \ #radialMaskTargetSliver,radialMaskTarget
-            constructThickThinWedgeRingsTargetAndCue(myWin,radii[0],radialMask,radialMaskTargetSliver,radialMaskTarget,
+    thickWedgesRing,thickWedgesRingCopy, thinWedgesRing, targetRing, cueDoubleRing=  constructThickThinWedgeRingsTargetAndCue(myWin, \
+            radii[0],radialMask,radialMaskThinWedge,
             cueRadialMask,visibleWedge,numObjects,patchAngleThickWedges,patchAngleThickWedges,
                             bgColor,thickWedgeColor,thinWedgeColor,thisTrial['targetAngleOffset'],gratingTexPix,cueColor,objToCue,ppLog=logging)
+    #The thickWedgesRing, typically red, are drawn as a radial grating that occupies all 360 deg circular, with a texture to mask out everything else to create a ring
+    #The thinWedgesRing, typically blue, are centered in the red and one of these wedges will be later displaced to create a target.
+    #The targetRing is the displaced blue wedge. Actually a full circular radial grating, but visibleWedge set to subtend only the part where the target is.
+    #The thickWedgesRingCopy is to draw over the old, undisplaced blue wedge, only in the target area. It is thus a copy of the thickWedgesRing, 
+    # with visibleWedge set to show only the target part
+    #The cueRing is two white arcs to bring attention to the target area.
     core.wait(.1)
     myMouse.setVisible(False)
     if eyetracking: 
@@ -529,7 +533,8 @@ patchAngleThin,bgColor,
     for n in range(trialDurFrames): #this is the loop for this trial's stimulus!
             offsetXYeachRing=[[0,0],[0,0]]
             cueAngle = \
-                        oneFrameOfStim(thisTrial,n,maskBegin,[cue],[thickThinWedgesRing],target,stimClock,useClock,offsetXYeachRing) #actual drawing of stimuli
+                        oneFrameOfStim(thisTrial,n,maskBegin,[cueDoubleRing],[thickWedgesRing,thinWedgesRing],
+                                                     [thickWedgesRingCopy,targetRing],stimClock,useClock,offsetXYeachRing) #actual drawing of stimuli
             if exportImages:
                 myWin.getMovieFrame(buffer='back') #for later saving
                 framesSaved +=1
