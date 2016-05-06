@@ -249,16 +249,16 @@ NextRemindPctDoneText = visual.TextStim(myWin,pos=(-.1, -.4),colorSpace='rgb',co
 NextRemindCountText = visual.TextStim(myWin,pos=(.1, -.5),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
 
 stimList = []
-speeds = np.array( [ 0.0 ]  )   #dont want to go faster than 2 because of blur problem
+speeds = np.array( [ 1.0 ]  )   #dont want to go faster than 2 because of blur problem
 #Set up the factorial design (list of all conditions)
 for numCuesEachRing in [ [1] ]:
  for numObjsEachRing in [ [8] ]: #First entry in each sub-list is num objects in the first ring, second entry is num objects in the second ring
   for cueLeadTime in [1.400]:  #How long is the cue on prior to the eyeballs appearing
       for speed in speeds:
-          for direction in [1.0]: # [-1.0,1.0]:
-            for targetAngleOffset in [-3,3]:
+          for direction in [-1.0,1.0]:
+            for targetOffset in [-1.5,1.5]: 
                 for objToCueQuadrant in range(4):
-                    stimList.append( {'numCuesEachRing':numCuesEachRing,'numObjsEachRing':numObjsEachRing,'targetAngleOffset':targetAngleOffset,
+                    stimList.append( {'numCuesEachRing':numCuesEachRing,'numObjsEachRing':numObjsEachRing,'targetOffset':targetOffset,
                                                 'cueLeadTime':cueLeadTime,'speed':speed,'objToCueQuadrant':objToCueQuadrant,'direction':direction} )
 #set up record of proportion correct in various conditions
 trials = data.TrialHandler(stimList,trialsPerCondition) #constant stimuli method
@@ -342,27 +342,26 @@ def oneFrameOfStim(thisTrial,currFrame,maskBegin,cues,stimRings,targetRings,cloc
           else:
             fixationBlank.draw()
           fixationPoint.draw()
-          numRing = 0
+          numRing = 0 #Haven't implemented capability for multiple rings, although started out that way, got rid of it because complexity
           #draw cue
-          for numRing in range(len(cues)):
-            if n< thisTrial['cueLeadTime']*refreshRate: #keep cue moving
-                angleMove = angleChangeThisFrame(thisTrial, moveDirection, numRing, n, n-1)
-                cues[numRing].setOri(angleMove,operation='+',log=autoLogging)
-            else: pass #Time for target, cue will now be stationary
-            cueCurrAngle = cues[numRing].ori
-            for cue in cues: cue.draw()
-          #draw eyeballs
+          if n< thisTrial['cueLeadTime']*refreshRate: #keep cue moving
+            angleMove = angleChangeThisFrame(thisTrial, moveDirection, numRing, n, n-1)
+            cues[numRing].setOri(angleMove,operation='+',log=autoLogging)
+          else: pass #Time for target, cue will now be stationary
+          cueCurrAngle = cues[numRing].ori
+          for cue in cues: cue.draw()
+          #draw target
           if n >= thisTrial['cueLeadTime']*refreshRate: #also draw rings
-               for numRing in range(len(stimRings)):
 #                angleMove = angleChangeThisFrame(thisTrial, moveDirection, numRing, n, n-1)
 #                stimAngleEachRing[numRing] += angleMove*(isReversed[numRing])
 #                angleObject0 = angleIniEachRing[numRing] + eyeballsCurrAngleEachRing[numRing]
                 #    print('angleMove=',np.round(angleMove,2)*180/pi, ' angleObject0=',np.round(angleObject0,2)*180/pi)
                 #stimRings[numRing].setOri(stimAngle,log=autoLogging)
-                stimRings[numRing].draw()
+                for stimRing in stimRings:
+                    stimRing.draw()
                 #target.setOri(angleMove,operation='+',log=autoLogging)
-               for targetRing in targetRings:
-                    targetRing.draw()  #Probably just the new background (to replace the displaced target, and the target
+                for targetRing in targetRings:
+                  targetRing.draw()  #Probably just the new background (to replace the displaced target, and the target
 #                if reversalNumEachRing[numRing] <= len(reversalTimesEachRing[numRing]): #haven't exceeded  reversals assigned
 #                    reversalNum = int(reversalNumEachRing[numRing])
 #                    if len( reversalTimesEachRing[numRing] ) <= reversalNum:
@@ -389,16 +388,16 @@ def oneFrameOfStim(thisTrial,currFrame,maskBegin,cues,stimRings,targetRings,cloc
 # #######End of function definition that displays the stimuli!!!! #####################################
 
 respPromptText = visual.TextStim(myWin,height=0.09, pos=(0, -.8),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
-respPromptText.setText('Press A if the thin wedge is offset anticlockwise, or L if clockwise')
+respPromptText.setText('Press L if the thin wedge is offset towards the edge of the screen, or G if towards the centre of the screen')
 
 def collectResponses(expStop): #Kristjansson&Holcombe cuing experiment
     #draw the possible stimuli
     #eyeball left, eyeball right, eyeball down, eyeball up
     #draw something that represents clockwise 
     responsesNeeded = 1
-    responsesAutopilot = list(['A'])
+    responsesAutopilot = list(['L'])
     for r in range(responsesNeeded):
-        responsesAutopilot.append('A')
+        responsesAutopilot.append('L')
     respcount =0
     
     while respcount <responsesNeeded:
@@ -410,7 +409,7 @@ def collectResponses(expStop): #Kristjansson&Holcombe cuing experiment
                   expStop = True
                   respcount += 1
                   responses.append('X') #dummy response so dont' get error when try to record in datafile before quitting
-              elif key.upper() in ['A','L']: #A for anticlockwise, L for clockwise
+              elif key.upper() in ['L','G']: #L for towards edge of screen, G for towards ctr #A for anticlockwise, L for clockwise
                    responses.append( key.upper() )
                    respcount += 1
               else: #flicker response prompt to indicate invalid response
@@ -451,12 +450,13 @@ while trialNum < trials.nTotal and expStop==False:
     else:
         quadrantObjectToCue =  np.random.random_integers(0, objsPerQuadrant-1, size=1)
         objToCue = thisTrial['objToCueQuadrant']*objsPerQuadrant + quadrantObjectToCue
-    #print('objToCue=',objToCue)
+    #objToCue = np.array([7]); print('HEY objToCue not randomised')
     colorRings=list();
     preDrawStimToGreasePipeline = list()
     isReversed= list([1]) * numRings #always takes values of -1 or 1
     reversalNumEachRing = list([0]) * numRings
     angleIniEachRing = list( np.random.uniform(0,2*pi,size=[numRings]) )
+    #angleIniEachRing = list( [0] ); print('HEY angle not randomised')
     cueCurrAngleEachRing = list([0]) * numRings
     moveDirection = list( np.random.random_integers(0,1,size=[numRings]) *2 -1 ) #randomise initial direction
     maskBegin = thisTrial['cueLeadTime'] + targetDur
@@ -474,7 +474,7 @@ while trialNum < trials.nTotal and expStop==False:
     thickWedgeColor = [0,-1,-1] #dark red
     thinWedgeColor=[0,0,1] #blue
     cueColor=[1,1,1]
-    radialMask =   np.array( [0,0,0,0,0,0,0,1,0,0,0] )
+    radialMask =   np.array( [0,0,0,0,1,0,0,0,0] ) # [0,0,0,0,0,0,0,1,0,0,0] )
     radialMaskThinWedge =   np.array( [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] ) #This is the sliver that's offset relative to the larger wedge, that you have to judge the offset of
     wedgeRadiusFraction = np.where(radialMask)[0][0]*1.0 / len(radialMask)
     #print('wedgeRadiusFraction = ',wedgeRadiusFraction)
@@ -499,7 +499,7 @@ while trialNum < trials.nTotal and expStop==False:
     cueRadialMask[ outerArcCenterPos ] = 1
     innerArcActualFraction = innerArcCenterPos*1.0/len(cueRadialMask)
     outerArcActualFraction = outerArcCenterPos*1.0/len(cueRadialMask)
-    closeEnough = .01
+    closeEnough = .02
     if abs(cueInnerArcDesiredFraction - innerArcActualFraction) > closeEnough:
         print('cueInnerArcDesiredFraction of object radius = ',cueInnerArcDesiredFraction, ' actual = ', innerArcActualFraction, ' exceeding tolerance of ',closeEnough )
     if abs(cueOuterArcDesiredFraction - outerArcActualFraction) > closeEnough:
@@ -508,7 +508,7 @@ while trialNum < trials.nTotal and expStop==False:
     thickWedgesRing,thickWedgesRingCopy, thinWedgesRing, targetRing, cueDoubleRing=  constructThickThinWedgeRingsTargetAndCue(myWin, \
             radii[0],radialMask,radialMaskThinWedge,
             cueRadialMask,visibleWedge,numObjects,patchAngleThickWedges,patchAngleThickWedges,
-                            bgColor,thickWedgeColor,thinWedgeColor,thisTrial['targetAngleOffset'],gratingTexPix,cueColor,objToCue,ppLog=logging)
+                            bgColor,thickWedgeColor,thinWedgeColor,0,thisTrial['targetOffset'],gratingTexPix,cueColor,objToCue,ppLog=logging)
     #The thickWedgesRing, typically red, are drawn as a radial grating that occupies all 360 deg circular, with a texture to mask out everything else to create a ring
     #The thinWedgesRing, typically blue, are centered in the red and one of these wedges will be later displaced to create a target.
     #The targetRing is the displaced blue wedge. Actually a full circular radial grating, but visibleWedge set to subtend only the part where the target is.
@@ -539,8 +539,9 @@ while trialNum < trials.nTotal and expStop==False:
                 myWin.getMovieFrame(buffer='back') #for later saving
                 framesSaved +=1
             myWin.flip(clearBuffer=True)
+            #if n == round(thisTrial['cueLeadTime']*refreshRate): #debug
+            #  event.waitKeys(maxWait=20, keyList=['SPACE','ESCAPE','x'], timeStamped=False) #debugON
             t=trialClock.getTime()-t0; ts.append(t);
-    #event.waitKeys(maxWait=2, keyList=['SPACE'], timeStamped=False) #debugOFF
     myWin.flip()
     event.clearEvents(eventType='mouse')
     if eyetracking:
@@ -590,10 +591,10 @@ while trialNum < trials.nTotal and expStop==False:
     if autopilot:
         responses = responsesAutopilot
     #score response
-    if thisTrial['targetAngleOffset'] >0:
+    if thisTrial['targetOffset'] >0:
         answer = 'L'
     else:
-        answer = 'A'
+        answer = 'G'
     if responses[0] == answer:
         correct = 1
     else: correct = 0            

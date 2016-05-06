@@ -7,6 +7,8 @@ from math import atan, pi, cos, sin, sqrt, ceil
 import time, sys, platform, os, StringIO, gc
 from psychopy import visual, core
 
+#If you run this code stand-alone, it will do a demo of the basic stimulus it is designed to provide
+
 #BEGIN helper functions from primes.py
 def gcd(a,b): 
    """Return greatest common divisor using Euclid's Algorithm."""
@@ -170,7 +172,7 @@ def constructRingsAsGratings(myWin,numRings,radii,ringRadialMaskEachRing,numObje
 #########################################
 
 def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,radialMaskTarget,cueRadialMask,visibleWedge,numObjects,patchAngleThick,patchAngleThin,bgColor,
-                                            thickWedgeColor,thinWedgeColor,targetAngleOffset,gratingTexPix,cueColor,objToCue,ppLog):
+                                            thickWedgeColor,thinWedgeColor,targetAngleOffset,targetRadialOffset,gratingTexPix,cueColor,objToCue,ppLog):
     #Construct a grating formed of the colors in order of stimColorIdxsOrder
     #Also construct a similar cueRing grating with same colors, but one blob potentially highlighted. 
     #cueRing Has different spacing than ringRadial, not sure why, I think because calculations tend to be off as it's 
@@ -243,9 +245,9 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,radialMaskT
     #angularPhase = 
     #I need to not show the part of the thick wedge that will be displaced, while showing enough of thick wedge to overdraw previous location of thin wedge
     targetCorrectedForRingReversal = numObjects-1 - objToCue #grating seems to be laid out in opposite direction than blobs, this fixes postCueNumBlobsAway so positive is in direction of motion
-    visibleAngleStart = targetCorrectedForRingReversal*segmentAngle + (segmentAngle-patchAngleThick)/2
     kludgeFactor = 5
-    visibleAngleEnd = visibleAngleStart + patchAngleThick + kludgeFactor
+    visibleAngleStart = targetCorrectedForRingReversal*segmentAngle + (segmentAngle-patchAngleThick)/2 - kludgeFactor
+    visibleAngleEnd = (visibleAngleStart+kludgeFactor) + patchAngleThick + kludgeFactor  
     print('targetCorrectedForRingReversal = ',targetCorrectedForRingReversal,' visibleAngleStart=',visibleAngleStart,' visibleAngleEnd=',visibleAngleEnd)
     if targetAngleOffset >= 0:
         visibleAngleEnd -= targetAngleOffset #don't show the part of the thick wedge that would be displaced
@@ -255,8 +257,7 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,radialMaskT
     #DRAW THE TARGET RING, like the above ringRadial except displaced
     #Below call is identical to ringRadial except ori
     #set visibleWedge so it only highlights a single thick wedge
-    vernierOffset = -2
-    targetRadial= visual.RadialStim(myWin, tex=thinRingTex, color=[1,1,1],size=radius+vernierOffset,#ringTex is the actual colored pattern. radial grating used to make it an annulus
+    targetRadial= visual.RadialStim(myWin, tex=thinRingTex, color=[1,1,1],size=radius+targetRadialOffset,#ringTex is the actual colored pattern. radial grating used to make it an annulus
             visibleWedge=[visibleAngleStart,visibleAngleEnd],
             ori = targetAngleOffset, #Always zero in the new version where the task is to judge the radial offset of the blue thin wedge
             mask=radialMaskTarget, # this is a 1-D mask masking the centre, to create an annulus
@@ -350,10 +351,10 @@ if __name__ == "__main__": #do self-tests
     cueRadialMask[ outerArcCenterPos ] = 1
     print('cueInnerArcDesiredFraction = ',cueInnerArcDesiredFraction, ' actual = ', innerArcCenterPos*1.0/len(cueRadialMask) )
     print('cueOuterArcDesiredFraction = ',cueOuterArcDesiredFraction, ' actual = ', outerArcCenterPos*1.0/len(cueRadialMask) )
-    targetAngleOffset = 0
+    targetAngleOffset = 0; targetRadialOffset = 1
     thickWedgesRing,thickWedgesRingCopy, thinWedgesRing, targetRing, cueRing =  \
         constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,radialMaskThinWedge,cueRadialMask,visibleWedge,numObjects,
-                            patchAngleThickWedges,patchAngleThickWedges,bgColor,thickWedgeColor,thinWedgeColor,targetAngleOffset,gratingTexPix,cueColor,objToCue,ppLog=logging)
+                            patchAngleThickWedges,patchAngleThickWedges,bgColor,thickWedgeColor,thinWedgeColor,targetAngleOffset,targetRadialOffset,gratingTexPix,cueColor,objToCue,ppLog=logging)
     
     keepGoing = True
     while keepGoing:
