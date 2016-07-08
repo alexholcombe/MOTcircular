@@ -1,3 +1,5 @@
+## Outline of informal talk
+
 - TF and speed limits. Window of tracking diagram, p.5
 - Demo vimeo.
 - Evidence of speed and TF limit - Figure 8

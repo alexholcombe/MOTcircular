@@ -42,7 +42,7 @@ To predict the speed limit according to the neurons per unit time theory, we mus
 ## Ended up using radius=6, 
 centered on eccentricity= 5 (*near* condition) and =10 (*far* condition)
 
-See theory.R
+See [theory.R](theory.R) for full calculations!
 
 calcMeanEccentricityOfCircle(6, 5, .001) / 6 #1.18   An 18% boost in speed limit predicted.
  
