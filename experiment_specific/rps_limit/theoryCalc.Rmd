@@ -17,9 +17,45 @@ Constant rps limit implies receptive fields must be 6.28 deg (2pi) farther apart
 A unit distance on cortex is assumed to be a constant number of receptive fields (this is the logic of measuring "perceptive field" size).
 
 Whatever that number of receptive fields is, it should span 6.28 deg visual angle more for every unit increase in eccentricity.
-What does this correspond to in terms of cortical magnification factor? M inverse, because
+
+Minv, M inverse, is the visual angle per mm of cortex. But how many mm of cortex increase (with eccentricity) corresponds to X receptive fields being 6.28 deg farther apart? We don't know; we can't eliminate the unknown scaling constant.
+
+We do know that an rps limit corresponds to a linear increase. V1 shows a linear increase (see Figure 5 of Strasburger et al., 2011). Indeed, M-scaling is conventionally linear, with departures shown in Strasburger Table 2 having exponents close to 1.
+
+Already know it's not far from linearity, otherwise couldn't be close to rps limit. If had been very different from linearity, then would somewhat rule out M-scaling.
+
+Because it seems like from the idea that the limit decreases by just the right amount with eccentricity, seemed ought to be able to conclude something specific. In fact it seems it only constrains eccentricity scaling to being linear, plus that the following ratio must have a particular value: number of neurons that can be crossed per second / number of such neurons per mm of cortex (still need to confirm with math).
+
+n = # of neurons attention can move per second
+
+c = # of neurons per mm of cortex
+
+
+
+In $2*pi$ deg of visual angle at 1 deg eccentricity, $2*n$ relevant neurons are present.
+At 2 deg eccentricity, $2*pi$ + $2*pi$ neurons are present.
+
+At 1 deg eccentricity, $2*n/(2*pi)$  are present per deg of visual angle
+At $e$ deg eccentricity, $2*n/(2*pi*e)$ are present per deg of visual angle
+
+$N(e)$ - neurons at each eccentricity per degree of visual angle
+
+$$N(e) = 2*n/(2*pi*e) = n/(pi*e)$$
+
+$$deg/mm = (neurons/mm) / (neurons/deg)$$
+ 
+$$Minv = c/N(e)$$
+
+Substituting in $N(e)$
+
+$$Minv = c/(n/(pi*e)) = (c*pi*e)/n = c*pi*e/n$$
+
+So indeed, as long as $Minv$ is linear, it works because $c$ and $n$ are unknown.
+
+
+THE BELOW CALCULATIONS WERE WHEN I THOUGHT THE CONSTANT COULD BE ELIMINATED. 
+
 M was initially defined as the cortical distance in cortex onto which 1 deg of visual field projects, whereas
-Minv, M inverse, is the visual angle for a particular cortical distance.
 
 deg/RF (degrees per every two receptive fields) = Minv * mm/RF
 So if mm/RF = .01, I'm interested in Minv*.01, specifically how much it increases per deg eccentricity. According to rps limit, that's 6.28. So that seems a huge increase given how little Minv increases (see below)
