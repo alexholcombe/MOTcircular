@@ -125,23 +125,26 @@ $(document).ready(function () {
 #  &quot;/Users/alexh/Documents/attention_tempresltn/multiple object tracking/newTraj/newTraj_repo/analysis&quot;
 #)
 library(ggplot2)</code></pre>
-<p>What does rps limit imply for cortical magnification factor? Constant rps limit implies receptive fields must be 6.28 deg (2pi) farther apart for every unit increase in eccentricity. A unit distance on cortex is assumed to be a constant number of receptive fields (this is the logic of measuring “perceptive field” size).</p>
+<div id="what-does-the-rps-limit-imply-for-cortical-magnification-factor" class="section level2">
+<h2>What does the rps limit imply for cortical magnification factor?</h2>
+<p>Constant rps limit implies receptive fields must be 6.28 deg (2pi) farther apart for every unit increase in eccentricity. A unit distance on cortex is assumed to be a constant number of receptive fields (this is the logic of measuring “perceptive field” size).</p>
 <p>Whatever that number of receptive fields is, it should span 6.28 deg visual angle more for every unit increase in eccentricity.</p>
-<p>Minv, M inverse, is the visual angle per mm of cortex. But how many mm of cortex increase (with eccentricity) corresponds to X receptive fields being 6.28 deg farther apart? We don’t know; we can’t eliminate the unknown scaling constant.</p>
+<p>Minv, M inverse, is the <em>visual angle per mm of cortex</em>. But how many mm of cortex increase (with eccentricity) corresponds to X receptive fields being 6.28 deg farther apart? We don’t know; we can’t eliminate the unknown scaling constant.</p>
 <p>We do know that an rps limit corresponds to a linear increase. V1 shows a linear increase (see Figure 5 of Strasburger et al., 2011). Indeed, M-scaling is conventionally linear, with departures shown in Strasburger Table 2 having exponents close to 1.</p>
 <p>Already know it’s not far from linearity, otherwise couldn’t be close to rps limit. If had been very different from linearity, then would somewhat rule out M-scaling.</p>
 <p>Because it seems like from the idea that the limit decreases by just the right amount with eccentricity, seemed ought to be able to conclude something specific. In fact it seems it only constrains eccentricity scaling to being linear, plus that the following ratio must have a particular value: number of neurons that can be crossed per second / number of such neurons per mm of cortex (still need to confirm with math).</p>
-<p>n = # of neurons attention can move per second</p>
-<p>c = # of neurons per mm of cortex</p>
-<p>In <span class="math inline">\(2*pi\)</span> deg of visual angle at 1 deg eccentricity, <span class="math inline">\(2*n\)</span> relevant neurons are present. At 2 deg eccentricity, <span class="math inline">\(2*pi\)</span> + <span class="math inline">\(2*pi\)</span> neurons are present.</p>
-<p>At 1 deg eccentricity, <span class="math inline">\(2*n/(2*pi)\)</span> are present per deg of visual angle At <span class="math inline">\(e\)</span> deg eccentricity, <span class="math inline">\(2*n/(2*pi*e)\)</span> are present per deg of visual angle</p>
+<p><span class="math inline">\(r\)</span> = speed limit in rps</p>
+<p><span class="math inline">\(n\)</span> = # of neurons attention can move per second</p>
+<p><span class="math inline">\(c\)</span> = # of neurons per mm of cortex</p>
+<p>In <span class="math inline">\(2 \pi\)</span> deg of visual angle at 1 deg eccentricity, <span class="math inline">\(r n\)</span> relevant neurons are present. At 2 deg eccentricity, <span class="math inline">\(r n\)</span> neurons are present but over a larger distance - <span class="math inline">\(4 \pi\)</span>.</p>
+<p>At each eccentricity <span class="math inline">\(e\)</span>, <span class="math inline">\(r n / 2 \pi e\)</span> neurons are present per deg of visual angle.</p>
 <p><span class="math inline">\(N(e)\)</span> - neurons at each eccentricity per degree of visual angle</p>
-<p><span class="math display">\[N(e) = 2*n/(2*pi*e) = n/(pi*e)\]</span></p>
-<p><span class="math display">\[deg/mm = (neurons/mm) / (neurons/deg)\]</span></p>
+<p><span class="math display">\[N(e) = r n / 2 \pi e\]</span></p>
+<p><span class="math display">\[deg/mm = (neurons/mm)  /  (neurons/deg)\]</span></p>
 <p><span class="math display">\[Minv = c/N(e)\]</span></p>
-<p>Substituting in <span class="math inline">\(N(3)\)</span></p>
-<p><span class="math display">\[Minv = c/(n/(pi*e)) = (c*pi*e)/n = c*pi*e/n\]</span></p>
-<p>So indeed, as long as <span class="math inline">\(Minv\)</span> is linear, it works because <span class="math inline">\(c\)</span> and <span class="math inline">\(n\)</span> are unknown.</p>
+<p>Substituting in <span class="math inline">\(N(e)\)</span></p>
+<p><span class="math display">\[Minv = c/( r n / 2 \pi e ) = 2 \pi e c / r n = \frac{2 \pi e c}{r n}\]</span></p>
+<p>So indeed, as long as cortical magnification (<span class="math inline">\(Minv\)</span>) is linear, it can accommodate the rps limit (or any uh) because <span class="math inline">\(c\)</span> and <span class="math inline">\(n\)</span> are unknown.</p>
 <p>THE BELOW CALCULATIONS WERE WHEN I THOUGHT THE CONSTANT COULD BE ELIMINATED.</p>
 <p>M was initially defined as the cortical distance in cortex onto which 1 deg of visual field projects, whereas</p>
 <p>deg/RF (degrees per every two receptive fields) = Minv * mm/RF So if mm/RF = .01, I’m interested in Minv*.01, specifically how much it increases per deg eccentricity. According to rps limit, that’s 6.28. So that seems a huge increase given how little Minv increases (see below)</p>
@@ -174,7 +177,12 @@ library(ggplot2)</code></pre>
 <p>So cortical distance in deg/mm cortex according to Schira increases by only 0.43 for the increase of my experiment of r of 7.5.</p>
 <p>Yet for rps to be constant we need a 47.12 increase in deg/mm.</p>
 <p>But how many mm of cortex are we talking about- does that matter? Let’s say receptive fields are spaced 0.1 mm apart. Then increase in deg is 0.043</p>
-<p>In fact the rps limit found in the present paper did change slightly from r=4.5 to r=12, namely it decrased by 0.38 rps for the CRT and 0.39 rps for the Spinzter.</p>
+</div>
+<div id="the-speed-limit-when-the-trajectory-is-off-center" class="section level2">
+<h2>The speed limit when the trajectory is off-center</h2>
+<p>The rps limit found in the present experiments did change slightly from r=4.5 to r=12, namely it decreased by about 0.1 rps for both the CRT and the Spinzter.</p>
+<p>OH CRAP I can’t assume the speed limit will go with the mean eccentricity- it might go with the worst case, which is the smallest eccentricity of the path, which predicts a significantly worse speed limit for both the near and far conditions. Near condition it might be very very slow, whereas for the far condition it comes to 4 deg from the fovea, compared to 6 when it’s centered. PERHAPS DO ANOTHER EXPERIMENT where I actually modify the speed in the off-center condition as it moves along the trajectory in proportion to the eccentricity. Call this the <em>eccentricity-scaled</em> manipulation.</p>
+<p>Continuing to find that the higher eccentricity does not yield a higher speed limit would provide further evidence that both the costly-hemifield-switch theory and cortical distance theories are wrong.</p>
 <pre class="r"><code>calcMeanEccentricityAlongCircle &lt;- function(radius,eccentricity,epsilonTheta) {
   #numerically integrate as at https://github.com/alexholcombe/MOTcircular/blob/master/analysis/theory.md
   #for each theta of the circle, calculate distance from origin to that point
@@ -232,6 +240,7 @@ if (sum(exp$rps - exp$speedUp) &lt; .00001) {
     cat(&quot;The ways of calculating do not coincide&quot;)
 }</code></pre>
 <pre><code>## Both ways of calculating coincide</code></pre>
+</div>
 
 
 
