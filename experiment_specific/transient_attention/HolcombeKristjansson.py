@@ -9,11 +9,12 @@ import itertools #to calculate all subsets
 from copy import deepcopy
 from math import atan, pi, cos, sin, sqrt, ceil
 import time, sys, platform, os, StringIO, gc
-eyetrackingOption = False #Because Psychopy v1.83.01 mistakenly included an old version of pylink which prevents EyelinkEyetrackerForPsychopySUPA3 stuff from importing
+eyetrackingOption = False #Include this so can turn it off, because Psychopy v1.83.01 mistakenly included an old version of pylink which prevents EyelinkEyetrackerForPsychopySUPA3 stuff from importing
 if eyetrackingOption:
     from EyelinkEyetrackerForPsychopySUPA3 import Tracker_EyeLink #Chris Fajou integration
 from helpersAOH import accelerateComputer, openMyStimWindow, constructThickThinWedgeRingsTargetAndCue
 eyetracking = False
+getEyeTrackingFileFromEyetrackingMachineAtEndOfExperiment = False #If True, can take up to 1.5 hrs in certain conditions
 
 quitFinder = True
 if quitFinder:
@@ -44,10 +45,10 @@ radii=[25]   #Need to encode as array for those experiments wherein more than on
 respRadius=radii[0] #deg
 refreshRate= 85 *1.0;  #160 #set to the framerate of the monitor
 useClock = True #as opposed to using frame count, which assumes no frames are ever missed
-fullscr=0; #show in small window (0) or full screen (1) 
-scrn=1 #which screen to display the stimuli. 0 is home screen, 1 is second screen
+fullscr=1; #show in small window (0) or full screen (1) 
+scrn=0 #which screen to display the stimuli. 0 is home screen, 1 is second screen
 # create a dialog from dictionary 
-infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':False, 'Screen to use':scrn, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': refreshRate }
+infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':True, 'Screen to use':scrn, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': refreshRate }
 OK = gui.DlgFromDict(dictionary=infoFirst, 
     title='MOT', 
     order=['Autopilot','Check refresh etc', 'Screen to use', 'Screen refresh rate', 'Fullscreen (timing errors if not)'], 
@@ -65,7 +66,7 @@ refreshRate = infoFirst['Screen refresh rate']
 
 if demo: refreshRate = 60. 
 tokenChosenEachRing= [-999]*numRings
-targetDur = 0.6; #duration of target  (in seconds) 
+targetDur = 2.06; #duration of target  (in seconds) 
 targetDur = round(targetDur * refreshRate) / refreshRate #discretize to nearest integer number of refreshes
 logging.info(  'targetDur= '+str(targetDur)   )
 
@@ -81,8 +82,8 @@ cueColor = np.array([1,1,1])
 #monitor parameters
 widthPix = 1024 #1440  #monitor width in pixels
 heightPix =768  #900 #monitor height in pixels
-monitorwidth = 38.5 #28.5 #monitor width in centimeters
-viewdist = 57.; #cm
+monitorwidth = 40.5 #28.5 #monitor width in centimeters
+viewdist = 55.; #cm
 pixelperdegree = widthPix/ (atan(monitorwidth/viewdist) /np.pi*180)
 bgColor = [-1,-1,-1] #black background
 monitorname = 'testMonitor' # 'mitsubishi' #in psychopy Monitors Center
@@ -103,7 +104,7 @@ myWin = openMyStimWindow(mon,widthPix,heightPix,bgColor,allowGUI,units,fullscr,s
 myMouse = event.Mouse(visible = 'true',win=myWin)
 myWin.setRecordFrameIntervals(False)
 
-trialsPerCondition = 8 #default value
+trialsPerCondition = 2 #default value
 
 refreshMsg2 = ''
 if not checkRefreshEtc:
@@ -249,14 +250,14 @@ NextRemindPctDoneText = visual.TextStim(myWin,pos=(-.1, -.4),colorSpace='rgb',co
 NextRemindCountText = visual.TextStim(myWin,pos=(.1, -.5),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
 
 stimList = []
-speeds = np.array( [ 1.0 ]  )   #dont want to go faster than 2 because of blur problem
+speeds = np.array( [ 0, 2.0 ]  )   #dont want to go faster than 2 because of blur problem
 #Set up the factorial design (list of all conditions)
 for numCuesEachRing in [ [1] ]:
  for numObjsEachRing in [ [8] ]: #First entry in each sub-list is num objects in the first ring, second entry is num objects in the second ring
-  for cueLeadTime in [1.400]:  #How long is the cue on prior to the eyeballs appearing
+  for cueLeadTime in [0.020, 0.060, 0.125, 0.167, 0.267, 0.467]:  #How long is the cue on prior to the eyeballs appearing
       for speed in speeds:
           for direction in [-1.0,1.0]:
-            for targetOffset in [-1.5,1.5]: 
+            for targetOffset in [-1.00, 1.00]: 
                 for objToCueQuadrant in range(4):
                     stimList.append( {'numCuesEachRing':numCuesEachRing,'numObjsEachRing':numObjsEachRing,'targetOffset':targetOffset,
                                                 'cueLeadTime':cueLeadTime,'speed':speed,'objToCueQuadrant':objToCueQuadrant,'direction':direction} )
@@ -435,7 +436,8 @@ thisTrial = trials.next()
 ts = list();
 
 if eyetracking:
-    eyeMoveFile=('EyeTrack_'+subject+'_'+timeAndDateStr+'.EDF')
+    if getEyeTrackingFileFromEyetrackingMachineAtEndOfExperiment:
+        eyeMoveFile=('EyeTrack_'+subject+'_'+timeAndDateStr+'.EDF')
     tracker=Tracker_EyeLink(myWin,trialClock,subject,1, 'HV5',(255,255,255),(0,0,0),False,(widthPix,heightPix))
 
 while trialNum < trials.nTotal and expStop==False:
@@ -466,14 +468,14 @@ while trialNum < trials.nTotal and expStop==False:
     
     #Task will be to judge which thick wedge has the thin wedge offset within it
     
-    #Set up parameters to construct the thick,thin wedges
+    #Set up parameters to construct the thick (context),thin (target offset relative to context) wedges
     gratingTexPix= 1024
     radius = 25
     visibleWedge = [0,360]
     patchAngleThickWedges = 360/numObjects/2
-    thickWedgeColor = [0,-1,-1] #dark red
-    thinWedgeColor=[0,0,1] #blue
-    cueColor=[1,1,1]
+    thickWedgeColor = [1,1,1]  # originally [0,-1,-1] #dark red
+    thinWedgeColor=  [-1,-1,-1] #originally [0,0,1] #blue
+    cueColor=[1,-.9,-.9] #
     radialMask =   np.array( [0,0,0,0,1,0,0,0,0] ) # [0,0,0,0,0,0,0,1,0,0,0] )
     radialMaskThinWedge =   np.array( [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] ) #This is the sliver that's offset relative to the larger wedge, that you have to judge the offset of
     wedgeRadiusFraction = np.where(radialMask)[0][0]*1.0 / len(radialMask)
@@ -481,7 +483,7 @@ while trialNum < trials.nTotal and expStop==False:
     wedgeThicknessFraction = len( np.where(radialMask)[0] )*1.0 / len(radialMask)
     #print('wedgeThickness = ',wedgeThicknessFraction*radius)
     wedgeCenterFraction = wedgeRadiusFraction + wedgeThicknessFraction/2.
-    desiredArcDistanceFractionRadius = .23
+    desiredArcDistanceFractionRadius = 0.10   #.23 #Is this what controls how far apart the two arcs of the cue are?
     cueInnerArcDesiredFraction = wedgeCenterFraction - desiredArcDistanceFractionRadius
     cueOuterArcDesiredFraction = wedgeCenterFraction + desiredArcDistanceFractionRadius
     if cueOuterArcDesiredFraction > 1:
@@ -679,7 +681,7 @@ if  trialNum >0:
         df = df.convert_objects(convert_numeric=True)
         print('df.dtypes=', df.dtypes) #df.dtypes in my case are  "objects". you can't take the mean
         print('dfFromPP =', df)
-if eyetracking:
+if eyetracking and getEyeTrackingFileFromEyetrackingMachineAtEndOfExperiment:
     tracker.closeConnectionToEyeTracker(eyeMoveFile)
 logging.info('finishing at '+timeAndDateStr)
 #print('%corr = ', round( correct*1.0/trialNum*100., 2)  , '% of ',trialNum,' trials', end=' ')
