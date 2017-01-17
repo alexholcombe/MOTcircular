@@ -44,12 +44,12 @@ numRings=2
 radii=[25]   #Need to encode as array for those experiments wherein more than one ring presented 
 
 respRadius=radii[0] #deg
-refreshRate= 85 *1.0;  #160 #set to the framerate of the monitor
+refreshRate= 60 *1.0;  #160 #set to the framerate of the monitor
 useClock = True #as opposed to using frame count, which assumes no frames are ever missed
 fullscr=0; #show in small window (0) or full screen (1) 
 scrn=0 #which screen to display the stimuli. 0 is home screen, 1 is second screen
 # create a dialog from dictionary 
-infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':False, 'Screen to use':scrn, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': refreshRate }
+infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':True, 'Screen to use':scrn, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': refreshRate }
 OK = gui.DlgFromDict(dictionary=infoFirst, 
     title='MOT', 
     order=['Autopilot','Check refresh etc', 'Screen to use', 'Screen refresh rate', 'Fullscreen (timing errors if not)'], 
@@ -82,7 +82,7 @@ colors_all = np.array([[1,-1,-1],[1,-1,-1]])
 cueColor = np.array([1,1,1])
 #monitor parameters
 widthPix = 1024 #1440  #monitor width in pixels
-heightPix =768  #900 #monitor height in pixels
+heightPix =640 #768  #900 #monitor height in pixels
 monitorwidth = 40.5 #28.5 #monitor width in centimeters
 viewdist = 55.; #cm
 pixelperdegree = widthPix/ (atan(monitorwidth/viewdist) /np.pi*180)
