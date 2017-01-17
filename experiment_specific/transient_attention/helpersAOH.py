@@ -1,4 +1,5 @@
 from __future__ import print_function
+from __future__ import division
 __author__ = """Alex "O." Holcombe""" ## double-quotes will be silently removed, single quotes will be left, eg, O'Connor
 import numpy as np
 import itertools #to calculate all subsets
@@ -6,7 +7,7 @@ from copy import deepcopy
 from math import atan, pi, cos, sin, sqrt, ceil
 import time, sys, platform, os, StringIO, gc
 from psychopy import visual, core
-
+from random import randint
 #If you run this code stand-alone, it will do a demo of the basic stimulus it is designed to provide
 
 #BEGIN helper functions from primes.py
@@ -270,7 +271,18 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,radialMaskT
             mask=radialMask, # this is a 1-D mask masking the centre, to create an annulus
             radialCycles=0, angularCycles=numObjects,
             angularRes=angRes, interpolate=antialiasGrating, autoLog=autoLogging)
-
+    lines=[]
+    targeti = 1
+    for i in xrange(0,numObjects):
+       angleDeg = -i/numObjects*360  #Negative because I think gratings are drawn in the opposite direction
+       x = cos(angleDeg*pi/180) * radius/3
+       y = sin(angleDeg*pi/180) * radius/3
+       orientation = i/numObjects*360
+       if i == targetCorrectedForRingReversal-1: #dont know why have to subtract 1
+            orientation += 90
+       print("Drawing line ",i," at x=",x, " y=", y)
+       thisLine = visual.Rect(myWin, width=radius/20., height=radius/5., pos=(x,y), ori=orientation, fillColor=[-1,1,-1], lineColor=None, autoLog=autoLogging)
+       lines.append(thisLine)
     #CREATING CUE TEXTURE
     #Both inner and outer cue arcs can be drawn in one go via a radial mask
     #use visibleWedge so it only highlights a single thick wedge
@@ -295,7 +307,7 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,radialMaskT
                     mask = cueRadialMask, radialCycles=0, angularCycles=1, #only one cycle because no pattern actually repeats- trying to highlight only one sector
                     angularRes=angRes, interpolate=antialiasGrating, autoLog=autoLogging)
     
-    return ringRadialThickWedges,ringRadialThickWedgesCopy,ringRadialThinWedges,targetRadial,cueRing
+    return ringRadialThickWedges,ringRadialThickWedgesCopy,ringRadialThinWedges,targetRadial,cueRing,lines
     ######### End constructRingAsGrating ###########################################################
 
 if __name__ == "__main__": #do self-tests
@@ -313,8 +325,8 @@ if __name__ == "__main__": #do self-tests
     #Task will be to judge which thick wedge has the thin wedge offset within it
     numObjects = 6
     gratingTexPix= 1024
-    objToCue= 3
-    radius = 25
+    objToCue=5 #lines work until get to 5
+    radius = 25.
     visibleWedge = [0,360]
     patchAngleThickWedges = 360/numObjects/2
     thickWedgeColor = [1,-1,-1]
@@ -352,7 +364,7 @@ if __name__ == "__main__": #do self-tests
     print('cueInnerArcDesiredFraction = ',cueInnerArcDesiredFraction, ' actual = ', innerArcCenterPos*1.0/len(cueRadialMask) )
     print('cueOuterArcDesiredFraction = ',cueOuterArcDesiredFraction, ' actual = ', outerArcCenterPos*1.0/len(cueRadialMask) )
     targetAngleOffset = 0; targetRadialOffset = 1
-    thickWedgesRing,thickWedgesRingCopy, thinWedgesRing, targetRing, cueRing =  \
+    thickWedgesRing,thickWedgesRingCopy, thinWedgesRing, targetRing, cueRing, lines =  \
         constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,radialMaskThinWedge,cueRadialMask,visibleWedge,numObjects,
                             patchAngleThickWedges,patchAngleThickWedges,bgColor,thickWedgeColor,thinWedgeColor,targetAngleOffset,targetRadialOffset,gratingTexPix,cueColor,objToCue,ppLog=logging)
     
@@ -384,6 +396,8 @@ if __name__ == "__main__": #do self-tests
         #When time to draw target, draw over old position of target thin wedge and draw displaced version
         thickWedgesRingCopy.draw()
         targetRing.draw() #this is the particular blue patch offset. And drawing the rest in red, so that the undisplaced doesn't show through.
+        for line in lines:
+            line.draw()
         myWin.flip()
         for key in event.getKeys():       #check if pressed abort-type key
               if key in ['escape','q']:

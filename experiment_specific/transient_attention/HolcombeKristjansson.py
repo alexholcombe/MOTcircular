@@ -1,5 +1,6 @@
 from __future__ import print_function
 __author__ = """Alex "O." Holcombe, Wei-Ying Chen""" ## double-quotes will be silently removed, single quotes will be left, eg, O'Connor
+from __future__ import division
 import helpersAOH
 from psychopy import *
 import psychopy.info
@@ -45,10 +46,10 @@ radii=[25]   #Need to encode as array for those experiments wherein more than on
 respRadius=radii[0] #deg
 refreshRate= 85 *1.0;  #160 #set to the framerate of the monitor
 useClock = True #as opposed to using frame count, which assumes no frames are ever missed
-fullscr=1; #show in small window (0) or full screen (1) 
+fullscr=0; #show in small window (0) or full screen (1) 
 scrn=0 #which screen to display the stimuli. 0 is home screen, 1 is second screen
 # create a dialog from dictionary 
-infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':True, 'Screen to use':scrn, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': refreshRate }
+infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':False, 'Screen to use':scrn, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': refreshRate }
 OK = gui.DlgFromDict(dictionary=infoFirst, 
     title='MOT', 
     order=['Autopilot','Check refresh etc', 'Screen to use', 'Screen refresh rate', 'Fullscreen (timing errors if not)'], 
@@ -331,7 +332,7 @@ def angleChangeThisFrame(thisTrial, moveDirection, numRing, thisFrameN, lastFram
     angleMove = moveDirection[numRing]*thisTrial['direction']*thisTrial['speed']*2*pi*(thisFrameN-lastFrameN)/refreshRate
     return angleMove
 
-def oneFrameOfStim(thisTrial,currFrame,maskBegin,cues,stimRings,targetRings,clock,useClock,offsetXYeachRing):
+def oneFrameOfStim(thisTrial,currFrame,maskBegin,cues,stimRings,targetRings,lines,clock,useClock,offsetXYeachRing):
 #defining a function to draw each frame of stim. So can call second time for tracking task response phase
           if useClock: #Don't count on not missing frames. Use actual time.
             t = clock.getTime()
@@ -390,7 +391,8 @@ def oneFrameOfStim(thisTrial,currFrame,maskBegin,cues,stimRings,targetRings,cloc
             elif n < maskBegin*refreshRate + 8:
                 noiseMask2.draw()  #show second mask
             else: noiseMask3.draw()
-            
+          for line in lines:
+            line.draw()
           if blindspotFill:
               blindspotStim.draw()
           return cueCurrAngle
@@ -478,7 +480,6 @@ while trialNum < trials.nTotal and expStop==False:
     
     #Set up parameters to construct the thick (context),thin (target offset relative to context) wedges
     gratingTexPix= 1024
-    radius = 25
     visibleWedge = [0,360]
     patchAngleThickWedges = 360/numObjects/2
     thickWedgeColor = [1,1,1]  # originally [0,-1,-1] #dark red
@@ -490,7 +491,7 @@ while trialNum < trials.nTotal and expStop==False:
     wedgeRadiusFraction = np.where(radialMask)[0][0]*1.0 / len(radialMask)
     #print('wedgeRadiusFraction = ',wedgeRadiusFraction)
     wedgeThicknessFraction = len( np.where(radialMask)[0] )*1.0 / len(radialMask)
-    #print('wedgeThickness = ',wedgeThicknessFraction*radius)
+    #print('wedgeThickness = ',wedgeThicknessFraction*radii[0])
     wedgeCenterFraction = wedgeRadiusFraction + wedgeThicknessFraction/2.
     desiredArcDistanceFractionRadius = 0.10   #.23 #Is this what controls how far apart the two arcs of the cue are?
     cueInnerArcDesiredFraction = wedgeCenterFraction - desiredArcDistanceFractionRadius
@@ -516,16 +517,16 @@ while trialNum < trials.nTotal and expStop==False:
     if abs(cueOuterArcDesiredFraction - outerArcActualFraction) > closeEnough:
         print('cueOuterArcDesiredFraction of object radius = ',cueOuterArcDesiredFraction, ' actual = ', outerArcActualFraction, ' exceeding tolerance of ',closeEnough)
 
-    thickWedgesRing,thickWedgesRingCopy, thinWedgesRing, targetRing, cueDoubleRing=  constructThickThinWedgeRingsTargetAndCue(myWin, \
+    thickWedgesRing,thickWedgesRingCopy, thinWedgesRing, targetRing, cueDoubleRing, lines=  constructThickThinWedgeRingsTargetAndCue(myWin, \
             radii[0],radialMask,radialMaskThinWedge,
             cueRadialMask,visibleWedge,numObjects,patchAngleThickWedges,patchAngleThickWedges,
                             bgColor,thickWedgeColor,thinWedgeColor,0,thisTrial['targetOffset'],gratingTexPix,cueColor,objToCue,ppLog=logging)
-    #The thickWedgesRing, typically red, are drawn as a radial grating that occupies all 360 deg circular, with a texture to mask out everything else to create a ring
-    #The thinWedgesRing, typically blue, are centered in the red and one of these wedges will be later displaced to create a target.
-    #The targetRing is the displaced blue wedge. Actually a full circular radial grating, but visibleWedge set to subtend only the part where the target is.
-    #The thickWedgesRingCopy is to draw over the old, undisplaced blue wedge, only in the target area. It is thus a copy of the thickWedgesRing, 
+    #The thickWedgesRing, typically white, are drawn as a radial grating that occupies all 360 deg circular, with a texture to mask out everything else to create a ring
+    #The thinWedgesRing, typically black, are centered in the white and one of these wedges will be later displaced to create a target.
+    #The targetRing is the displaced black wedge. Actually a full circular radial grating, but visibleWedge set to subtend only the part where the target is.
+    #The thickWedgesRingCopy is to draw over the old, undisplaced black wedge, only in the target area. It is thus a copy of the thickWedgesRing, 
     # with visibleWedge set to show only the target part
-    #The cueRing is two white arcs to bring attention to the target area.
+    #The cueRing is two red arcs to bring attention to the target area.
     core.wait(.1)
     myMouse.setVisible(False)
     if eyetracking: 
@@ -545,7 +546,7 @@ while trialNum < trials.nTotal and expStop==False:
             offsetXYeachRing=[[0,0],[0,0]]
             cueAngle = \
                         oneFrameOfStim(thisTrial,n,maskBegin,[cueDoubleRing],[thickWedgesRing,thinWedgesRing],
-                                                     [thickWedgesRingCopy,targetRing],stimClock,useClock,offsetXYeachRing) #actual drawing of stimuli
+                                                     [thickWedgesRingCopy,targetRing],lines,stimClock,useClock,offsetXYeachRing) #actual drawing of stimuli
             if exportImages:
                 myWin.getMovieFrame(buffer='back') #for later saving
                 framesSaved +=1
