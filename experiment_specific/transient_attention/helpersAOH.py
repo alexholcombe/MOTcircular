@@ -7,7 +7,7 @@ from copy import deepcopy
 from math import atan, pi, cos, sin, sqrt, ceil
 import time, sys, platform, os, StringIO, gc
 from psychopy import visual, core
-from random import randint
+import random 
 #If you run this code stand-alone, it will do a demo of the basic stimulus it is designed to provide
 
 #BEGIN helper functions from primes.py
@@ -290,6 +290,7 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,radialMaskT
     lineWidth = lineHeight / 4
     targeti = (targetCorrectedForRingReversal-1)  % numObjects   #dont know why have to subtract 1. Then have to mod numObjects so negative number gets turned into positive
     for i in xrange(0,numObjects):
+       lineColor = [1,1,1]
        angleDeg = -i/numObjects*360  #Negative because I think gratings are drawn in the opposite direction
        tangentialOrientation = i/numObjects*360
        if __name__ != "__main__": #not self-test
@@ -299,11 +300,16 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,radialMaskT
        x = cos(angleDeg*pi/180) * eccentricity
        y = sin(angleDeg*pi/180) * eccentricity
        if i == targeti:
-            orientation = tangentialOrientation + 90
+            orientation = tangentialOrientation
+            if targetRadialOffset>0:
+                orientation = tangentialOrientation + 90
+                print("Flipping target")
+            print("targetRadialOFfset=",targetRadialOffset)
+            lineColor = [1,1,1]
        else:
-            orientation = tangentialOrientation #set randomly
-       print("Drawing line ",i," at x=",x, " y=", y, "targetCorrectedForRingReversal=", targetCorrectedForRingReversal )
-       thisLine = visual.Rect(myWin, width=lineWidth, height=lineHeight, pos=(x,y), ori=orientation, fillColor=[-1,1,-1], lineColor=None, autoLog=autoLogging)
+            orientation = random.random()*360 #tangentialOrientation #set randomly
+       #print("Drawing line ",i," at x=",x, " y=", y, "targetCorrectedForRingReversal=", targetCorrectedForRingReversal )
+       thisLine = visual.Rect(myWin, width=lineWidth, height=lineHeight, pos=(x,y), ori=orientation, fillColor=lineColor, lineColor=None, autoLog=autoLogging)
        lines.append(thisLine)
     #CREATING CUE TEXTURE
     #Both inner and outer cue arcs can be drawn in one go via a radial mask
@@ -385,7 +391,7 @@ if __name__ == "__main__": #do self-tests
     cueRadialMask[ outerArcCenterPos ] = 1
     print('cueInnerArcDesiredFraction = ',cueInnerArcDesiredFraction, ' actual = ', innerArcCenterPos*1.0/len(cueRadialMask) )
     print('cueOuterArcDesiredFraction = ',cueOuterArcDesiredFraction, ' actual = ', outerArcCenterPos*1.0/len(cueRadialMask) )
-    targetAngleOffset = 0; targetRadialOffset = 1
+    targetAngleOffset = 0; targetRadialOffset = -1
     thickWedgesRing,thickWedgesRingCopy, thinWedgesRing, targetRing, cueRing, lines =  \
         constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,radialMaskThinWedge,cueRadialMask,visibleWedge,numObjects,
                             patchAngleThickWedges,patchAngleThickWedges,bgColor,thickWedgeColor,thinWedgeColor,targetAngleOffset,targetRadialOffset,gratingTexPix,cueColor,objToCue,ppLog=logging)

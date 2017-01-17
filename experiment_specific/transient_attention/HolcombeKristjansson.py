@@ -67,7 +67,7 @@ refreshRate = infoFirst['Screen refresh rate']
 
 if demo: refreshRate = 60. 
 tokenChosenEachRing= [-999]*numRings
-targetDur = 52.06; #duration of target  (in seconds) 
+targetDur = 1.06; #duration of target  (in seconds) 
 targetDur = round(targetDur * refreshRate) / refreshRate #discretize to nearest integer number of refreshes
 logging.info(  'targetDur= '+str(targetDur)   )
 
@@ -358,41 +358,25 @@ def oneFrameOfStim(thisTrial,currFrame,maskBegin,cues,stimRings,targetRings,line
           for cue in cues: cue.draw()
           #draw target
           if n >= thisTrial['cueLeadTime']*refreshRate: #also draw rings
-#                angleMove = angleChangeThisFrame(thisTrial, moveDirection, numRing, n, n-1)
-#                stimAngleEachRing[numRing] += angleMove*(isReversed[numRing])
-#                angleObject0 = angleIniEachRing[numRing] + eyeballsCurrAngleEachRing[numRing]
-                #    print('angleMove=',np.round(angleMove,2)*180/pi, ' angleObject0=',np.round(angleObject0,2)*180/pi)
-                #stimRings[numRing].setOri(stimAngle,log=autoLogging)
-                for stimRing in stimRings:
-                    stimRing.draw()
+                linesInsteadOfArcTargets = True
+                if not linesInsteadOfArcTargets:
+                    for stimRing in stimRings: 
+                        stimRing.draw()
                 #target.setOri(angleMove,operation='+',log=autoLogging)
-                for targetRing in targetRings:
-                  targetRing.draw()  #Probably just the new background (to replace the displaced target, and the target
-#                if reversalNumEachRing[numRing] <= len(reversalTimesEachRing[numRing]): #haven't exceeded  reversals assigned
-#                    reversalNum = int(reversalNumEachRing[numRing])
-#                    if len( reversalTimesEachRing[numRing] ) <= reversalNum:
-#                        msg = 'You failed to allocate enough reversal times, reached ' +str(reversalNum)+ ' reversals at '+ str(reversalTimesEachRing[numRing][reversalNum-1]) + \
-#                                  'and still going, current time ='+str(n/refreshRate)+' asking for time of next one, will assume no more reversals'
-#                        logging.error(msg)
-#                        print(msg)
-#                        nextReversalTime = 9999 #didn't allocate enough, will just not reverse any more
-#                    else: #allocated enough reversals
-#                        nextReversalTime = reversalTimesEachRing[numRing][ reversalNum ]
-#                    if n > refreshRate * nextReversalTime: #have now exceeded time for this next reversal
-#                        isReversed[numRing] = -1*isReversed[numRing]
-#                        reversalNumEachRing[numRing] +=1
-#                        
-#                    x,y = xyThisFrameThisAngle('circle',radii, numRing,angleThisObject,n,thisTrial['speed']) ########################################################
-#                    x += offsetXYeachRing[numRing][0]
-#                    y += offsetXYeachRing[numRing][1]
+                if not linesInsteadOfArcTargets:
+                    for targetRing in targetRings:
+                        targetRing.draw()  #Probably just the new background (to replace the displaced target, and the target
+                else:
+                    for line in lines:  #for future experiment, change orientation according to cueCurrAngle so lines appear at cue final destination
+                        line.draw()
+            
           if n >= maskBegin*refreshRate: #time for mask
             if n < maskBegin*refreshRate + 4: #show first mask for 4 frames, then show second mask
                 noiseMask.draw()
             elif n < maskBegin*refreshRate + 8:
                 noiseMask2.draw()  #show second mask
             else: noiseMask3.draw()
-          for line in lines:  #for future experiment, change orientation according to cueCurrAngle so lines appear at cue final destination
-            line.draw()
+
           if blindspotFill:
               blindspotStim.draw()
           return cueCurrAngle
