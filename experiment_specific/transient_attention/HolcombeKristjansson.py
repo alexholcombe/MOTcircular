@@ -243,14 +243,15 @@ else:
 fixationPoint = visual.PatchStim(myWin,colorSpace='rgb',color=(1,1,1),mask='circle',units='pix',size=2,autoLog=autoLogging) #put a point in the center
 
 #create noise post-mask
+maskDur = 0.3; individualMaskDurFrames = 4
 numChecksAcross = 128
 nearestPowerOfTwo = round( sqrt(numChecksAcross) )**2 #Because textures (created on next line) must be a power of 2
-whiteNoiseTexture = np.round( np.random.rand(nearestPowerOfTwo,nearestPowerOfTwo) ,0 )   *2.0-1 #Can counterphase flicker  noise texture to create salient flicker if you break fixation
-noiseMask= visual.PatchStim(myWin, tex=whiteNoiseTexture, size=(widthPix,heightPix), units='pix', interpolate=False, autoLog=autoLogging)
-whiteNoiseTexture = np.round( np.random.rand(nearestPowerOfTwo,nearestPowerOfTwo) ,0 )   *2.0-1 #Can counterphase flicker  noise texture to create salient flicker if you break fixation
-noiseMask2= visual.PatchStim(myWin, tex=whiteNoiseTexture, size=(widthPix,heightPix), units='pix', interpolate=False, autoLog=autoLogging)
-whiteNoiseTexture = np.round( np.random.rand(nearestPowerOfTwo,nearestPowerOfTwo) ,0 )   *2.0-1 #Can counterphase flicker  noise texture to create salient flicker if you break fixation
-noiseMask3= visual.PatchStim(myWin, tex=whiteNoiseTexture, size=(widthPix,heightPix), units='pix', interpolate=False, autoLog=autoLogging)
+noiseMasks = []
+numNoiseMasks = int(          ceil(maskDur / ((1/refreshRate)*individualMaskDurFrames))                    )
+for i in xrange(numNoiseMasks):
+    whiteNoiseTexture = np.round( np.random.rand(nearestPowerOfTwo,nearestPowerOfTwo) ,0 )   *2.0-1 #Can counterphase flicker  noise texture to create salient flicker if you break fixation
+    noiseMask= visual.PatchStim(myWin, tex=whiteNoiseTexture, size=(widthPix,heightPix), units='pix', interpolate=False, autoLog=autoLogging)
+    noiseMasks.append(noiseMask)
 
 respText = visual.TextStim(myWin,pos=(0, -.8),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
 NextText = visual.TextStim(myWin,pos=(0, 0),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
@@ -374,11 +375,11 @@ def oneFrameOfStim(thisTrial,currFrame,maskBegin,cues,stimRings,targetRings,line
                         line.draw()
             
           if n >= maskBegin*refreshRate: #time for mask
-            if n < maskBegin*refreshRate + 4: #show first mask for 4 frames, then show second mask
-                noiseMask.draw()
-            elif n < maskBegin*refreshRate + 8:
-                noiseMask2.draw()  #show second mask
-            else: noiseMask3.draw()
+            howManyFramesIntoMaskInterval  = round(n - maskBegin*refreshRate)
+            whichMask = round( howManyFramesIntoMaskInterval / individualMaskDurFrames ) #increment whichMAsk every maskFramesDur frames
+            whichMask = whichMask % numNoiseMasks #restart with first if no more are available
+            #print("n-maskBegin*refreshRate=",n-maskBegin*refreshRate, " whichMask=",whichMask, "numNoiseMasks = ",numNoiseMasks)
+            noiseMasks[ int(whichMask) ].draw()
 
           if blindspotFill:
               blindspotStim.draw()
@@ -459,7 +460,6 @@ while trialNum < trials.nTotal and expStop==False:
     cueCurrAngleEachRing = list([0]) * numRings
     moveDirection = list( np.random.random_integers(0,1,size=[numRings]) *2 -1 ) #randomise initial direction
     maskBegin = thisTrial['cueLeadTime'] + targetDur
-    maskDur = 0.25
     trialDurTotal = maskBegin + maskDur
     trialDurFrames= int( trialDurTotal*refreshRate )
     
@@ -575,13 +575,13 @@ while trialNum < trials.nTotal and expStop==False:
                     else:
                         logging.info( 'flankers also=' + str( np.around(interframeIntervs[flankingAlso],1) ))
             #end timing check
-    myMouse.setVisible(True)
     passThisTrial=False
     
     # ####### set up and collect responses
     responses = list();  responsesAutopilot = list()
     responses,responsesAutopilot, expStop =  \
             collectResponses(expStop)  #collect responses!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#####
+    myMouse.setVisible(True)
     core.wait(.1)
     if exportImages:  #maybe catch one frame of response
         myWin.saveMovieFrames('exportedImages/frame.png')    
