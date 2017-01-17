@@ -1,6 +1,6 @@
 from __future__ import print_function
-__author__ = """Alex "O." Holcombe, Wei-Ying Chen""" ## double-quotes will be silently removed, single quotes will be left, eg, O'Connor
 from __future__ import division
+__author__ = """Alex "O." Holcombe, Wei-Ying Chen""" ## double-quotes will be silently removed, single quotes will be left, eg, O'Connor
 import helpersAOH
 from psychopy import *
 import psychopy.info
@@ -255,7 +255,7 @@ NextRemindPctDoneText = visual.TextStim(myWin,pos=(-.1, -.4),colorSpace='rgb',co
 NextRemindCountText = visual.TextStim(myWin,pos=(.1, -.5),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
 
 stimList = []
-speeds = np.array( [ 0, 2.0 ]  )   #dont want to go faster than 2 because of blur problem
+speeds = np.array( [ 0,  0  ]  )   #dont want to go faster than 2.0 because of blur problem
 #Set up the factorial design (list of all conditions)
 for numCuesEachRing in [ [1] ]:
  for numObjsEachRing in [ [8] ]: #First entry in each sub-list is num objects in the first ring, second entry is num objects in the second ring
@@ -391,7 +391,7 @@ def oneFrameOfStim(thisTrial,currFrame,maskBegin,cues,stimRings,targetRings,line
             elif n < maskBegin*refreshRate + 8:
                 noiseMask2.draw()  #show second mask
             else: noiseMask3.draw()
-          for line in lines:
+          for line in lines:  #for future experiment, change orientation according to cueCurrAngle so lines appear at cue final destination
             line.draw()
           if blindspotFill:
               blindspotStim.draw()

@@ -271,17 +271,39 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,radialMaskT
             mask=radialMask, # this is a 1-D mask masking the centre, to create an annulus
             radialCycles=0, angularCycles=numObjects,
             angularRes=angRes, interpolate=antialiasGrating, autoLog=autoLogging)
+            
+    #Draw lines (alternative target)
     lines=[]
-    targeti = 1
+    #calculate estimated eccentricity that grating target would be at, if were using grating targets
+    #Find the center of the ones in radialMaskTarget, multiply by grating radius
+    oneIndices = np.where(radialMaskTarget==1)[0]
+    oneIndexMean = np.mean(oneIndices)
+    proportnOfRadius =  oneIndexMean / len(radialMaskTarget)
+    proportnOfRadius += 0.5 * 1/len(radialMaskTarget) #Because grating mask doesn't work with centering, rather it's the beginning or something so need to add to get to center of wedge
+    eccentricity = proportnOfRadius* radius
+    eccentricity = eccentricity / 2 #Don't know why need to divide by 2
+    #print("oneIndexMean = ", oneIndexMean, "proportnOfRadius = ", proportnOfRadius, "eccentricity = ", eccentricity)
+    #Calculate appropriate line width in deg
+    wedgeThicknessFraction = len( np.where(radialMask)[0] )  *    1.0 / len(radialMask)
+    wedgeThickness =  wedgeThicknessFraction*radius/2
+    lineHeight =  wedgeThickness*1.0 #*0.9
+    lineWidth = lineHeight / 4
+    targeti = (targetCorrectedForRingReversal-1)  % numObjects   #dont know why have to subtract 1. Then have to mod numObjects so negative number gets turned into positive
     for i in xrange(0,numObjects):
        angleDeg = -i/numObjects*360  #Negative because I think gratings are drawn in the opposite direction
-       x = cos(angleDeg*pi/180) * radius/3
-       y = sin(angleDeg*pi/180) * radius/3
-       orientation = i/numObjects*360
-       if i == targetCorrectedForRingReversal-1: #dont know why have to subtract 1
-            orientation += 90
-       print("Drawing line ",i," at x=",x, " y=", y)
-       thisLine = visual.Rect(myWin, width=radius/20., height=radius/5., pos=(x,y), ori=orientation, fillColor=[-1,1,-1], lineColor=None, autoLog=autoLogging)
+       tangentialOrientation = i/numObjects*360
+       if __name__ != "__main__": #not self-test
+            halfAngle = 360/numObjects/2 #For some reason target is offset by half the distance between two objects, even though that doesn't happen in helpersAOH self-test
+            angleDeg += halfAngle
+            tangentialOrientation -= halfAngle
+       x = cos(angleDeg*pi/180) * eccentricity
+       y = sin(angleDeg*pi/180) * eccentricity
+       if i == targeti:
+            orientation = tangentialOrientation + 90
+       else:
+            orientation = tangentialOrientation #set randomly
+       print("Drawing line ",i," at x=",x, " y=", y, "targetCorrectedForRingReversal=", targetCorrectedForRingReversal )
+       thisLine = visual.Rect(myWin, width=lineWidth, height=lineHeight, pos=(x,y), ori=orientation, fillColor=[-1,1,-1], lineColor=None, autoLog=autoLogging)
        lines.append(thisLine)
     #CREATING CUE TEXTURE
     #Both inner and outer cue arcs can be drawn in one go via a radial mask
@@ -325,7 +347,7 @@ if __name__ == "__main__": #do self-tests
     #Task will be to judge which thick wedge has the thin wedge offset within it
     numObjects = 6
     gratingTexPix= 1024
-    objToCue=5 #lines work until get to 5
+    objToCue=0 
     radius = 25.
     visibleWedge = [0,360]
     patchAngleThickWedges = 360/numObjects/2
