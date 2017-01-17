@@ -249,7 +249,7 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,radialMaskT
     kludgeFactor = 5
     visibleAngleStart = targetCorrectedForRingReversal*segmentAngle + (segmentAngle-patchAngleThick)/2 - kludgeFactor
     visibleAngleEnd = (visibleAngleStart+kludgeFactor) + patchAngleThick + kludgeFactor  
-    print('targetCorrectedForRingReversal = ',targetCorrectedForRingReversal,' visibleAngleStart=',visibleAngleStart,' visibleAngleEnd=',visibleAngleEnd)
+    #print('targetCorrectedForRingReversal = ',targetCorrectedForRingReversal,' visibleAngleStart=',visibleAngleStart,' visibleAngleEnd=',visibleAngleEnd)
     if targetAngleOffset >= 0:
         visibleAngleEnd -= targetAngleOffset #don't show the part of the thick wedge that would be displaced
     else: #shifted the other way, towards the start, so spillover on that side needs to be avoided by not drawing it
@@ -286,11 +286,11 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,radialMaskT
     #Calculate appropriate line width in deg
     wedgeThicknessFraction = len( np.where(radialMask)[0] )  *    1.0 / len(radialMask)
     wedgeThickness =  wedgeThicknessFraction*radius/2
-    lineHeight =  wedgeThickness*1.0 #*0.9
-    lineWidth = lineHeight / 4
     targeti = (targetCorrectedForRingReversal-1)  % numObjects   #dont know why have to subtract 1. Then have to mod numObjects so negative number gets turned into positive
     for i in xrange(0,numObjects):
-       lineColor = [1,1,1]
+       lineHeight =  wedgeThickness*1.0 #*0.9
+       lineWidth = lineHeight / 4
+       lineColor = [.1,.1,.1]
        angleDeg = -i/numObjects*360  #Negative because I think gratings are drawn in the opposite direction
        tangentialOrientation = i/numObjects*360
        if __name__ != "__main__": #not self-test
@@ -303,11 +303,12 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,radialMaskT
             orientation = tangentialOrientation
             if targetRadialOffset>0:
                 orientation = tangentialOrientation + 90
-                print("Flipping target")
-            print("targetRadialOFfset=",targetRadialOffset)
-            lineColor = [1,1,1]
+            #lineColor = [1,1,1]
        else:
-            orientation = random.random()*360 #tangentialOrientation #set randomly
+            orientation = tangentialOrientation + random.randint(0,1)*90
+       if orientation==tangentialOrientation: #make bigger because harder to see
+            lineHeight *= 1.35 #for tangential, make longer
+
        #print("Drawing line ",i," at x=",x, " y=", y, "targetCorrectedForRingReversal=", targetCorrectedForRingReversal )
        thisLine = visual.Rect(myWin, width=lineWidth, height=lineHeight, pos=(x,y), ori=orientation, fillColor=lineColor, lineColor=None, autoLog=autoLogging)
        lines.append(thisLine)

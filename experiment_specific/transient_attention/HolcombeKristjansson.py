@@ -44,9 +44,9 @@ numRings=2
 radii=[25]   #Need to encode as array for those experiments wherein more than one ring presented 
 
 respRadius=radii[0] #deg
-refreshRate= 60 *1.0;  #160 #set to the framerate of the monitor
+refreshRate= 85 *1.0;  #160 #set to the framerate of the monitor
 useClock = True #as opposed to using frame count, which assumes no frames are ever missed
-fullscr=0; #show in small window (0) or full screen (1) 
+fullscr=1; #show in small window (0) or full screen (1) 
 scrn=0 #which screen to display the stimuli. 0 is home screen, 1 is second screen
 # create a dialog from dictionary 
 infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':True, 'Screen to use':scrn, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': refreshRate }
@@ -67,7 +67,7 @@ refreshRate = infoFirst['Screen refresh rate']
 
 if demo: refreshRate = 60. 
 tokenChosenEachRing= [-999]*numRings
-targetDur = 1.06; #duration of target  (in seconds) 
+targetDur = .01177*2 # .0353 #.06; #duration of target  (in seconds) 
 targetDur = round(targetDur * refreshRate) / refreshRate #discretize to nearest integer number of refreshes
 logging.info(  'targetDur= '+str(targetDur)   )
 
@@ -82,7 +82,7 @@ colors_all = np.array([[1,-1,-1],[1,-1,-1]])
 cueColor = np.array([1,1,1])
 #monitor parameters
 widthPix = 1024 #1440  #monitor width in pixels
-heightPix =640 #768  #900 #monitor height in pixels
+heightPix = 768  #900 #monitor height in pixels
 monitorwidth = 40.5 #28.5 #monitor width in centimeters
 viewdist = 55.; #cm
 pixelperdegree = widthPix/ (atan(monitorwidth/viewdist) /np.pi*180)
@@ -179,6 +179,9 @@ fileNameWithPath = dataDir+'/'+subject+ '_' + expname+timeAndDateStr
 if not demo and not exportImages:
     saveCodeCmd = 'cp \'' + sys.argv[0] + '\' '+ fileNameWithPath + '.py'
     os.system(saveCodeCmd)  #save a copy of the code as it was when that subject was run
+    #also save helpersAOH.py because it has critical drawing commands
+    saveCodeCmd = 'cp \'' + 'helpersAOH.py' + '\' '+ fileNameWithPath + '_helpersAOH.py'
+    os.system(saveCodeCmd)  #save a copy of the code as it was when that subject was run
     logF = logging.LogFile(fileNameWithPath+'.log', 
         filemode='w',#if you set this to 'a' it will append instead of overwriting
         level=logging.INFO)#info, data, warnings, and errors will be sent to this logfile
@@ -255,7 +258,7 @@ NextRemindPctDoneText = visual.TextStim(myWin,pos=(-.1, -.4),colorSpace='rgb',co
 NextRemindCountText = visual.TextStim(myWin,pos=(.1, -.5),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
 
 stimList = []
-speeds = np.array( [ 0,  0  ]  )   #dont want to go faster than 2.0 because of blur problem
+speeds = np.array( [ 0, 2 ]  )   #dont want to go faster than 2.0 because of blur problem
 #Set up the factorial design (list of all conditions)
 for numCuesEachRing in [ [1] ]:
  for numObjsEachRing in [ [8] ]: #First entry in each sub-list is num objects in the first ring, second entry is num objects in the second ring
@@ -382,8 +385,8 @@ def oneFrameOfStim(thisTrial,currFrame,maskBegin,cues,stimRings,targetRings,line
           return cueCurrAngle
 # #######End of function definition that displays the stimuli!!!! #####################################
 
-respPromptText = visual.TextStim(myWin,height=0.09, pos=(0, -.8),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
-respPromptText.setText('Press L if the thin wedge is offset towards the edge of the screen, or G if towards the centre of the screen')
+respPromptText = visual.TextStim(myWin,height=0.04, pos=(0, -.9),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
+respPromptText.setText('Press G if the line is like the rim, or L if it is oriented like a spoke')
 
 def collectResponses(expStop): #Kristjansson&Holcombe cuing experiment
     #draw the possible stimuli
