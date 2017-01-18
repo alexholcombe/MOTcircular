@@ -290,7 +290,7 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,radialMaskT
     for i in xrange(0,numObjects):
        lineHeight =  wedgeThickness*1.0 #*0.9
        lineWidth = lineHeight / 4
-       lineColor = [.1,.1,.1]
+       lineColor = [-.3,-.3,-.3]
        angleDeg = -i/numObjects*360  #Negative because I think gratings are drawn in the opposite direction
        tangentialOrientation = i/numObjects*360
        if __name__ != "__main__": #not self-test
@@ -307,7 +307,8 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,radialMaskT
        else:
             orientation = tangentialOrientation + random.randint(0,1)*90
        if orientation==tangentialOrientation: #make bigger because harder to see
-            lineHeight *= 1.35 #for tangential, make longer
+            lineHeight *= 1.4 #for tangential, make longer
+       else: lineHeight *=.8
 
        #print("Drawing line ",i," at x=",x, " y=", y, "targetCorrectedForRingReversal=", targetCorrectedForRingReversal )
        thisLine = visual.Rect(myWin, width=lineWidth, height=lineHeight, pos=(x,y), ori=orientation, fillColor=lineColor, lineColor=None, autoLog=autoLogging)

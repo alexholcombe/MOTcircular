@@ -243,14 +243,16 @@ else:
 fixationPoint = visual.PatchStim(myWin,colorSpace='rgb',color=(1,1,1),mask='circle',units='pix',size=2,autoLog=autoLogging) #put a point in the center
 
 #create noise post-mask
-maskDur = 0.3; individualMaskDurFrames = 4
+maskDur = 0.5; #0.2
+individualMaskDurFrames = 5
 numChecksAcross = 128
 nearestPowerOfTwo = round( sqrt(numChecksAcross) )**2 #Because textures (created on next line) must be a power of 2
 noiseMasks = []
 numNoiseMasks = int(          ceil(maskDur / ((1/refreshRate)*individualMaskDurFrames))                    )
 for i in xrange(numNoiseMasks):
     whiteNoiseTexture = np.round( np.random.rand(nearestPowerOfTwo,nearestPowerOfTwo) ,0 )   *2.0-1 #Can counterphase flicker  noise texture to create salient flicker if you break fixation
-    noiseMask= visual.PatchStim(myWin, tex=whiteNoiseTexture, size=(widthPix,heightPix), units='pix', interpolate=False, autoLog=autoLogging)
+    noiseMask= visual.PatchStim(myWin, tex=whiteNoiseTexture, 
+        size=(widthPix,heightPix*.9),pos=[0,heightPix*.05], units='pix', interpolate=False, autoLog=autoLogging)
     noiseMasks.append(noiseMask)
 
 respText = visual.TextStim(myWin,pos=(0, -.8),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
@@ -376,9 +378,9 @@ def oneFrameOfStim(thisTrial,currFrame,maskBegin,cues,stimRings,targetRings,line
             
           if n >= maskBegin*refreshRate: #time for mask
             howManyFramesIntoMaskInterval  = round(n - maskBegin*refreshRate)
-            whichMask = round( howManyFramesIntoMaskInterval / individualMaskDurFrames ) #increment whichMAsk every maskFramesDur frames
+            whichMask = int( howManyFramesIntoMaskInterval / individualMaskDurFrames ) #increment whichMAsk every maskFramesDur frames
             whichMask = whichMask % numNoiseMasks #restart with first if no more are available
-            #print("n-maskBegin*refreshRate=",n-maskBegin*refreshRate, " whichMask=",whichMask, "numNoiseMasks = ",numNoiseMasks)
+            #print("individualMaskDurFrames=",individualMaskDurFrames,"howManyFramesIntoMaskInterval=",howManyFramesIntoMaskInterval, " whichMask=",whichMask, "numNoiseMasks = ",numNoiseMasks)
             noiseMasks[ int(whichMask) ].draw()
 
           if blindspotFill:
