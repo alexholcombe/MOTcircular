@@ -1,6 +1,6 @@
 from __future__ import print_function
 from __future__ import division
-__author__ = """Alex "O." Holcombe, Wei-Ying Chen""" ## double-quotes will be silently removed, single quotes will be left, eg, O'Connor
+__author__ = """Alex "O." Holcombe""" ## double-quotes will be silently removed, single quotes will be left, eg, O'Connor
 import helpersAOH
 from psychopy import *
 import psychopy.info
@@ -86,7 +86,7 @@ heightPix = 768  #900 #monitor height in pixels
 monitorwidth = 40.5 #28.5 #monitor width in centimeters
 viewdist = 55.; #cm
 pixelperdegree = widthPix/ (atan(monitorwidth/viewdist) /np.pi*180)
-bgColor = [-1,-1,-1] #black background
+bgColor = [0,0,0] # [-1,-1,-1] #black background
 monitorname = 'testMonitor' # 'mitsubishi' #in psychopy Monitors Center
 if exportImages:
     fullscr=0; scrn=0
@@ -229,17 +229,18 @@ blindspotFill = 0 #a way for people to know if they move their eyes
 if blindspotFill:
     blindspotStim = visual.PatchStim(myWin, tex='none',mask='circle',size=4.8,colorSpace='rgb',color = (-1,1,-1),autoLog=autoLogging) #to outline chosen options
     blindspotStim.setPos([13.1,-2.7]) #AOH, size=4.8; pos=[13.1,-2.7] #DL: [13.3,-0.8]
-fixatnNoise = True
+fixatnNoise = False
 fixSizePix = 20 #make fixation big so flicker more conspicuous
 if fixatnNoise:
     numChecksAcross = fixSizePix/4
     nearestPowerOfTwo = round( sqrt(numChecksAcross) )**2 #Because textures (created on next line) must be a power of 2
-    fixatnNoiseTexture = np.round( np.random.rand(nearestPowerOfTwo,nearestPowerOfTwo) ,0 )   *2.0-1 #Can counterphase flicker  noise texture to create salient flicker if you break fixation
+    fixatnNoiseTexture = np.round( np.random.rand(nearestPowerOfTwo,nearestPowerOfTwo) ,0 )   *2.0-1 
+    #Can counterphase flicker  noise texture to create salient flicker if you break fixation
     fixation= visual.PatchStim(myWin, tex=fixatnNoiseTexture, size=(fixSizePix,fixSizePix), units='pix', mask='circle', interpolate=False, autoLog=autoLogging)
-    fixationBlank= visual.PatchStim(myWin, tex=-1*fixatnNoiseTexture, colorSpace='rgb',mask='circle',size=fixSizePix,units='pix',autoLog=autoLogging)
+    fixationCounterphase= visual.PatchStim(myWin, tex=-1*fixatnNoiseTexture, colorSpace='rgb',mask='circle',size=fixSizePix,units='pix',autoLog=autoLogging)
 else:
     fixation = visual.PatchStim(myWin,tex='none',colorSpace='rgb',color=(.9,.9,.9),mask='circle',units='pix',size=fixSizePix,autoLog=autoLogging)
-    fixationBlank= visual.PatchStim(myWin,tex='none',colorSpace='rgb',color=(-1,-1,-1),mask='circle',units='pix',size=fixSizePix,autoLog=autoLogging)
+    fixationCounterphase= visual.PatchStim(myWin,tex='none',colorSpace='rgb',color=(-1,-1,-1),mask='circle',units='pix',size=fixSizePix,autoLog=autoLogging)
 fixationPoint = visual.PatchStim(myWin,colorSpace='rgb',color=(1,1,1),mask='circle',units='pix',size=2,autoLog=autoLogging) #put a point in the center
 
 #create noise post-mask
@@ -352,7 +353,7 @@ def oneFrameOfStim(thisTrial,currFrame,maskBegin,cues,stimRings,targetRings,line
           if n%2:
             fixation.draw()#flicker fixation on and off at framerate to see when skip frame
           else:
-            fixationBlank.draw()
+            fixationCounterphase.draw()
           fixationPoint.draw()
           numRing = 0 #Haven't implemented capability for multiple rings, although started out that way, got rid of it because complexity
           #draw cue
@@ -389,7 +390,8 @@ def oneFrameOfStim(thisTrial,currFrame,maskBegin,cues,stimRings,targetRings,line
 # #######End of function definition that displays the stimuli!!!! #####################################
 
 respPromptText = visual.TextStim(myWin,height=0.04, pos=(0, -.9),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
-respPromptText.setText('Press G if the line is like the rim, or L if it is oriented like a spoke')
+respPromptText.setText('Press G if the cued circle is black, or L if it is white')
+#respPromptText.setText('Press G if the line is like the rim, or L if it is oriented like a spoke')
 
 def collectResponses(expStop): #Kristjansson&Holcombe cuing experiment
     #draw the possible stimuli
@@ -520,12 +522,12 @@ while trialNum < trials.nTotal and expStop==False:
     myMouse.setVisible(False)
     if eyetracking: 
         tracker.startEyeTracking(trialNum,True,widthPix,heightPix) #start recording with eyetracker
-
+    event.clearEvents() #clear key and mouseclick buffer
     fixatnPeriodFrames = int(   (np.random.rand(1)/2.+0.8)   *refreshRate)  #random interval between x and x+800ms
     for i in range(fixatnPeriodFrames):
         if i%2:
             fixation.draw()
-        else: fixationBlank.draw()
+        else: fixationCounterphase.draw()
         myWin.flip() #clearBuffer=True)  
     trialClock.reset()
     t0=trialClock.getTime(); t=trialClock.getTime()-t0
@@ -544,7 +546,6 @@ while trialNum < trials.nTotal and expStop==False:
             #  event.waitKeys(maxWait=20, keyList=['SPACE','ESCAPE','x'], timeStamped=False) #debugON
             t=trialClock.getTime()-t0; ts.append(t);
     myWin.flip()
-    event.clearEvents(eventType='mouse')
     if eyetracking:
         tracker.stopEyeTracking()
 
@@ -629,7 +630,10 @@ while trialNum < trials.nTotal and expStop==False:
     trialNum+=1
     waitForKeyPressBetweenTrials = False
     if trialNum< trials.nTotal:
-        if trialNum%( max(trials.nTotal/4,1) ) ==0:  #have to enforce at least 1, otherwise will modulus by 0 when #trials is less than 4
+        pctTrialsCompletedForBreak = np.array([.5,.75])  
+        breakTrials = np.round(trials.nTotal*pctTrialsCompletedForBreak)
+        timeForTrialsRemainingMsg = np.any(trialNum==breakTrials)
+        if timeForTrialsRemainingMsg :
             pctDone = round(    (1.0*trialNum) / (1.0*trials.nTotal)*100,  0  )
             NextRemindPctDoneText.setText( str(pctDone) + '% complete' )
             NextRemindCountText.setText( str(trialNum) + ' of ' + str(trials.nTotal)     )
@@ -638,12 +642,12 @@ while trialNum < trials.nTotal and expStop==False:
                 NextRemindPctDoneText.draw()
                 NextRemindCountText.draw()
         waitingForKeypress = False
-        if waitForKeyPressBetweenTrials:
+        if waitForKeyPressBetweenTrials or timeForTrialsRemainingMsg:
             waitingForKeypress=True
             NextText.setText('Press "SPACE" to continue')
             NextText.draw()
             NextRemindCountText.draw()
-            NextRemindText.draw()
+            #NextRemindText.draw()
             myWin.flip(clearBuffer=True) 
         else: core.wait(0.15)
         while waitingForKeypress:
