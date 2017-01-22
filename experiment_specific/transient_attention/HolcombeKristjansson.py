@@ -269,12 +269,13 @@ speeds = np.array( [ 0, 2 ]  )   #dont want to go faster than 2.0 because of blu
 for numCuesEachRing in [ [1] ]:
  for numObjsEachRing in [ [8] ]:# #First entry in each sub-list is num objects in the first ring, second entry is num objects in the second ring
   for cueLeadTime in [0.020, 0.060, 0.125, 0.167, 0.267, 0.467]:  #How long is the cue on prior to the eyeballs appearing
+    for durMotion in [1.5]: #If speed!=0, how long it should go on before moving thing stops and cueLeadTime clock begins
       for speed in speeds:
           for direction in [-1.0,1.0]:
             for targetOffset in [-1.0, 1.0]: 
                 for objToCueQuadrant in range(4):
                     stimList.append( {'numCuesEachRing':numCuesEachRing,'numObjsEachRing':numObjsEachRing,'targetOffset':targetOffset,
-                                                'cueLeadTime':cueLeadTime,'speed':speed,'objToCueQuadrant':objToCueQuadrant,'direction':direction} )
+                                                'cueLeadTime':cueLeadTime,'durMotion':durMotion,'speed':speed,'objToCueQuadrant':objToCueQuadrant,'direction':direction} )
 #set up record of proportion correct in various conditions
 trials = data.TrialHandler(stimList,trialsPerCondition) #constant stimuli method
                                 #        extraInfo= {'subject':subject} )  #will be included in each row of dataframe and wideText. Not working in v1.82.01
@@ -346,9 +347,7 @@ def oneFrameOfStim(thisTrial,currFrame,maskBegin,cues,stimRings,targetRings,line
           if useClock: #Don't count on not missing frames. Use actual time.
             t = clock.getTime()
             n = round(t*refreshRate)
-          else:
-            n = currFrame
-          
+          else: n = currFrame
           if n<rampUpFrames:
                 contrast = cos( -pi+ pi* n/rampUpFrames  ) /2. +.5 #starting from -pi trough of cos, and scale into 0->1 range
           else: contrast = 1
@@ -357,6 +356,7 @@ def oneFrameOfStim(thisTrial,currFrame,maskBegin,cues,stimRings,targetRings,line
           else:
             fixationCounterphase.draw()
           fixationPoint.draw()
+          
           numRing = 0 #Haven't implemented capability for multiple rings, although started out that way, got rid of it because complexity
           #draw cue
           if n< thisTrial['cueLeadTime']*refreshRate: #keep cue moving
