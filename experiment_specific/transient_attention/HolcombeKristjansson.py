@@ -46,10 +46,10 @@ radii=[25]   #Need to encode as array for those experiments wherein more than on
 respRadius=radii[0] #deg
 refreshRate= 85 *1.0;  #160 #set to the framerate of the monitor
 useClock = True #as opposed to using frame count, which assumes no frames are ever missed
-fullscr=1; #show in small window (0) or full screen (1) 
+fullscr=0; #show in small window (0) or full screen (1) 
 scrn=0 #which screen to display the stimuli. 0 is home screen, 1 is second screen
 # create a dialog from dictionary 
-infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':True, 'Screen to use':scrn, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': refreshRate }
+infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':False, 'Screen to use':scrn, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': refreshRate }
 OK = gui.DlgFromDict(dictionary=infoFirst, 
     title='MOT', 
     order=['Autopilot','Check refresh etc', 'Screen to use', 'Screen refresh rate', 'Fullscreen (timing errors if not)'], 
@@ -152,7 +152,7 @@ if checkRefreshEtc and (not demo) and (myWinRes != [widthPix,heightPix]).any():
     msgWrongResolution = 'Instead of desired resolution of '+ str(widthPix)+'x'+str(heightPix)+ ' pixels, screen apparently '+ str(myWinRes[0])+ 'x'+ str(myWinRes[1])
     myDlg.addText(msgWrongResolution, color='Red')
     print(msgWrongResolution); logging.info(msgWrongResolution)
-myDlg.addText('Note: to abort press ESC at a trials response screen', color=[-1.,1.,-1.]) # color='DimGrey') color names stopped working along the way, for unknown reason
+myDlg.addText('Note: to abort press ESC at a trials response screen', color='DimGrey')  #color=(-1.,1.,-1)) # color='DimGrey') color names stopped working along the way, for unknown reason
 myDlg.show()
 if myDlg.OK: #unpack information from dialogue box
    thisInfo = myDlg.data #this will be a list of data returned from each field added in order

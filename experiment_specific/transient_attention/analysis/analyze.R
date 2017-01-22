@@ -12,8 +12,9 @@ dfThis<-read.table(file="../dataRaw/EC_012001_20Jan2017_09-28.txt",header=TRUE) 
 df<-rbind(df,dfThis)
 dfThis<-read.table(file="../dataRaw/EC_022001_20Jan2017_09-49.txt",header=TRUE) #radius doubled
 df<-rbind(df,dfThis)
-
-
+dfThis<-read.table(file="../dataRaw/EC_032001_20Jan2017_16-58.txt",header=TRUE) #linearised monitor, went back to original radius, upgraded Psychopy to 1.84.2
+df<-rbind(df,dfThis)
+table(df$subject,df$timingBlips)
 library(ggplot2)
 g<-ggplot(df,aes(x=cueLeadTime,y=correct,color=factor(speed))) + stat_summary(fun.y=mean,geom="point",alpha=1)
 g<-g+ stat_summary(fun.y=mean,geom="line")
