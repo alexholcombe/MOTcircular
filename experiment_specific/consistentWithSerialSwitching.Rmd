@@ -1,0 +1,54 @@
+---
+title: "temporalLimitsModelling"
+author: "Alex Holcombe"
+date: "May 31, 2015"
+output: html_document
+---
+
+```{r}
+directry<-'/Users/alexh/Documents/attention_tempresltn/multiple\ object\ tracking/ExperimentsWithWing/speedLimitsAndTargetLoad/allAnalysisForPosting/speed-tf-VSS14/data'
+load(paste0(directry,"/thrAll.Rdata"))
+
+````
+
+Check for consistency across the 3 experiments, with serial switching prediction.
+
+```{r}
+minObjForTFregime = 5
+tf <-subset(thrAll,iv=="tf" & criterionNote=="threeQuarters" & numObjects>minObjForTFregime)
+```
+
+```{r}
+library(dplyr)
+ovMean <- tf %>%
+ group_by(exp,numTargets) %>%
+ summarise(thr = mean(thresh))
+
+```
+
+Overall means are 
+```{r}
+ovMean
+```
+
+What is the inter-target visiting time based on these thresholds?
+```{r}
+ovMean$visitTime = (1000/ovMean$thr)/ovMean$numTargets
+ovMean$visitTime <- round(ovMean$visitTime,0)
+ovMean
+```
+
+```{r}
+library(tidyr)
+spread(ovMean, key = numTargets, value = value)
+ovMean$visitTime
+```
+
+
+You can also embed plots, for example:
+
+```{r, echo=FALSE}
+plot(cars)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
