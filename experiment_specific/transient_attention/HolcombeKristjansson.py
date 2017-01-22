@@ -45,11 +45,11 @@ radii=[25]   #Need to encode as array for those experiments wherein more than on
 
 respRadius=radii[0] #deg
 refreshRate= 85 *1.0;  #160 #set to the framerate of the monitor
-useClock = True #as opposed to using frame count, which assumes no frames are ever missed
-fullscr=0; #show in small window (0) or full screen (1) 
+useClock = False #as opposed to using frame count, which assumes no frames are ever missed
+fullscr=1; #show in small window (0) or full screen (1) 
 scrn=0 #which screen to display the stimuli. 0 is home screen, 1 is second screen
 # create a dialog from dictionary 
-infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':False, 'Screen to use':scrn, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': refreshRate }
+infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':True, 'Screen to use':scrn, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': refreshRate }
 OK = gui.DlgFromDict(dictionary=infoFirst, 
     title='MOT', 
     order=['Autopilot','Check refresh etc', 'Screen to use', 'Screen refresh rate', 'Fullscreen (timing errors if not)'], 
@@ -67,7 +67,7 @@ refreshRate = infoFirst['Screen refresh rate']
 
 if demo: refreshRate = 60. 
 tokenChosenEachRing= [-999]*numRings
-targetDur = .01177*2 # .0353 #.06; #duration of target  (in seconds) 
+targetDur =  2*.01177 #.06; #duration of target  (in seconds) 
 targetDur = round(targetDur * refreshRate) / refreshRate #discretize to nearest integer number of refreshes
 logging.info(  'targetDur= '+str(targetDur)   )
 
@@ -152,7 +152,7 @@ if checkRefreshEtc and (not demo) and (myWinRes != [widthPix,heightPix]).any():
     msgWrongResolution = 'Instead of desired resolution of '+ str(widthPix)+'x'+str(heightPix)+ ' pixels, screen apparently '+ str(myWinRes[0])+ 'x'+ str(myWinRes[1])
     myDlg.addText(msgWrongResolution, color='Red')
     print(msgWrongResolution); logging.info(msgWrongResolution)
-myDlg.addText('Note: to abort press ESC at a trials response screen', color='DimGrey')  #color=(-1.,1.,-1)) # color='DimGrey') color names stopped working along the way, for unknown reason
+myDlg.addText('Note: to abort press ESC at a trials response screen', color='DimGrey') # color='DimGrey') color names stopped working along the way, for unknown reason
 myDlg.show()
 if myDlg.OK: #unpack information from dialogue box
    thisInfo = myDlg.data #this will be a list of data returned from each field added in order
@@ -191,7 +191,7 @@ logging.console.setLevel(logging.WARNING) #DEBUG means set the console to receiv
 if refreshRateWrong:
     logging.error(refreshMsg1+refreshMsg2)
 else: logging.info(refreshMsg1+refreshMsg2)
-longerThanRefreshTolerance = 0.27
+longerThanRefreshTolerance = .01 #0.27
 longFrameLimit = round(1000./refreshRate*(1.0+longerThanRefreshTolerance),3) # round(1000/refreshRate*1.5,2)
 msg = 'longFrameLimit='+ str(longFrameLimit) +' Recording trials where one or more interframe interval exceeded this figure '
 logging.info(msg); print(msg)
@@ -239,9 +239,11 @@ if fixatnNoise:
     fixation= visual.PatchStim(myWin, tex=fixatnNoiseTexture, size=(fixSizePix,fixSizePix), units='pix', mask='circle', interpolate=False, autoLog=autoLogging)
     fixationCounterphase= visual.PatchStim(myWin, tex=-1*fixatnNoiseTexture, colorSpace='rgb',mask='circle',size=fixSizePix,units='pix',autoLog=autoLogging)
 else:
-    fixation = visual.PatchStim(myWin,tex='none',colorSpace='rgb',color=(.9,.9,.9),mask='circle',units='pix',size=fixSizePix,autoLog=autoLogging)
+    fixation = visual.PatchStim(myWin,tex='none',colorSpace='rgb',color=(.3,.3,.3),mask='circle',units='pix',size=fixSizePix,autoLog=autoLogging)
     fixationCounterphase= visual.PatchStim(myWin,tex='none',colorSpace='rgb',color=(-1,-1,-1),mask='circle',units='pix',size=fixSizePix,autoLog=autoLogging)
-fixationPoint = visual.PatchStim(myWin,colorSpace='rgb',color=(1,1,1),mask='circle',units='pix',size=2,autoLog=autoLogging) #put a point in the center
+fixationPoint = visual.Circle(myWin, size=6, fillColor=(1,1,1), units='pix', lineColor=None, autoLog=autoLogging)
+fixation.setPos([0,0])
+fixationCounterphase.setPos([0,0])
 
 #create noise post-mask
 maskDur = 0.5; #0.2
@@ -265,7 +267,7 @@ stimList = []
 speeds = np.array( [ 0, 2 ]  )   #dont want to go faster than 2.0 because of blur problem
 #Set up the factorial design (list of all conditions)
 for numCuesEachRing in [ [1] ]:
- for numObjsEachRing in [ [8] ]: #First entry in each sub-list is num objects in the first ring, second entry is num objects in the second ring
+ for numObjsEachRing in [ [8] ]:# #First entry in each sub-list is num objects in the first ring, second entry is num objects in the second ring
   for cueLeadTime in [0.020, 0.060, 0.125, 0.167, 0.267, 0.467]:  #How long is the cue on prior to the eyeballs appearing
       for speed in speeds:
           for direction in [-1.0,1.0]:
@@ -437,6 +439,10 @@ stimClock = core.Clock()
 thisTrial = trials.next()
 ts = list();
 
+highA = sound.Sound('G',octave=5, sampleRate=6000, secs=.4, bits=8)
+highA.setVolume(0.8)
+lowD = sound.Sound('E',octave=3, sampleRate=6000, secs=.4, bits=8)
+       
 if eyetracking:
     if getEyeTrackingFileFromEyetrackingMachineAtEndOfExperiment:
         eyeMoveFile=('EyeTrack_'+subject+'_'+timeAndDateStr+'.EDF')
@@ -524,11 +530,14 @@ while trialNum < trials.nTotal and expStop==False:
         tracker.startEyeTracking(trialNum,True,widthPix,heightPix) #start recording with eyetracker
     event.clearEvents() #clear key and mouseclick buffer
     fixatnPeriodFrames = int(   (np.random.rand(1)/2.+0.8)   *refreshRate)  #random interval between x and x+800ms
+    if (fixatnPeriodFrames-1) % 2 ==0:
+        fixatnPeriodFrames +=1 #make it odd
     for i in range(fixatnPeriodFrames):
         if i%2:
             fixation.draw()
         else: fixationCounterphase.draw()
-        myWin.flip() #clearBuffer=True)  
+        fixationPoint.draw()
+        myWin.flip() #clearBuffer=True)
     trialClock.reset()
     t0=trialClock.getTime(); t=trialClock.getTime()-t0
     ts = list()
@@ -616,17 +625,17 @@ while trialNum < trials.nTotal and expStop==False:
     if len(speedIdxs) ==0:
         print('Apparently current speed= ',thisTrial['speed'],' is not in list of speeds=',speeds, '. Please make sure speeds is a numpy array')
     else: speedIdx = speedIdxs[0]  #extract index, where returns a list with first element array of the indexes
-    numRightWrongEachSpeed[ speedIdx, (correct >0) ] +=1  #if right, add to 1th column, otherwise add to 0th column count
+    numRightWrongEachSpeed[ speedIdx, int(correct >0) ] +=1  #if right, add to 1th column, otherwise add to 0th column count
     
     if feedback and not expStop:
         if correct:
-            highA = sound.Sound('G',octave=5, sampleRate=6000, secs=.8, bits=8)
             highA.setVolume(0.8)
             highA.play()
         else: #incorrect
-            lowD = sound.Sound('E',octave=3, sampleRate=6000, secs=.8, bits=8)
             lowD.setVolume(0.8)
             lowD.play()
+        core.wait(0.3)
+
     trialNum+=1
     waitForKeyPressBetweenTrials = False
     if trialNum< trials.nTotal:
