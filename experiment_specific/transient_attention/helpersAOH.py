@@ -281,7 +281,7 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,radialMaskT
     proportnOfRadius =  oneIndexMean / len(radialMaskTarget)
     proportnOfRadius += 0.5 * 1/len(radialMaskTarget) #Because grating mask doesn't work with centering, rather it's the beginning or something so need to add to get to center of wedge
     eccentricity = proportnOfRadius* radius
-    eccentricity = eccentricity / 2 #Don't know why need to divide by 2
+    eccentricity = eccentricity / 1.97 #Don't know why need to divide by almost 2
     #print("oneIndexMean = ", oneIndexMean, "proportnOfRadius = ", proportnOfRadius, "eccentricity = ", eccentricity)
     #Calculate appropriate line width in deg
     wedgeThicknessFraction = len( np.where(radialMask)[0] )  *    1.0 / len(radialMask)

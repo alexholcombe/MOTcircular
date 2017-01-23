@@ -8,7 +8,7 @@ from psychopy import sound, monitors, logging
 import numpy as np
 import itertools #to calculate all subsets
 from copy import deepcopy
-from math import atan, pi, cos, sin, sqrt, ceil
+from math import atan, pi, cos, sin, sqrt, ceil, atan2
 import time, sys, platform, os, StringIO, gc
 eyetrackingOption = True #Include this so can turn it off, because Psychopy v1.83.01 mistakenly included an old version of pylink which prevents EyelinkEyetrackerForPsychopySUPA3 stuff from importing
 if eyetrackingOption:
@@ -69,7 +69,6 @@ if demo: refreshRate = 60.
 tokenChosenEachRing= [-999]*numRings
 targetDur =  1/refreshRate * 5#2 #duration of target  (in seconds) 
 targetDur = round(targetDur * refreshRate) / refreshRate #discretize to nearest integer number of refreshes
-print('targetDur=',targetDur) #debugAH
 rampUpDur=0
 rampUpFrames = refreshRate*rampUpDur
 ballStdDev = 1.8
@@ -365,15 +364,17 @@ def oneFrameOfStim(thisTrial,currFrame,maskBegin,cues,stimRings,targetRings,line
             angleMove = angleChangeThisFrame(thisTrial, moveDirection, numRing, n, n-1)
             cues[numRing].setOri(angleMove,operation='+',log=autoLogging)
             for line in lines: #move their eventual position along with the cue.  cos(theta) = 
-                print("pos=",line.pos)
+                eccentricity = sqrt( line.pos[0]**2 + line.pos[1]**2 )
                 currLineAngle =  atan2(line.pos[1],line.pos[0])    /pi*180
-                currLineAngle += angleMove
+                currLineAngle -= angleMove #subtraction because grating angles go opposite direction to non-gratings
                 x = cos(currLineAngle/180*pi) * eccentricity
                 y = sin(currLineAngle/180*pi) * eccentricity
-                line.draw() #debugAH see if it's moving
+                line.setPos( [x,y], log=autoLogging)
+                #line.draw() #debug, see if it's moving
           else: pass #Time for target, cue will now be stationary
           cueCurrAngle = cues[numRing].ori
           for cue in cues: cue.draw()
+          
           #check whether time to draw target and distractor objects
           timeTargetOnset = thisTrial['cueLeadTime']
           if thisTrial['speed']>0:
@@ -392,8 +393,7 @@ def oneFrameOfStim(thisTrial,currFrame,maskBegin,cues,stimRings,targetRings,line
                     print("drawing Lines!")
                     for line in lines:  #for future experiment, change orientation according to cueCurrAngle so lines appear at cue final destination
                         line.draw()
-          if n==1: #debugAH
-            print("n=",n,"timeTargetOnset = ",timeTargetOnset, "timeTargetOnset frames = ",timeTargetOnset*refreshRate, "cueLeadTime=",thisTrial['cueLeadTime'])
+          #if n==1:   print("n=",n,"timeTargetOnset = ",timeTargetOnset, "timeTargetOnset frames = ",timeTargetOnset*refreshRate, "cueLeadTime=",thisTrial['cueLeadTime']) #debugAH
           if n >= round(maskBegin*refreshRate): #time for mask
             howManyFramesIntoMaskInterval  = round(n - maskBeginTime*refreshRate)
             whichMask = int( howManyFramesIntoMaskInterval / individualMaskDurFrames ) #increment whichMAsk every maskFramesDur frames
@@ -558,7 +558,7 @@ while trialNum < trials.nTotal and expStop==False:
     t0=trialClock.getTime(); t=trialClock.getTime()-t0
     ts = list()
     stimClock.reset()
-    print("trialDurFrames=",trialDurFrames,"trialDur=",trialDurFrames/refreshRate) #debugAH
+    #print("trialDurFrames=",trialDurFrames,"trialDur=",trialDurFrames/refreshRate) #debug
     for n in range(trialDurFrames): #this is the loop for this trial's stimulus!
             offsetXYeachRing=[[0,0],[0,0]]
             cueAngle = \
