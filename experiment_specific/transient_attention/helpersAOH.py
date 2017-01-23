@@ -289,7 +289,7 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,radius,radialMask,radialMaskT
     targeti = (targetCorrectedForRingReversal-1)  % numObjects   #dont know why have to subtract 1. Then have to mod numObjects so negative number gets turned into positive
     targetFillColors = np.array([[.9,.9,.9],[-.8,-.8,-.8]]) #  [-.3,-.3,-.3]
     for i in xrange(0,numObjects):
-       lineHeight =  wedgeThickness*1.0 #*0.9
+       lineHeight =  wedgeThickness * 3.0# *1.0 
        lineWidth = lineHeight / 4
        angleDeg = -i/numObjects*360  #Negative because I think gratings are drawn in the opposite direction
        tangentialOrientation = i/numObjects*360

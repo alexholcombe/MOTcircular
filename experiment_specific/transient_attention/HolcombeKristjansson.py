@@ -44,7 +44,7 @@ numRings=2
 radii=[25]   #Need to encode as array for those experiments wherein more than one ring presented 
 
 respRadius=radii[0] #deg
-refreshRate= 85 *1.0;  #160 #set to the framerate of the monitor
+refreshRate= 60 #85 #set to the framerate of the monitor
 useClock = False #as opposed to using frame count, which assumes no frames are ever missed
 fullscr=1; #show in small window (0) or full screen (1) 
 scrn=0 #which screen to display the stimuli. 0 is home screen, 1 is second screen
@@ -67,10 +67,9 @@ refreshRate = infoFirst['Screen refresh rate']
 
 if demo: refreshRate = 60. 
 tokenChosenEachRing= [-999]*numRings
-targetDur =  2*.01177 #.06; #duration of target  (in seconds) 
+targetDur =  1/refreshRate * 5#2 #duration of target  (in seconds) 
 targetDur = round(targetDur * refreshRate) / refreshRate #discretize to nearest integer number of refreshes
-logging.info(  'targetDur= '+str(targetDur)   )
-
+print('targetDur=',targetDur) #debugAH
 rampUpDur=0
 rampUpFrames = refreshRate*rampUpDur
 ballStdDev = 1.8
@@ -246,7 +245,7 @@ fixation.setPos([0,0])
 fixationCounterphase.setPos([0,0])
 
 #create noise post-mask
-maskDur = 0.5; #0.2
+maskDur = 0 #0.5; 
 individualMaskDurFrames = 5
 numChecksAcross = 128
 nearestPowerOfTwo = round( sqrt(numChecksAcross) )**2 #Because textures (created on next line) must be a power of 2
@@ -264,11 +263,11 @@ NextRemindPctDoneText = visual.TextStim(myWin,pos=(-.1, -.4),colorSpace='rgb',co
 NextRemindCountText = visual.TextStim(myWin,pos=(.1, -.5),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
 
 stimList = []
-speeds = np.array( [ 0, 2 ]  )   #dont want to go faster than 2.0 because of blur problem
+speeds = np.array([2]) #np.array( [ 0, 2 ]  )   #dont want to go faster than 2.0 because of blur problem
 #Set up the factorial design (list of all conditions)
 for numCuesEachRing in [ [1] ]:
- for numObjsEachRing in [ [8] ]:# #First entry in each sub-list is num objects in the first ring, second entry is num objects in the second ring
-  for cueLeadTime in [0.020, 0.060, 0.125, 0.167, 0.267, 0.467]:  #How long is the cue on prior to the eyeballs appearing
+ for numObjsEachRing in [ [4] ]:#8 #First entry in each sub-list is num objects in the first ring, second entry is num objects in the second ring
+  for cueLeadTime in [.467]: # [0.020, 0.060, 0.125, 0.167, 0.267, 0.467]:  #How long is the cue on prior to the target and distractors appearing
     for durMotion in [1.5]: #If speed!=0, how long it should go on before moving thing stops and cueLeadTime clock begins
       for speed in speeds:
           for direction in [-1.0,1.0]:
@@ -359,28 +358,44 @@ def oneFrameOfStim(thisTrial,currFrame,maskBegin,cues,stimRings,targetRings,line
           
           numRing = 0 #Haven't implemented capability for multiple rings, although started out that way, got rid of it because complexity
           #draw cue
-          if n< thisTrial['cueLeadTime']*refreshRate: #keep cue moving
+          cueMovementEndTime = 0
+          if thisTrial['speed']:
+            cueMovementEndTime += thisTrial['durMotion']
+          if n< cueMovementEndTime*refreshRate: #cue movement interval
             angleMove = angleChangeThisFrame(thisTrial, moveDirection, numRing, n, n-1)
             cues[numRing].setOri(angleMove,operation='+',log=autoLogging)
+            for line in lines: #move their eventual position along with the cue.  cos(theta) = 
+                print("pos=",line.pos)
+                currLineAngle =  atan2(line.pos[1],line.pos[0])    /pi*180
+                currLineAngle += angleMove
+                x = cos(currLineAngle/180*pi) * eccentricity
+                y = sin(currLineAngle/180*pi) * eccentricity
+                line.draw() #debugAH see if it's moving
           else: pass #Time for target, cue will now be stationary
           cueCurrAngle = cues[numRing].ori
           for cue in cues: cue.draw()
-          #draw target
-          if n >= thisTrial['cueLeadTime']*refreshRate: #also draw rings
+          #check whether time to draw target and distractor objects
+          timeTargetOnset = thisTrial['cueLeadTime']
+          if thisTrial['speed']>0:
+            timeTargetOnset += thisTrial['durMotion']
+          if n >= round(timeTargetOnset*refreshRate): #draw target and distractor objects
                 linesInsteadOfArcTargets = True
+                #draw distractor objects
                 if not linesInsteadOfArcTargets:
                     for stimRing in stimRings: 
                         stimRing.draw()
-                #target.setOri(angleMove,operation='+',log=autoLogging)
+                #draw target(s)
                 if not linesInsteadOfArcTargets:
                     for targetRing in targetRings:
                         targetRing.draw()  #Probably just the new background (to replace the displaced target, and the target
                 else:
+                    print("drawing Lines!")
                     for line in lines:  #for future experiment, change orientation according to cueCurrAngle so lines appear at cue final destination
                         line.draw()
-            
-          if n >= maskBegin*refreshRate: #time for mask
-            howManyFramesIntoMaskInterval  = round(n - maskBegin*refreshRate)
+          if n==1: #debugAH
+            print("n=",n,"timeTargetOnset = ",timeTargetOnset, "timeTargetOnset frames = ",timeTargetOnset*refreshRate, "cueLeadTime=",thisTrial['cueLeadTime'])
+          if n >= round(maskBegin*refreshRate): #time for mask
+            howManyFramesIntoMaskInterval  = round(n - maskBeginTime*refreshRate)
             whichMask = int( howManyFramesIntoMaskInterval / individualMaskDurFrames ) #increment whichMAsk every maskFramesDur frames
             whichMask = whichMask % numNoiseMasks #restart with first if no more are available
             #print("individualMaskDurFrames=",individualMaskDurFrames,"howManyFramesIntoMaskInterval=",howManyFramesIntoMaskInterval, " whichMask=",whichMask, "numNoiseMasks = ",numNoiseMasks)
@@ -469,7 +484,8 @@ while trialNum < trials.nTotal and expStop==False:
     #angleIniEachRing = list( [0] ); print('HEY angle not randomised')
     cueCurrAngleEachRing = list([0]) * numRings
     moveDirection = list( np.random.random_integers(0,1,size=[numRings]) *2 -1 ) #randomise initial direction
-    maskBegin = thisTrial['cueLeadTime'] + targetDur
+    durExtra = thisTrial['durMotion'] if thisTrial['speed'] else 0 #in motion condition, cue moves for awhile before cue lead time clock starts
+    maskBegin = thisTrial['cueLeadTime'] + targetDur + durExtra
     trialDurTotal = maskBegin + maskDur
     trialDurFrames= int( trialDurTotal*refreshRate )
     
@@ -497,13 +513,13 @@ while trialNum < trials.nTotal and expStop==False:
         msg='Can"t start outer arc at fraction='+str(cueOuterArcDesiredFraction)
         logging.error(msg); print(msg)
     fractionResolution = .02     #Quantisation of possible positions of cue arc
-    binsNeeded = 1.0 / fractionResolution
+    binsNeeded = 1.0 / fractionResolution 
     
     #setup cue parameters
-    cueRadialMask = np.zeros( binsNeeded )
+    cueRadialMask = np.zeros( int(binsNeeded) )
     #For the cueRadialMask, want everything zero except just inside and outside of the wedges.
-    innerArcCenterPos = round( binsNeeded*cueInnerArcDesiredFraction )
-    outerArcCenterPos = round( binsNeeded*cueOuterArcDesiredFraction )
+    innerArcCenterPos = int( round( binsNeeded*cueInnerArcDesiredFraction ) )
+    outerArcCenterPos = int( round( binsNeeded*cueOuterArcDesiredFraction ) )
     cueRadialMask[ innerArcCenterPos ] = 1
     cueRadialMask[ outerArcCenterPos ] = 1
     innerArcActualFraction = innerArcCenterPos*1.0/len(cueRadialMask)
@@ -542,6 +558,7 @@ while trialNum < trials.nTotal and expStop==False:
     t0=trialClock.getTime(); t=trialClock.getTime()-t0
     ts = list()
     stimClock.reset()
+    print("trialDurFrames=",trialDurFrames,"trialDur=",trialDurFrames/refreshRate) #debugAH
     for n in range(trialDurFrames): #this is the loop for this trial's stimulus!
             offsetXYeachRing=[[0,0],[0,0]]
             cueAngle = \
