@@ -9,7 +9,7 @@ import numpy as np
 import itertools #to calculate all subsets
 from copy import deepcopy
 from math import atan, pi, cos, sin, sqrt, ceil, atan2
-import time, sys, platform, os, StringIO, gc
+import time, sys, platform, os, StringIO, gc, random
 eyetrackingOption = True #Include this so can turn it off, because Psychopy v1.83.01 mistakenly included an old version of pylink which prevents EyelinkEyetrackerForPsychopySUPA3 stuff from importing
 if eyetrackingOption:
     from EyelinkEyetrackerForPsychopySUPA3 import Tracker_EyeLink #Chris Fajou integration
@@ -262,12 +262,12 @@ NextRemindPctDoneText = visual.TextStim(myWin,pos=(-.1, -.4),colorSpace='rgb',co
 NextRemindCountText = visual.TextStim(myWin,pos=(.1, -.5),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
 
 stimList = []
-speeds = np.array([2]) #np.array( [ 0, 2 ]  )   #dont want to go faster than 2.0 because of blur problem
+speeds = np.array([1]) #np.array( [ 0, 2 ]  )   #dont want to go faster than 2 rps because of blur problem
 #Set up the factorial design (list of all conditions)
 for numCuesEachRing in [ [1] ]:
  for numObjsEachRing in [ [4] ]:#8 #First entry in each sub-list is num objects in the first ring, second entry is num objects in the second ring
-  for cueLeadTime in [.467]: # [0.020, 0.060, 0.125, 0.167, 0.267, 0.467]:  #How long is the cue on prior to the target and distractors appearing
-    for durMotion in [1.5]: #If speed!=0, how long it should go on before moving thing stops and cueLeadTime clock begins
+  for cueLeadTime in [0.020, 0.060, 0.125, 0.167, 0.267, 0.467]:  #How long is the cue on prior to the target and distractors appearing
+    for durMotion in [.5]:  #If speed!=0, how long should cue(s) move before stopping and cueLeadTime clock begins
       for speed in speeds:
           for direction in [-1.0,1.0]:
             for targetOffset in [-1.0, 1.0]: 
@@ -337,15 +337,16 @@ def xyThisFrameThisAngle(basicShape, radiiThisTrial, numRing, angle, thisFrameN,
     return x,y
 
 def angleChangeThisFrame(thisTrial, moveDirection, numRing, thisFrameN, lastFrameN):
-    angleMove = moveDirection[numRing]*thisTrial['direction']*thisTrial['speed']*2*pi*(thisFrameN-lastFrameN)/refreshRate
+    #angleMove is deg of the circle
+    #speed is in units of revolutions per second
+    angleMovePerFrame = moveDirection[numRing]*thisTrial['direction']*thisTrial['speed']*360/refreshRate
+    angleMove = angleMovePerFrame*(thisFrameN-lastFrameN)
+    #print("angleMovePerFrame = ",angleMovePerFrame,"angleMove=",angleMove)
     return angleMove
 
-def oneFrameOfStim(thisTrial,currFrame,maskBegin,cues,stimRings,targetRings,lines,clock,useClock,offsetXYeachRing):
+def oneFrameOfStim(thisTrial,currFrame,lastFrame,maskBegin,cues,stimRings,targetRings,lines,offsetXYeachRing):
 #defining a function to draw each frame of stim. So can call second time for tracking task response phase
-          if useClock: #Don't count on not missing frames. Use actual time.
-            t = clock.getTime()
-            n = round(t*refreshRate)
-          else: n = currFrame
+          n=currFrame
           if n<rampUpFrames:
                 contrast = cos( -pi+ pi* n/rampUpFrames  ) /2. +.5 #starting from -pi trough of cos, and scale into 0->1 range
           else: contrast = 1
@@ -360,18 +361,20 @@ def oneFrameOfStim(thisTrial,currFrame,maskBegin,cues,stimRings,targetRings,line
           cueMovementEndTime = 0
           if thisTrial['speed']:
             cueMovementEndTime += thisTrial['durMotion']
-          if n< cueMovementEndTime*refreshRate: #cue movement interval
-            angleMove = angleChangeThisFrame(thisTrial, moveDirection, numRing, n, n-1)
+
+          if n<= cueMovementEndTime*refreshRate: #cue movement interval. Afterwards, cue stationary
+            angleMove = angleChangeThisFrame(thisTrial, moveDirection, numRing, n, lastFrame)
             cues[numRing].setOri(angleMove,operation='+',log=autoLogging)
-            for line in lines: #move their eventual position along with the cue.  cos(theta) = 
-                eccentricity = sqrt( line.pos[0]**2 + line.pos[1]**2 )
-                currLineAngle =  atan2(line.pos[1],line.pos[0])    /pi*180
+            for line in lines: #move their (eventual) position along with the cue.  
+                eccentricity = sqrt( line.pos[0]**2 + line.pos[1]**2 ) #reverse calculate its eccentricity
+                currLineAngle =  atan2(line.pos[1],line.pos[0])    /pi*180  #calculate its current angle
                 currLineAngle -= angleMove #subtraction because grating angles go opposite direction to non-gratings
                 x = cos(currLineAngle/180*pi) * eccentricity
                 y = sin(currLineAngle/180*pi) * eccentricity
-                line.setPos( [x,y], log=autoLogging)
+                line.setPos( [x,y], log=autoLogging)   
                 #line.draw() #debug, see if it's moving
-          else: pass #Time for target, cue will now be stationary
+            #print("cueMovementEndTime=",cueMovementEndTime,"n=",n,", in sec=",n/refreshRate, "currLineAngle=",currLineAngle, "cues ori=",cues[numRing].ori) #debugAH
+
           cueCurrAngle = cues[numRing].ori
           for cue in cues: cue.draw()
           
@@ -390,8 +393,7 @@ def oneFrameOfStim(thisTrial,currFrame,maskBegin,cues,stimRings,targetRings,line
                     for targetRing in targetRings:
                         targetRing.draw()  #Probably just the new background (to replace the displaced target, and the target
                 else:
-                    print("drawing Lines!")
-                    for line in lines:  #for future experiment, change orientation according to cueCurrAngle so lines appear at cue final destination
+                    for line in lines:  
                         line.draw()
           #if n==1:   print("n=",n,"timeTargetOnset = ",timeTargetOnset, "timeTargetOnset frames = ",timeTargetOnset*refreshRate, "cueLeadTime=",thisTrial['cueLeadTime']) #debugAH
           if n >= round(maskBegin*refreshRate): #time for mask
@@ -559,11 +561,18 @@ while trialNum < trials.nTotal and expStop==False:
     ts = list()
     stimClock.reset()
     #print("trialDurFrames=",trialDurFrames,"trialDur=",trialDurFrames/refreshRate) #debug
+    offsetXYeachRing=[[0,0],[0,0]]
+    lastFrame = 0 #only used if useClock = True
     for n in range(trialDurFrames): #this is the loop for this trial's stimulus!
-            offsetXYeachRing=[[0,0],[0,0]]
+            if useClock: #Don't count on not missing frames. Use actual time.
+                t = stimClock.getTime()
+                currFrame = round(t*refreshRate)
+            else: currFrame = n
+            
             cueAngle = \
-                        oneFrameOfStim(thisTrial,n,maskBegin,[cueDoubleRing],[thickWedgesRing,thinWedgesRing],
-                                                     [thickWedgesRingCopy,targetRing],lines,stimClock,useClock,offsetXYeachRing) #actual drawing of stimuli
+                        oneFrameOfStim(thisTrial,currFrame,lastFrame,maskBegin,[cueDoubleRing],[thickWedgesRing,thinWedgesRing],
+                                                     [thickWedgesRingCopy,targetRing],lines,offsetXYeachRing) #actual drawing of stimuli
+            lastFrame = currFrame #only used if useClock=True
             if exportImages:
                 myWin.getMovieFrame(buffer='back') #for later saving
                 framesSaved +=1
