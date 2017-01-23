@@ -244,7 +244,7 @@ fixation.setPos([0,0])
 fixationCounterphase.setPos([0,0])
 
 #create noise post-mask
-maskDur = 0 #0.5; 
+maskDur = 0.5; 
 individualMaskDurFrames = 5
 numChecksAcross = 128
 nearestPowerOfTwo = round( sqrt(numChecksAcross) )**2 #Because textures (created on next line) must be a power of 2
@@ -397,7 +397,7 @@ def oneFrameOfStim(thisTrial,currFrame,lastFrame,maskBegin,cues,stimRings,target
                         line.draw()
           #if n==1:   print("n=",n,"timeTargetOnset = ",timeTargetOnset, "timeTargetOnset frames = ",timeTargetOnset*refreshRate, "cueLeadTime=",thisTrial['cueLeadTime']) #debugAH
           if n >= round(maskBegin*refreshRate): #time for mask
-            howManyFramesIntoMaskInterval  = round(n - maskBeginTime*refreshRate)
+            howManyFramesIntoMaskInterval  = round(n - maskBegin*refreshRate)
             whichMask = int( howManyFramesIntoMaskInterval / individualMaskDurFrames ) #increment whichMAsk every maskFramesDur frames
             whichMask = whichMask % numNoiseMasks #restart with first if no more are available
             #print("individualMaskDurFrames=",individualMaskDurFrames,"howManyFramesIntoMaskInterval=",howManyFramesIntoMaskInterval, " whichMask=",whichMask, "numNoiseMasks = ",numNoiseMasks)
