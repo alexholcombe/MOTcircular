@@ -172,6 +172,11 @@ def constructRingsAsGratings(myWin,numRings,radii,ringRadialMaskEachRing,numObje
     ######### End constructRingAsGrating ###########################################################
 #########################################
 
+def gratingAngleToEuclidean(theta):
+    euclidean = -1.0 * theta #because grating angles are clockwise and euclidean is counter-clockwise
+    euclidean += 90 #because gratings start with 0 at North and Euclidean 0 is East
+    return euclidean
+
 def constructThickThinWedgeRingsTargetAndCue(myWin,initialAngle,radius,radialMask,radialMaskTarget,cueRadialMask,visibleWedge,numObjects,patchAngleThick,patchAngleThin,bgColor,
                                             thickWedgeColor,thinWedgeColor,targetAngleOffset,targetRadialOffset,gratingTexPix,cueColor,objToCue,ppLog):
     #Construct a grating formed of the colors in order of stimColorIdxsOrder
@@ -247,11 +252,11 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,initialAngle,radius,radialMas
     #So, overdraw a single segment of the grating by using visibleWedge
     #angularPhase = 
     #I need to not show the part of the thick wedge that will be displaced, while showing enough of thick wedge to overdraw previous location of thin wedge
-    targetCorrectedForRingReversal = numObjects-1 - objToCue #grating seems to be laid out in opposite direction than blobs, this fixes postCueNumBlobsAway so positive is in direction of motion
-    kludgeFactor = 5
-    visibleAngleStart = targetCorrectedForRingReversal*segmentAngle + (segmentAngle-patchAngleThick)/2 - kludgeFactor
-    visibleAngleEnd = (visibleAngleStart+kludgeFactor) + patchAngleThick + kludgeFactor  
-    #print('targetCorrectedForRingReversal = ',targetCorrectedForRingReversal,' visibleAngleStart=',visibleAngleStart,' visibleAngleEnd=',visibleAngleEnd)
+    targetCorrectedForRingReversal = objToCue #numObjects-1 - objToCue #grating seems to be laid out in opposite direction than blobs, this fixes postCueNumBlobsAway so positive is in direction of motion
+    kludgeWiden= 5
+    visibleAngleStart = targetCorrectedForRingReversal*segmentAngle + (segmentAngle-patchAngleThick)/2 - kludgeWiden
+    visibleAngleEnd = (visibleAngleStart+kludgeWiden) + patchAngleThick + kludgeWiden  
+    print('targetCorrectedForRingReversal = ',targetCorrectedForRingReversal,'targetRing initialAngle=', initialAngle, ' visibleAngleStart=',visibleAngleStart,' visibleAngleEnd=',visibleAngleEnd)
     if targetAngleOffset >= 0:
         visibleAngleEnd -= targetAngleOffset #don't show the part of the thick wedge that would be displaced
     else: #shifted the other way, towards the start, so spillover on that side needs to be avoided by not drawing it
@@ -289,28 +294,31 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,initialAngle,radius,radialMas
     #Calculate appropriate line width in deg
     wedgeThicknessFraction = len( np.where(radialMask)[0] )  *    1.0 / len(radialMask)
     wedgeThickness =  wedgeThicknessFraction*radius/2
-    targeti = (targetCorrectedForRingReversal-1)  % numObjects   #dont know why have to subtract 1. Then have to mod numObjects so negative number gets turned into positive
+    targeti = targetCorrectedForRingReversal % numObjects # (targetCorrectedForRingReversal-1)  % numObjects   #dont know why have to subtract 1. Then have to mod numObjects so negative number gets turned into positive
     targetFillColors = np.array([[.9,.9,.9],[-.8,-.8,-.8]]) #  [-.3,-.3,-.3]
     for i in xrange(0,numObjects):
        lineHeight =  wedgeThickness * 1.0# *1.0 
        lineWidth = lineHeight / 10
-       angleDeg = -initialAngle #+halfAngle
-       angleDeg += -i/numObjects*360  #Negative because I think gratings are drawn in the opposite direction
+       angleDeg = initialAngle
+       angleDeg+= (visibleAngleStart+visibleAngleEnd)/2  #because when gratings are drawn, there's this additional offset for which bit of the grating is visible
+       angleDeg += i/numObjects*360  
        tangentialOrientation = i/numObjects*360
        if __name__ != "__main__": #not self-test
             halfAngle = 360/numObjects/2 #For some reason target is offset by half the distance between two objects, even though that doesn't happen in helpersAOH self-test
             tangentialOrientation += halfAngle
-       x = cos(angleDeg*pi/180) * eccentricity
-       y = sin(angleDeg*pi/180) * eccentricity
+          
+       x = cos(   gratingAngleToEuclidean(angleDeg)*pi/180      ) * eccentricity
+       y = sin(    gratingAngleToEuclidean(angleDeg)*pi/180      ) * eccentricity
        lineColor = targetFillColors[0]
        if i == targeti:
+            print("line targeti=", targeti, " angleDeg=",angleDeg, "Euclidean angle=",gratingAngleToEuclidean(angleDeg) )
             orientation = tangentialOrientation
             if targetRadialOffset<0: #it's always one of two values, a negative one and a positive one
                 #orientation = tangentialOrientation + 90
                 lineColor = targetFillColors[1] #opposite color
        else:
             #orientation = tangentialOrientation + random.randint(0,1)*90
-            lineColor = [-1,1,-1] # targetFillColors[ random.randint(0,1) ]
+            lineColor = targetFillColors[ random.randint(0,1) ]
        #if orientation==tangentialOrientation: #make bigger because harder to see
        #     lineHeight *= 1.4 #for tangential, make longer
        #else: lineHeight *=.8
@@ -332,10 +340,10 @@ def constructThickThinWedgeRingsTargetAndCue(myWin,initialAngle,radius,radialMas
     #draw cue
     visibleAngleStart = 0; visibleAngleEnd=360
     if objToCue>=0:
-        objToCueCorrectdForRingReversal = numObjects-1 - objToCue #grating seems to be laid out in opposite direction than blobs, this fixes postCueNumBlobsAway so positive is in direction of motion
+        objToCueCorrectdForRingReversal = objToCue #numObjects-1 - objToCue #grating seems to be laid out in opposite direction than blobs, this fixes postCueNumBlobsAway so positive is in direction of motion
         visibleAngleStart = objToCueCorrectdForRingReversal*segmentAngle + (segmentAngle-patchAngleThick)/2
         visibleAngleEnd = visibleAngleStart + patchAngleThick
-        #print('objToCueCorrectdForRingReversal = ',objToCueCorrectdForRingReversal,' visibleAngleStart=',visibleAngleStart,' visibleAngleEnd=',visibleAngleEnd)
+        print('objToCueCorrectdForRingReversal = ',objToCueCorrectdForRingReversal,' visibleAngleStart=',visibleAngleStart,' visibleAngleEnd=',visibleAngleEnd)
 
     cueRing = visual.RadialStim(myWin, tex=cueTex, color=[1,1,1],size=radius, #cueTexInner is white. Only one sector of it shown by mask
                     visibleWedge=[visibleAngleStart,visibleAngleEnd],
@@ -361,7 +369,8 @@ if __name__ == "__main__": #do self-tests
     widthPix = myWin.size[0]; heightPix = myWin.size[1]
 
     #Task will be to judge which thick wedge has the thin wedge offset within it
-    numObjects = 4
+    numObjects = 8
+    initialAngle =random.random()*360
     gratingTexPix= 1024
     objToCue=0 
     radius = 25.
@@ -401,7 +410,6 @@ if __name__ == "__main__": #do self-tests
     cueRadialMask[ outerArcCenterPos ] = 1
     print('cueInnerArcDesiredFraction = ',cueInnerArcDesiredFraction, ' actual = ', innerArcCenterPos*1.0/len(cueRadialMask) )
     print('cueOuterArcDesiredFraction = ',cueOuterArcDesiredFraction, ' actual = ', outerArcCenterPos*1.0/len(cueRadialMask) )
-    initialAngle =0
     targetAngleOffset = 0; targetRadialOffset = -1
     thickWedgesRing,thickWedgesRingCopy, thinWedgesRing, targetRing, cueRing, lines =  \
         constructThickThinWedgeRingsTargetAndCue(myWin,initialAngle,radius,radialMask,radialMaskThinWedge,cueRadialMask,visibleWedge,numObjects,

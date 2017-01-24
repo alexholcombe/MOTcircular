@@ -243,7 +243,7 @@ fixation.setPos([0,0])
 fixationCounterphase.setPos([0,0])
 
 #create noise post-mask
-maskDur = 0 #0.5; 
+maskDur = 0.5 
 individualMaskDurFrames = 5
 numChecksAcross = 128
 nearestPowerOfTwo = round( sqrt(numChecksAcross) )**2 #Because textures (created on next line) must be a power of 2
@@ -261,10 +261,10 @@ NextRemindPctDoneText = visual.TextStim(myWin,pos=(-.1, -.4),colorSpace='rgb',co
 NextRemindCountText = visual.TextStim(myWin,pos=(.1, -.5),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
 
 stimList = []
-speeds = np.array([0,0]) # np.array( [ 0, 1]  )   #dont want to go faster than 2 rps because of blur problem
+speeds = np.array([0,1]) # np.array( [ 0, 1]  )   #dont want to go faster than 2 rps because of blur problem
 #Set up the factorial design (list of all conditions)
 for numCuesEachRing in [ [1] ]:
- for numObjsEachRing in [ [8] ]:#8 #First entry in each sub-list is num objects in the first ring, second entry is num objects in the second ring
+ for numObjsEachRing in [ [2] ]:#8 #First entry in each sub-list is num objects in the first ring, second entry is num objects in the second ring
   for cueLeadTime in [0.267 ]:#..02, 0.060, 0.125, 0.167, 0.267, 0.467]:  #How long is the cue on prior to the target and distractors appearing
     for durMotionMin in [.45]:  #If speed!=0, how long should cue(s) move before stopping and cueLeadTime clock begins
       durMotion = durMotionMin + random.random()*.2
@@ -535,7 +535,7 @@ while trialNum < trials.nTotal and expStop==False:
         print('cueInnerArcDesiredFraction of object radius = ',cueInnerArcDesiredFraction, ' actual = ', innerArcActualFraction, ' exceeding tolerance of ',closeEnough )
     if abs(cueOuterArcDesiredFraction - outerArcActualFraction) > closeEnough:
         print('cueOuterArcDesiredFraction of object radius = ',cueOuterArcDesiredFraction, ' actual = ', outerArcActualFraction, ' exceeding tolerance of ',closeEnough)
-    initialAngle = 45# random.random()*360.
+    initialAngle = random.random()*360.
     thickWedgesRing,thickWedgesRingCopy, thinWedgesRing, targetRing, cueDoubleRing, lines=  constructThickThinWedgeRingsTargetAndCue(myWin, \
             initialAngle,radii[0],radialMask,radialMaskThinWedge,
             cueRadialMask,visibleWedge,numObjects,patchAngleThickWedges,patchAngleThickWedges,
