@@ -12,7 +12,7 @@ import time, sys, platform, os, StringIO, gc, random
 eyetrackingOption = True #Include this so can turn it off, because Psychopy v1.83.01 mistakenly included an old version of pylink which prevents EyelinkEyetrackerForPsychopySUPA3 stuff from importing
 if eyetrackingOption:
     from EyelinkEyetrackerForPsychopySUPA3 import Tracker_EyeLink #Chris Fajou integration
-from helpersAOH_V2 import accelerateComputer, openMyStimWindow, constructThickThinWedgeRingsTargetAndCue
+from helpersAOHtargetFinalCueLocatn import accelerateComputer, openMyStimWindow, constructThickThinWedgeRingsTargetAndCue
 eyetracking = False
 getEyeTrackingFileFromEyetrackingMachineAtEndOfExperiment = False #If True, can take up to 1.5 hrs in certain conditions
 
@@ -66,7 +66,7 @@ refreshRate = infoFirst['Screen refresh rate']
 
 if demo: refreshRate = 85. 
 tokenChosenEachRing= [-999]*numRings
-targetDur =  1/refreshRate * 2 #duration of target  (in seconds) 
+targetDur =  1/refreshRate * 50# 2 #duration of target  (in seconds) 
 targetDur = round(targetDur * refreshRate) / refreshRate #discretize to nearest integer number of refreshes
 rampUpDur=0
 rampUpFrames = refreshRate*rampUpDur
@@ -243,7 +243,7 @@ fixation.setPos([0,0])
 fixationCounterphase.setPos([0,0])
 
 #create noise post-mask
-maskDur = 0.5; 
+maskDur = 0 #0.5; 
 individualMaskDurFrames = 5
 numChecksAcross = 128
 nearestPowerOfTwo = round( sqrt(numChecksAcross) )**2 #Because textures (created on next line) must be a power of 2
@@ -264,7 +264,7 @@ stimList = []
 speeds = np.array([0,0]) # np.array( [ 0, 1]  )   #dont want to go faster than 2 rps because of blur problem
 #Set up the factorial design (list of all conditions)
 for numCuesEachRing in [ [1] ]:
- for numObjsEachRing in [ [2] ]:#8 #First entry in each sub-list is num objects in the first ring, second entry is num objects in the second ring
+ for numObjsEachRing in [ [8] ]:#8 #First entry in each sub-list is num objects in the first ring, second entry is num objects in the second ring
   for cueLeadTime in [0.267 ]:#..02, 0.060, 0.125, 0.167, 0.267, 0.467]:  #How long is the cue on prior to the target and distractors appearing
     for durMotionMin in [.45]:  #If speed!=0, how long should cue(s) move before stopping and cueLeadTime clock begins
       durMotion = durMotionMin + random.random()*.2
@@ -274,7 +274,7 @@ for numCuesEachRing in [ [1] ]:
         else: speed = speedMin
         for direction in [-1.0,1.0]:
           for targetOffset in [-1,1]:
-            for objToCueQuadrant in range(4):
+            for objToCueQuadrant in [0]: #AHdebug range(4):
                 stimList.append( {'numCuesEachRing':numCuesEachRing,'numObjsEachRing':numObjsEachRing,'targetOffset':targetOffset,
                                             'cueLeadTime':cueLeadTime,'durMotion':durMotion,'speed':speed,'objToCueQuadrant':objToCueQuadrant,'direction':direction} )
 #set up record of proportion correct in various conditions
@@ -476,10 +476,10 @@ while trialNum < trials.nTotal and expStop==False:
     if numObjects % 4 != 0:
         msg = 'numObjects not evenly divisible by 4, therefore cannot randomise quadrant. Therefore picking object to cue completely randomly'
         logging.error(msg); print(msg)
-        objToCue = np.random.random_integers(0, numObjects-1, size=1)
+        objToCue = np.array([0] )#np.random.random_integers(0, numObjects-1, size=1) #randomise which object is cued and thus is the target  #AHdebug
     else:
-        quadrantObjectToCue =  np.random.random_integers(0, objsPerQuadrant-1, size=1)
-        objToCue = thisTrial['objToCueQuadrant']*objsPerQuadrant + quadrantObjectToCue
+        withinQuadrantObjectToCue =  np.array([0])# AHdebug np.random.random_integers(0, objsPerQuadrant-1, size=1)
+        objToCue =  thisTrial['objToCueQuadrant']*objsPerQuadrant + withinQuadrantObjectToCue
     #objToCue = np.array([7]); print('HEY objToCue not randomised')
     colorRings=list();
     preDrawStimToGreasePipeline = list()
@@ -535,9 +535,9 @@ while trialNum < trials.nTotal and expStop==False:
         print('cueInnerArcDesiredFraction of object radius = ',cueInnerArcDesiredFraction, ' actual = ', innerArcActualFraction, ' exceeding tolerance of ',closeEnough )
     if abs(cueOuterArcDesiredFraction - outerArcActualFraction) > closeEnough:
         print('cueOuterArcDesiredFraction of object radius = ',cueOuterArcDesiredFraction, ' actual = ', outerArcActualFraction, ' exceeding tolerance of ',closeEnough)
-
+    initialAngle = 45# random.random()*360.
     thickWedgesRing,thickWedgesRingCopy, thinWedgesRing, targetRing, cueDoubleRing, lines=  constructThickThinWedgeRingsTargetAndCue(myWin, \
-            radii[0],radialMask,radialMaskThinWedge,
+            initialAngle,radii[0],radialMask,radialMaskThinWedge,
             cueRadialMask,visibleWedge,numObjects,patchAngleThickWedges,patchAngleThickWedges,
                             bgColor,thickWedgeColor,thinWedgeColor,0,thisTrial['targetOffset'],gratingTexPix,cueColor,objToCue,ppLog=logging)
     #The thickWedgesRing, typically white, are drawn as a radial grating that occupies all 360 deg circular, with a texture to mask out everything else to create a ring
