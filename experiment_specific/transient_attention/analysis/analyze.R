@@ -14,10 +14,21 @@ dfThis<-read.table(file="../dataRaw/EC_022001_20Jan2017_09-49.txt",header=TRUE) 
 df<-rbind(df,dfThis)
 dfThis<-read.table(file="../dataRaw/EC_032001_20Jan2017_16-58.txt",header=TRUE) #linearised monitor, went back to original radius, upgraded Psychopy to 1.84.2
 df<-rbind(df,dfThis)
+dfThis<-read.table(file="../dataRaw/IvT13_23Jan2017_15-29.txt",header=TRUE) #brightness task, large radius. 
+df<-rbind(df,dfThis)
+df$targetLocation<-"onset"
+df$durMotion<-0
+dfThis<-read.table(file="../dataRaw/IvTv21_23Jan2017_15-58.txt",header=TRUE) #With long motion and super-large radius
+dfThis$targetLocation<-"finalCuePos"
+df<-rbind(df,dfThis)
+dfThis<-read.table(file="../dataRaw/EC_V2003_23Jan2017_16-42.txt",header=TRUE) #With long motion and small radius
+dfThis$targetLocation<-"finalCuePos"
+df<-rbind(df,dfThis)
+
 table(df$subject,df$timingBlips)
 library(ggplot2)
 g<-ggplot(df,aes(x=cueLeadTime,y=correct,color=factor(speed))) + stat_summary(fun.y=mean,geom="point",alpha=1)
 g<-g+ stat_summary(fun.y=mean,geom="line")
-g<-g+facet_grid(subject~.)  #, scales="free_y")
+g<-g+facet_grid(subject~targetLocation)  #, scales="free_y")
 show(g)
 ggsave('../figs/IncludingLast.png')
