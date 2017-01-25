@@ -27,6 +27,8 @@ dfThis$targetLocation<-"finalCuePos"
 df<-rbind(df,dfThis)
 dfThis<-read.table(file="../dataRaw/AHtest_25Jan2017_11-21.txt",header=TRUE) #brightness task, large radius. 
 dfThis$targetLocation<-"finalCuePos"
+dfThis$objToCueQuadrant<--99
+dfThis$speed<-round(dfThis$speed)
 df<-rbind(df,dfThis)
 
 table(df$subject,df$timingBlips)
