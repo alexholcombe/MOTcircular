@@ -16,12 +16,16 @@ dfThis<-read.table(file="../dataRaw/EC_032001_20Jan2017_16-58.txt",header=TRUE) 
 df<-rbind(df,dfThis)
 dfThis<-read.table(file="../dataRaw/IvT13_23Jan2017_15-29.txt",header=TRUE) #brightness task, large radius. 
 df<-rbind(df,dfThis)
+
 df$targetLocation<-"onset"
 df$durMotion<-0
 dfThis<-read.table(file="../dataRaw/IvTv21_23Jan2017_15-58.txt",header=TRUE) #With long motion and super-large radius
 dfThis$targetLocation<-"finalCuePos"
 df<-rbind(df,dfThis)
 dfThis<-read.table(file="../dataRaw/EC_V2003_23Jan2017_16-42.txt",header=TRUE) #With long motion and small radius
+dfThis$targetLocation<-"finalCuePos"
+df<-rbind(df,dfThis)
+dfThis<-read.table(file="../dataRaw/AHtest_25Jan2017_11-21.txt",header=TRUE) #brightness task, large radius. 
 dfThis$targetLocation<-"finalCuePos"
 df<-rbind(df,dfThis)
 
