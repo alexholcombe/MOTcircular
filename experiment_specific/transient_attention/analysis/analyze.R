@@ -25,7 +25,7 @@ df<-rbind(df,dfThis)
 dfThis<-read.table(file="../dataRaw/EC_V2003_23Jan2017_16-42.txt",header=TRUE) #With long motion and small radius
 dfThis$targetLocation<-"finalCuePos"
 df<-rbind(df,dfThis)
-dfThis<-read.table(file="../dataRaw/AHtest_25Jan2017_11-21.txt",header=TRUE) #brightness task, large radius. 
+dfThis<-read.table(file="../dataRaw/AHtest_25Jan2017_11-21.txt",header=TRUE) 
 dfThis$targetLocation<-"finalCuePos"
 dfThis$objToCueQuadrant<--99
 dfThis$speed<-round(dfThis$speed)
