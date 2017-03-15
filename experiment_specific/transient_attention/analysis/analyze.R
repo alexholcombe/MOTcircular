@@ -25,6 +25,11 @@ df<-rbind(df,dfThis)
 dfThis<-read.table(file="../dataRaw/EC_V2003_23Jan2017_16-42.txt",header=TRUE) #With long motion and small radius
 dfThis$targetLocation<-"finalCuePos"
 df<-rbind(df,dfThis)
+dfThis<-read.table(file="../dataRaw/EC_pilot_25Jan2017_14-46.txt",header=TRUE) #With long motion and small radius
+dfThis$targetLocation<-"finalCuePos"
+dfThis$objToCueQuadrant<--99
+dfThis$speed<-round(dfThis$speed)
+df<-rbind(df,dfThis)
 dfThis<-read.table(file="../dataRaw/AHtest_25Jan2017_11-21.txt",header=TRUE) #with 
 dfThis$targetLocation<-"finalCuePos"
 dfThis$objToCueQuadrant<--99
@@ -35,10 +40,22 @@ dfThis$targetLocation<-"finalCuePos"
 dfThis$objToCueQuadrant<--99
 dfThis$speed<-round(dfThis$speed)
 df<-rbind(df,dfThis)
+dfThis<-read.table(file="../dataRaw/IvTd4_25Jan2017_14-16.txt",header=TRUE) #first session of long motion, white/black
+dfThis$targetLocation<-"finalCuePos"
+dfThis$objToCueQuadrant<--99
+dfThis$speed<-round(dfThis$speed)
+df<-rbind(df,dfThis)
+dfThis<-read.table(file="../dataRaw/IvTd4v2_25Jan2017_16-33.txt",header=TRUE) #second session of previous file
+dfThis$targetLocation<-"finalCuePos"
+dfThis$objToCueQuadrant<--99
+dfThis$speed<-round(dfThis$speed)
+df<-rbind(df,dfThis)
+
 
 table(df$subject,df$timingBlips)
 library(ggplot2)
-g<-ggplot(df,aes(x=cueLeadTime,y=correct,color=factor(speed))) + stat_summary(fun.y=mean,geom="point",alpha=1)
+g<-ggplot(subset(df,targetLocation=="finalCuePos"),
+                 aes(x=cueLeadTime,y=correct,color=factor(speed))) + stat_summary(fun.y=mean,geom="point",alpha=1)
 g<-g+ stat_summary(fun.y=mean,geom="line")
 g<-g+facet_grid(subject~targetLocation)  #, scales="free_y")
 show(g)
