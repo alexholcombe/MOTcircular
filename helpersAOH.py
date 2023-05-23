@@ -3,8 +3,9 @@ __author__ = """Alex "O." Holcombe""" ## double-quotes will be silently removed,
 import numpy as np
 import itertools #to calculate all subsets
 from copy import deepcopy
+import functools
 from math import atan, pi, cos, sin, sqrt, ceil
-import time, sys, platform, os, StringIO, gc
+import time, sys, platform, os, gc
 from psychopy import visual, core
 
 #BEGIN helper functions from primes.py
@@ -20,7 +21,7 @@ def lcm(a,b):
    
 def LCM(terms):
    "Return lcm of a list of numbers."   
-   return reduce(lambda a,b: lcm(a,b), terms)
+   return functools.reduce(lambda a,b: lcm(a,b), terms)
 #END helper functions from primes.py
 
 def calcCondsPerNumTargets(numRings,numTargets):

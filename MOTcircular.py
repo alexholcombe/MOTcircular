@@ -1,14 +1,13 @@
-from __future__ import print_function
 __author__ = """Alex "O." Holcombe, Wei-Ying Chen""" ## double-quotes will be silently removed, single quotes will be left, eg, O'Connor
-from psychopy import *
 import psychopy.info
-from psychopy import sound, monitors, logging
+from psychopy import sound, monitors, logging, visual, data, core
+import psychopy.gui, psychopy.event
 import numpy as np
 import itertools #to calculate all subsets
 from copy import deepcopy
 from math import atan, pi, cos, sin, sqrt, ceil
-import time, sys, platform, os, StringIO, gc
-from EyelinkEyetrackerForPsychopySUPA3 import EyeLinkCoreGraphicsPsychopy, Tracker_EyeLink #Chris Fajou integration
+import time, sys, platform, os, gc, io #io is successor to StringIO
+#from EyelinkEyetrackerForPsychopySUPA3 import EyeLinkCoreGraphicsPsychopy, Tracker_EyeLink #Chris Fajou integration but try ioHub
 from helpersAOH import accelerateComputer, openMyStimWindow, calcCondsPerNumTargets, LCM, gcd
 eyetracking = False; eyetrackFileGetFromEyelinkMachine = False #very timeconsuming to get the file from the Windows machine over the ethernet cable, 
 #usually better to get the EDF file from the Eyelink machine by hand by rebooting into Windows and going to 
@@ -40,12 +39,12 @@ radii=[2.5,9.5]   #Need to encode as array for those experiments wherein more th
 offsets = np.array([[0,0],[-5,0],[-10,0]])
 
 respRadius=radii[0] #deg
-refreshRate= 160 *1.0;  #160 #set to the framerate of the monitor
+refreshRate= 60 *1.0;  #160 #set to the framerate of the monitor
 useClock = True #as opposed to using frame count, which assumes no frames are ever missed
-fullscr=1; scrn=0
+fullscr=0; scrn=0
 # create a dialog from dictionary 
 infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':True, 'Screen to use':scrn, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': refreshRate }
-OK = gui.DlgFromDict(dictionary=infoFirst, 
+OK = psychopy.gui.DlgFromDict(dictionary=infoFirst, 
     title='MOT', 
     order=['Autopilot','Check refresh etc', 'Screen to use', 'Screen refresh rate', 'Fullscreen (timing errors if not)'], 
     tip={'Check refresh etc': 'To confirm refresh rate and that can keep up, at least when drawing a grating',
@@ -115,7 +114,7 @@ if demo:
 mon = monitors.Monitor(monitorname,width=monitorwidth, distance=viewdist)#fetch the most recent calib for this monitor
 mon.setSizePix( (widthPix,heightPix) )
 myWin = openMyStimWindow(mon,widthPix,heightPix,bgColor,allowGUI,units,fullscr,scrn,waitBlank)
-myMouse = event.Mouse(visible = 'true',win=myWin)
+myMouse = psychopy.event.Mouse(visible = 'true',win=myWin)
 myWin.setRecordFrameIntervals(False)
 
 trialsPerCondition = 2 #default value
@@ -150,7 +149,7 @@ else: #checkRefreshEtc
 
 myWin.close() #have to close window to show dialog box
 dlgLabelsOrdered = list() #new dialog box
-myDlg = gui.Dlg(title="object tracking experiment", pos=(200,400))
+myDlg = psychopy.gui.Dlg(title="object tracking experiment", pos=(200,400))
 if not autopilot:
     myDlg.addField('Subject name :', subject, tip='or subject code')
     dlgLabelsOrdered.append('subject')
@@ -165,7 +164,7 @@ if checkRefreshEtc and (not demo) and (myWinRes != [widthPix,heightPix]).any():
     msgWrongResolution = 'Instead of desired resolution of '+ str(widthPix)+'x'+str(heightPix)+ ' pixels, screen apparently '+ str(myWinRes[0])+ 'x'+ str(myWinRes[1])
     myDlg.addText(msgWrongResolution, color='Red')
     print(msgWrongResolution)
-myDlg.addText('Note: to abort press ESC at a trials response screen', color=[-1.,1.,-1.]) # color='DimGrey') color names stopped working along the way, for unknown reason
+myDlg.addText('Note: to abort press ESC at a trials response screen') # color='DimGrey') color names stopped working along the way, for unknown reason
 myDlg.show()
 if myDlg.OK: #unpack information from dialogue box
    thisInfo = myDlg.data #this will be a list of data returned from each field added in order
@@ -189,7 +188,7 @@ else:
 expname = ''
 fileName = dataDir+'/'+subject+ '_' + expname+timeAndDateStr
 if not demo and not exportImages:
-    dataFile = open(fileName+'.txt', 'w')  # sys.stdout  #StringIO.StringIO() 
+    dataFile = open(fileName+'.txt', 'w')  # sys.stdout 
     saveCodeCmd = 'cp \'' + sys.argv[0] + '\' '+ fileName + '.py'
     os.system(saveCodeCmd)  #save a copy of the code as it was when that subject was run
     logF = logging.LogFile(fileName+'.log', 
@@ -210,7 +209,7 @@ if msgWrongResolution != '':
     logging.error(msgWrongResolution)
 
 myWin = openMyStimWindow(mon,widthPix,heightPix,bgColor,allowGUI,units,fullscr,scrn,waitBlank)
-myMouse = event.Mouse(visible = 'true',win=myWin)
+myMouse = psychopy.event.Mouse(visible = 'true',win=myWin)
 runInfo = psychopy.info.RunTimeInfo(
         win=myWin,    ## a psychopy.visual.Window() instance; None = default temp window used; False = no win, no win.flips()
         refreshTest='grating', ## None, True, or 'grating' (eye-candy to avoid a blank screen)
@@ -248,10 +247,10 @@ else:
     fixationBlank= visual.PatchStim(myWin,tex='none',colorSpace='rgb',color=(-1,-1,-1),mask='circle',units='pix',size=fixSizePix,autoLog=autoLogging)
 fixationPoint = visual.PatchStim(myWin,colorSpace='rgb',color=(1,1,1),mask='circle',units='pix',size=2,autoLog=autoLogging) #put a point in the center
 
-respText = visual.TextStim(myWin,pos=(0, -.8),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
-NextText = visual.TextStim(myWin,pos=(0, 0),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
-NextRemindPctDoneText = visual.TextStim(myWin,pos=(-.1, -.4),colorSpace='rgb',color= (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
-NextRemindCountText = visual.TextStim(myWin,pos=(.1, -.5),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
+respText = visual.TextStim(myWin,pos=(0, -.8),colorSpace='rgb',color = (1,1,1),anchorHoriz='center', anchorVert='center', units='norm',autoLog=autoLogging)
+NextText = visual.TextStim(myWin,pos=(0, 0),colorSpace='rgb',color = (1,1,1),anchorHoriz='center', anchorVert='center', units='norm',autoLog=autoLogging)
+NextRemindPctDoneText = visual.TextStim(myWin,pos=(-.1, -.4),colorSpace='rgb',color= (1,1,1),anchorHoriz='center', anchorVert='center', units='norm',autoLog=autoLogging)
+NextRemindCountText = visual.TextStim(myWin,pos=(.1, -.5),colorSpace='rgb',color = (1,1,1),anchorHoriz='center', anchorVert='center', units='norm',autoLog=autoLogging)
 
 stimList = []
 # temporalfrequency limit test
@@ -271,13 +270,13 @@ for numObjs in numObjsInRing: #set up experiment design
           subsetsThis = list(itertools.combinations(ringNums,nt)) #all subsets of length nt from the universe of ringNums
           numSubsetsThis = len( subsetsThis );   #print('numSubsetsThis=',numSubsetsThis)
           repsNeeded = leastCommonMultipleSubsets / numSubsetsThis #that's the number of repetitions needed to make up for number of subsets of rings
-          for r in xrange(repsNeeded):  #for nt with largest number of subsets, need no repetitions
+          for r in range( int(repsNeeded) ):  #for nt with largest number of subsets, need no repetitions
                   for s in subsetsThis:
                       whichIsTarget = np.ones(numRings)*-999 #-999 is  value meaning no target in that ring. 1 will mean target in ring
                       for ring in s:
                          whichIsTarget[ring] = np.random.random_integers(0, numObjs-1, size=1) #1
                       #print('numTargets=',nt,' whichIsTarget=',whichIsTarget,' and that is one of ',numSubsetsThis,' possibilities and we are doing ',repsNeeded,'repetitions')
-                      for whichToQuery in xrange( leastCommonMultipleTargetNums ):  #for each subset, have to query one. This is dealed out to  the current subset by using modulus. It's assumed that this will result in equal total number of queried rings
+                      for whichToQuery in range( leastCommonMultipleTargetNums ):  #for each subset, have to query one. This is dealed out to  the current subset by using modulus. It's assumed that this will result in equal total number of queried rings
                           whichSubsetEntry = whichToQuery % nt  #e.g. if nt=2 and whichToQuery can be 0,1,or2 then modulus result is 0,1,0. This implies that whichToQuery won't be totally counterbalanced with which subset, which is bad because
                                           #might give more resources to one that's queried more often. Therefore for whichToQuery need to use least common multiple.
                           ringToQuery = s[whichSubsetEntry];  #print('ringToQuery=',ringToQuery,'subset=',s)
@@ -299,11 +298,11 @@ trials = data.TrialHandler(stimList,trialsPerCondition) #constant stimuli method
 
 timeAndDateStr = time.strftime("%d%b%Y_%H-%M", time.localtime()) 
 logging.info(  str('starting exp with name: "'+'TemporalFrequencyLimit'+'" at '+timeAndDateStr)   )
-logF = StringIO.StringIO()  #kludge so I dont have to change all the print >>logF statements
+logF = io.StringIO()  #kludge so I dont have to change all the print >>logF statements
 logging.info(    'numtrials='+ str(trials.nTotal)+' and each trialDur='+str(trialDur)+' refreshRate='+str(refreshRate)      )
 
 print(' numtrials=', trials.nTotal)
-print('rampUpDur=',rampUpDur, ' rampDownDur=', rampDownDur, ' secs', file=logF);  logging.info( logF.getvalue() ); logF = StringIO.StringIO() 
+print('rampUpDur=',rampUpDur, ' rampDownDur=', rampDownDur, ' secs', file=logF);  logging.info( logF.getvalue() )
 logging.info('task='+'track'+'   respType='+respType)
 logging.info(   'radii=' + str(radii)   )
 logging.flush()
@@ -478,7 +477,7 @@ def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,
     respondedEachToken = np.zeros([numRings,numObjects])  #potentially two sets of responses, one for each ring
     optionIdexs=list();baseSeq=list();numOptionsEachSet=list();numRespsNeeded=list()
     numRespsNeeded = np.zeros(numRings) 
-    for ring in xrange(numRings):
+    for ring in range(numRings):
         optionIdexs.append([])
         noArray=list()
         for k in range(numObjects):noArray.append(colors_all[0])
@@ -492,7 +491,8 @@ def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,
     respcount = 0;     tClicked = 0;       lastClickState=0;       mouse1=0
     for ring in range(optionSets): 
             responses.append( list() )
-            responsesAutopilot.append( [0]*numRespsNeeded[ring] )  #autopilot response is 0
+            zeros = [0]*int(numRespsNeeded[ring])
+            responsesAutopilot.append( zeros )  #autopilot response is 0
     passThisTrial = False; 
     numTimesRespSoundPlayed=0
     while respcount < sum(numRespsNeeded): #collecting response
@@ -564,7 +564,7 @@ def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,
                         #print 'response=', response, '  respcount=',respcount, ' lastClickState=',lastClickState, '  after affected by click'
                    #end if mouse clicked
                    
-               for key in event.getKeys():       #check if pressed abort-type key
+               for key in psychopy.event.getKeys():       #check if pressed abort-type key
                       if key in ['escape','q']:
                           expStop = True
                           respcount = 1
@@ -572,8 +572,8 @@ def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,
                lastClickState = mouse1
                if autopilot: 
                     respcount = 1
-                    for i in xrange(numRings):
-                        for j in xrange(numObjects):
+                    for i in range(numRings):
+                        for j in range(numObjects):
                             respondedEachToken[i][j] = 1 #must set to True for tracking task with click responses, because it uses to determine which one was clicked on
                if blindspotFill:
                     blindspotStim.draw()
@@ -670,7 +670,7 @@ while trialNum < trials.nTotal and expStop==False:
                 framesSaved +=1
             myWin.flip(clearBuffer=True)
             t=trialClock.getTime()-t0; ts.append(t);
-            if n==trialDurFrames-1: event.clearEvents(eventType='mouse');
+            if n==trialDurFrames-1: psychopy.event.clearEvents(eventType='mouse');
     if eyetracking:
             tracker.stopEyeTracking() #This seems to work immediately and cause the Eyelink machine to save the EDF file to its own drive
 
@@ -825,7 +825,7 @@ while trialNum < trials.nTotal and expStop==False:
                 waitingForKeypress=False
            elif expStop == True:
                 waitingForKeypress=False
-           for key in event.getKeys():       #check if pressed abort-type key
+           for key in psychopy.event.getKeys():       #check if pressed abort-type key
                  if key in ['space']: 
                     waitingForKeypress=False
                  if key in ['escape','q']:
@@ -848,7 +848,7 @@ logging.flush(); dataFile.close(); logF.close()
 
 if eyetracking:
   if eyetrackFileGetFromEyelinkMachine:
-    eyetrackerFileWaitingText = visual.TextStim(myWin,pos=(-.1,0),colorSpace='rgb',color = (1,1,1),alignHoriz='center', alignVert='center', units='norm',autoLog=autoLogging)
+    eyetrackerFileWaitingText = visual.TextStim(myWin,pos=(-.1,0),colorSpace='rgb',color = (1,1,1),anchorHoriz='center', anchorVert='center', units='norm',autoLog=autoLogging)
     eyetrackerFileWaitingText.setText('Waiting for eyetracking file from Eyelink computer. Do not abort eyetracking machine or file will not be saved?')
     eyetrackerFileWaitingText.draw()
     myWin.flip()
