@@ -274,13 +274,13 @@ for numObjs in numObjsInRing: #set up experiment design
                   for s in subsetsThis:
                       whichIsTarget = np.ones(numRings)*-999 #-999 is  value meaning no target in that ring. 1 will mean target in ring
                       for ring in s:
-                         whichIsTarget[ring] = np.random.random_integers(0, numObjs-1, size=1) #1
+                         whichIsTarget[ring] = np.random.randint(0,numObjs-1,size=1) #deprecated np.random.random_integers(0, numObjs-1, size=1) #1
                       #print('numTargets=',nt,' whichIsTarget=',whichIsTarget,' and that is one of ',numSubsetsThis,' possibilities and we are doing ',repsNeeded,'repetitions')
                       for whichToQuery in range( leastCommonMultipleTargetNums ):  #for each subset, have to query one. This is dealed out to  the current subset by using modulus. It's assumed that this will result in equal total number of queried rings
                           whichSubsetEntry = whichToQuery % nt  #e.g. if nt=2 and whichToQuery can be 0,1,or2 then modulus result is 0,1,0. This implies that whichToQuery won't be totally counterbalanced with which subset, which is bad because
                                           #might give more resources to one that's queried more often. Therefore for whichToQuery need to use least common multiple.
                           ringToQuery = s[whichSubsetEntry];  #print('ringToQuery=',ringToQuery,'subset=',s)
-                          for basicShape in ['diamond','circle']:
+                          for basicShape in ['circle']: #'diamond'
                             for initialDirRing0 in [-1,1]:
                                     stimList.append( {'basicShape':basicShape, 'numObjectsInRing':numObjs,'speed':speed,'initialDirRing0':initialDirRing0,
                                             'numTargets':nt,'whichIsTarget':whichIsTarget,'ringToQuery':ringToQuery} )
@@ -378,9 +378,6 @@ def xyThisFrameThisAngle(basicShape, radiiThisTrial, numRing, angle, thisFrameN,
                 return ans
             else: print('Error! unexpected type in radiusThisFrameThisAngle')
         
-    #if numRing==0:
-    #    basicShape='diamond'
-    #else: basicShape ='circle' #DEBUGOFF to compare speeds of circle and diamond
     if basicShape == 'circle':
         rThis =  r + waveForm('sin',speed,timeSeconds,numRing) * r * ampTemporalRadiusModulation
         rThis += r * RFcontourAmp * RFcontourCalcModulation(angle,RFcontourFreq,RFcontourPhase)
@@ -542,7 +539,7 @@ def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,
                                 clickableRegion.setPos([x,y])
                                 clickableRegion.setRadius(mouseToler)
                                 clickableRegion.draw()
-                                #print('mouseXY=',round(mouseX,2),',',round(mouseY,2),'xy=',x,',',y, ' distance=',distance, ' mouseToler=',mouseToler)
+                                print('mouseXY=',round(mouseX,2),',',round(mouseY,2),'xy=',x,',',y, ' distance=',distance, ' mouseToler=',mouseToler)
                             if distance<mouseToler:
                                 c = opts[optionSet][ncheck] #idx of color that this option num corresponds to
                                 if respondedEachToken[optionSet][ncheck]:  #clicked one that already clicked on
@@ -550,7 +547,7 @@ def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,
                                         respondedEachToken[optionSet][ncheck] =0
                                         responses[optionSet].remove(c) #this redundant list also of course encodes the order
                                         respcount -= 1
-                                        #print('removed number ',ncheck, ' from clicked list')
+                                        print('removed number ',ncheck, ' from clicked list')
                                 else:         #clicked on new one, need to add to response    
                                     numRespsAlready = len(  np.where(respondedEachToken[optionSet])[0]  )
                                     #print('numRespsAlready=',numRespsAlready,' numRespsNeeded= ',numRespsNeeded,'  responses=',responses)   #debugOFF
@@ -560,7 +557,7 @@ def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,
                                         respondedEachToken[optionSet][ncheck] = 1 #register this one has been clicked
                                         responses[optionSet].append(c) #this redundant list also of course encodes the order
                                         respcount += 1  
-                                        #print('added  ',ncheck,'th response to clicked list')
+                                        print('added  ',ncheck,'th response to clicked list')
                         #print 'response=', response, '  respcount=',respcount, ' lastClickState=',lastClickState, '  after affected by click'
                    #end if mouse clicked
                    
@@ -628,7 +625,7 @@ while trialNum < trials.nTotal and expStop==False:
         angleIniEachRing = [0]*numRings
     currAngle = list([0]) * numRings
     if randomInitiialDirExceptRing0:
-        initialDirectionEachRing = list( np.random.random_integers(0,1,size=[numRings]) *2 -1 ) #randomise initial direction of each ring
+        initialDirectionEachRing = list( np.random.randint(0,1,size=[numRings]) *2 -1 ) #randomise initial direction of each ring
         initialDirectionEachRing[0] = thisTrial['initialDirRing0']
         if oppositeInitialDirFirstTwoRings and numRings>1:
             initialDirectionEachRing[1] = -1*initialDirectionEachRing[0]
@@ -793,7 +790,7 @@ while trialNum < trials.nTotal and expStop==False:
         if orderCorrect==3  :correct=1
         else:correct=0
         if correct:
-            highA = sound.Sound('G',octave=5, sampleRate=6000, secs=.8, bits=8)
+            highA = sound.Sound('G',octave=5, sampleRate=6000, secs=.8)
             highA.setVolume(0.3) #low volume because piercing, loud relative to inner, outer files
             highA.play()
         else: #incorrect
