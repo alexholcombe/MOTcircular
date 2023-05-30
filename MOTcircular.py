@@ -41,7 +41,13 @@ offsets = np.array([[0,0],[-5,0],[-10,0]])
 respRadius=radii[0] #deg
 refreshRate= 60 *1.0;  #160 #set to the framerate of the monitor
 useClock = True #as opposed to using frame count, which assumes no frames are ever missed
-fullscr=0; scrn=0
+fullscr=0; scrn=1
+#Find out if screen may be Retina because of bug in psychopy for mouse coordinates (https://discourse.psychopy.org/t/mouse-coordinates-doubled-when-using-deg-units/11188/5)
+has_retina_scrn = False
+import subprocess
+if subprocess.call("system_profiler SPDisplaysDataType | grep -i 'retina'", shell=True) == 0:
+    has_retina_scrn = True #https://stackoverflow.com/questions/58349657/how-to-check-is-it-a-retina-display-in-python-or-terminal
+        
 # create a dialog from dictionary 
 infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':True, 'Screen to use':scrn, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': refreshRate }
 OK = psychopy.gui.DlgFromDict(dictionary=infoFirst, 
@@ -93,28 +99,26 @@ timeTillReversalMax = 1.5# 1.3 #2.9
 colors_all = np.array([[1,-1,-1],[1,-1,-1]])
 cueColor = np.array([1,1,1])
 #monitor parameters
-widthPix = 800 #1440  #monitor width in pixels
-heightPix =600  #900 #monitor height in pixels
-monitorwidth = 38.5 #28.5 #monitor width in centimeters
+widthPixRequested = 800 #1440  #monitor width in pixels
+heightPixRequested =600  #900 #monitor height in pixels
+monitorwidth = 30; #38.5 #monitor width in centimeters
 viewdist = 57.; #cm
-pixelperdegree = widthPix/ (atan(monitorwidth/viewdist) /np.pi*180)
 bgColor = [-1,-1,-1] #black background
 monitorname = 'testMonitor' # 'mitsubishi' #in psychopy Monitors Center
 if exportImages:
     fullscr=0; scrn=0
-    widthPix = 600; heightPix = 450
+    widthPixRequested = 600; heightPixRequested = 450
     monitorwidth = 25.0
 if demo:    
     scrn=0; fullscr=0
-    widthPix = 800; heightPix = 600
+    widthPixRequested = 800; heightPixRequested = 600
     monitorname='testMonitor'
     allowGUI = True
     monitorwidth = 23#18.0
 
 mon = monitors.Monitor(monitorname,width=monitorwidth, distance=viewdist)#fetch the most recent calib for this monitor
-mon.setSizePix( (widthPix,heightPix) )
-myWin = openMyStimWindow(mon,widthPix,heightPix,bgColor,allowGUI,units,fullscr,scrn,waitBlank)
-myMouse = psychopy.event.Mouse(visible = 'true',win=myWin)
+mon.setSizePix( (widthPixRequested,heightPixRequested) )
+myWin = openMyStimWindow(mon,widthPixRequested,heightPixRequested,bgColor,allowGUI,units,fullscr,scrn,waitBlank)
 myWin.setRecordFrameIntervals(False)
 
 trialsPerCondition = 2 #default value
@@ -160,8 +164,8 @@ myDlg.addText(refreshMsg1, color='Black')
 if refreshRateWrong:
     myDlg.addText(refreshMsg2, color='Red')
 msgWrongResolution = ''
-if checkRefreshEtc and (not demo) and (myWinRes != [widthPix,heightPix]).any():
-    msgWrongResolution = 'Instead of desired resolution of '+ str(widthPix)+'x'+str(heightPix)+ ' pixels, screen apparently '+ str(myWinRes[0])+ 'x'+ str(myWinRes[1])
+if checkRefreshEtc and (not demo) and (myWinRes != [widthPixRequested,heightPixRequested]).any():
+    msgWrongResolution = 'Instead of desired resolution of '+ str(widthPixRequested)+'x'+str(heightPixRequested)+ ' pixels, screen apparently '+ str(myWinRes[0])+ 'x'+ str(myWinRes[1])
     myDlg.addText(msgWrongResolution, color='Red')
     print(msgWrongResolution)
 myDlg.addText('Note: to abort press ESC at a trials response screen') # color='DimGrey') color names stopped working along the way, for unknown reason
@@ -208,12 +212,13 @@ print('longFrameLimit=',longFrameLimit,' Recording trials where one or more inte
 if msgWrongResolution != '':
     logging.error(msgWrongResolution)
 
-myWin = openMyStimWindow(mon,widthPix,heightPix,bgColor,allowGUI,units,fullscr,scrn,waitBlank)
+#Not a test - the final window opening
+myWin = openMyStimWindow(mon,widthPixRequested,heightPixRequested,bgColor,allowGUI,units,fullscr,scrn,waitBlank)
 
-if (myWin.size != [widthPix,heightPix]).any(): #Screen is not set to desired resolutoin of widthPix x heightPix
-    #Just roll with whatever wrong resolution the screen is set to
-    widthPix = myWin.size[0]
-    heightPix = myWin.size[1]
+#Just roll with whatever wrong resolution the screen is set to
+widthPix = myWin.size[0]
+heightPix = myWin.size[1]
+pixelperdegree = widthPix / (atan(monitorwidth/viewdist) /np.pi*180)
 
 myMouse = psychopy.event.Mouse(visible = 'true',win=myWin)
 runInfo = psychopy.info.RunTimeInfo(
@@ -238,6 +243,8 @@ clickableRegion.setColor((-1,1,-1)) #show in green
 #Optionally show location of most recent click
 clickedRegion = visual.Circle(myWin, radius=2.2, edges=32, colorSpace='rgb',lineColor=(-1,1,-1),fillColor=(-1,1,-1),autoLog=autoLogging) #to show clickable zones
 clickedRegion.setColor((0,1,-1)) #show in yellow
+
+landmarkDebug = visual.Circle(myWin, radius=2.2, edges=32, colorSpace='rgb',fillColor=(1,-1,1),autoLog=autoLogging) #to show clickable zones
 
 circlePostCue = visual.Circle(myWin, radius=2*radii[0], edges=32, colorSpace='rgb',fillColor = (-.85,-.85,-.85),lineColor=(-1,-1,-1),autoLog=autoLogging) #visual postcue
 #referenceCircle allows visualisation of trajectory, mostly for debugging
@@ -533,13 +540,13 @@ def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,
                  
        mouse1, mouse2, mouse3 = myMouse.getPressed()
        if mouse1 and lastClickState==0:  #only count this event if is a new click. Problem is that mouse clicks continue to be pressed for along time
-            mouseX,mouseY = myMouse.getPos() #supposedly in units of myWin, which is degrees
-            #print 'assumes window spans entire screen of ',monitorwidth,' cm; mouse position apparently in cm when units is set to deg = (',mouseX,',',mouseY,')'  
-            #because mouse apparently giving coordinates in cm, I need to convert it to degrees of visual angle because that's what drawing is done in terms of
-            cmperpixel = monitorwidth*1.0/widthPix
-            degpercm = 1.0/cmperpixel/pixelperdegree;  
-            mouseX = mouseX # * degpercm #mouse x location relative to center, converted to degrees
-            mouseY = mouseY #* degpercm #mouse x location relative to center, converted to degrees
+            mouseX,mouseY = myMouse.getPos() 
+            #supposedly in units of myWin, which is degrees, BUT
+            mouseFactor = 1
+            if (has_retina_scrn and scrn==0): #Because of a bug in Psychopy triggered by retina displays
+                mouseFactor = 0.5
+            mouseX = mouseX * mouseFactor 
+            mouseY = mouseY * mouseFactor 
             for optionSet in range(optionSets):
               for ncheck in range( numOptionsEachSet[optionSet] ): 
                     angle =  (angleIniEachRing[optionSet]+currAngle[optionSet]) + ncheck*1.0/numOptionsEachSet[optionSet] *2.*pi #radians
@@ -550,6 +557,7 @@ def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,
                     #Colors were drawn in order they're in in optionsIdxs
                     distance = sqrt(pow((x-mouseX),2)+pow((y-mouseY),2))
                     mouseToler = mouseChoiceArea + optionSet*mouseChoiceArea/6.#deg visual angle?  origin=2
+                    landmarkDebug.setPos([8,6]); landmarkDebug.draw()
                     if showClickedRegion:
                         clickedRegion.setPos([mouseX,mouseY])
                         clickedRegion.setRadius(mouseToler) 
@@ -558,6 +566,7 @@ def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,
                         clickableRegion.setPos([x,y]) 
                         clickableRegion.setRadius(mouseToler) 
                         clickableRegion.draw()
+                        print('monitorwidth=',round(monitorwidth,2), ' viewdist=', round(viewdist,2), ' pixelperdegree= ', round(pixelperdegree,2), ' cmperpix= ',round(cmperpixel,2),' , degpercm= ',round(degpercm,2))
                         print('mouseXY=',round(mouseX,2),',',round(mouseY,2),'xy=',round(x,2),',',round(y,2), ' distance=',distance, ' mouseToler=',mouseToler)
                     if distance<mouseToler:
                         c = opts[optionSet][ncheck] #idx of color that this option num corresponds to
@@ -581,7 +590,7 @@ def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,
            #end if mouse clicked
            
        for key in psychopy.event.getKeys():       #check if pressed abort-type key
-              if key in ['escape','q']:
+              if key in ['escape']: # ['escape','q']:
                   expStop = True
                   respcount = 1
               
