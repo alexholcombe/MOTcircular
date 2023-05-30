@@ -41,7 +41,7 @@ offsets = np.array([[0,0],[-5,0],[-10,0]])
 respRadius=radii[0] #deg
 refreshRate= 60 *1.0;  #160 #set to the framerate of the monitor
 useClock = True #as opposed to using frame count, which assumes no frames are ever missed
-fullscr=1; scrn=0
+fullscr=0; scrn=0
 # create a dialog from dictionary 
 infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':True, 'Screen to use':scrn, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': refreshRate }
 OK = psychopy.gui.DlgFromDict(dictionary=infoFirst, 
@@ -224,11 +224,18 @@ logging.info('linearizeMethod='+str(mon.getLinearizeMethod()))
     
 gaussian = visual.PatchStim(myWin, tex='none',mask='gauss',colorSpace='rgb',size=ballStdDev,autoLog=autoLogging)
 gaussian2 = visual.PatchStim(myWin, tex='none',mask='gauss',colorSpace='rgb',size=ballStdDev,autoLog=autoLogging)
-optionChosenCircle = visual.Circle(myWin, radius=mouseChoiceArea, edges=32, fillColorSpace='rgb',fillColor = (1,0,1),autoLog=autoLogging) #to outline chosen options
-clickableRegion = visual.Circle(myWin, radius=0.5, edges=32, fillColorSpace='rgb',fillColor = (-1,1,-1),autoLog=autoLogging) #to show clickable zones
-circlePostCue = visual.Circle(myWin, radius=2*radii[0], edges=32, fillColorSpace='rgb',fillColor = (-.85,-.85,-.85),lineColor=(-1,-1,-1),autoLog=autoLogging) #visual postcue
+optionChosenCircle = visual.Circle(myWin, radius=mouseChoiceArea, edges=32, colorSpace='rgb',fillColor = (1,0,1),autoLog=autoLogging) #to outline chosen options
+
+#Optionally show zones around objects that will count as a click for that object
+clickableRegion = visual.Circle(myWin, radius=2.2, edges=32, colorSpace='rgb',lineColor=(-1,1,-1),fillColor=(-1,1,-1),autoLog=autoLogging) #to show clickable zones
+clickableRegion.setColor((-1,1,-1)) #show in green
+#Optionally show location of most recent click
+clickedRegion = visual.Circle(myWin, radius=2.2, edges=32, colorSpace='rgb',lineColor=(-1,1,-1),fillColor=(-1,1,-1),autoLog=autoLogging) #to show clickable zones
+clickedRegion.setColor((0,1,-1)) #show in yellow
+
+circlePostCue = visual.Circle(myWin, radius=2*radii[0], edges=32, colorSpace='rgb',fillColor = (-.85,-.85,-.85),lineColor=(-1,-1,-1),autoLog=autoLogging) #visual postcue
 #referenceCircle allows visualisation of trajectory, mostly for debugging
-referenceCircle = visual.Circle(myWin, radius=radii[0], edges=32, fillColorSpace='rgb',lineColor=(-1,-1,1),autoLog=autoLogging) #visual postcue
+referenceCircle = visual.Circle(myWin, radius=radii[0], edges=32, colorSpace='rgb',lineColor=(-1,-1,1),autoLog=autoLogging) #visual postcue
 
 blindspotFill = 0 #a way for people to know if they move their eyes
 if blindspotFill:
@@ -247,7 +254,8 @@ else:
     fixationBlank= visual.PatchStim(myWin,tex='none',colorSpace='rgb',color=(-1,-1,-1),mask='circle',units='pix',size=fixSizePix,autoLog=autoLogging)
 fixationPoint = visual.PatchStim(myWin,colorSpace='rgb',color=(1,1,1),mask='circle',units='pix',size=2,autoLog=autoLogging) #put a point in the center
 
-respText = visual.TextStim(myWin,pos=(0, -.8),colorSpace='rgb',color = (1,1,1),anchorHoriz='center', anchorVert='center', units='norm',autoLog=autoLogging)
+respText = visual.TextStim(myWin,pos=(0, -.5),colorSpace='rgb',color = (1,1,1),anchorHoriz='center', anchorVert='center', units='norm',autoLog=autoLogging)
+respText.setText('Hello, world')
 NextText = visual.TextStim(myWin,pos=(0, 0),colorSpace='rgb',color = (1,1,1),anchorHoriz='center', anchorVert='center', units='norm',autoLog=autoLogging)
 NextRemindPctDoneText = visual.TextStim(myWin,pos=(-.1, -.4),colorSpace='rgb',color= (1,1,1),anchorHoriz='center', anchorVert='center', units='norm',autoLog=autoLogging)
 NextRemindCountText = visual.TextStim(myWin,pos=(.1, -.5),colorSpace='rgb',color = (1,1,1),anchorHoriz='center', anchorVert='center', units='norm',autoLog=autoLogging)
@@ -398,68 +406,70 @@ def angleChangeThisFrame(speed,initialDirectionEachRing, numRing, thisFrameN, la
 
 def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,initialDirectionEachRing,currAngle,blobToCueEachRing,isReversed,reversalNumEachRing,ShowTrackCueFrames): 
 #defining a function to draw each frame of stim. So can call second time for tracking task response phase
-          global cueRing,ringRadial,ringRadialR, currentlyCuedBlob #makes python treat it as a local variable
-          global angleIniEachRing, correctAnswers
-          if useClock: #Don't count on not missing frames. Use actual time.
-            t = clock.getTime()
-            n = round(t*refreshRate)
-          else:
-            n = currFrame
-          
-          if n<rampUpFrames:
-                contrast = cos( -pi+ pi* n/rampUpFrames  ) /2. +.5 #starting from -pi trough of cos, and scale into 0->1 range
-          elif rampDownFrames>0 and n > rampDownStart:
-                contrast = cos(pi* (n-rampDownStart)/rampDownFrames ) /2.+.5 #starting from peak of cos, and scale into 0->1 range
-          else: contrast = 1
-          if n%2:
-            fixation.draw()#flicker fixation on and off at framerate to see when skip frame
-          else:
-            fixationBlank.draw()
-          fixationPoint.draw()
-          for numRing in range(numRings):
-            speed = thisTrial['speed']
-            if basicShape == 'diamond':  #scale up speed so that it achieves that speed in rps even though it has farther to travel
-                perimeter = radii[numRing]*4.0
-                circum = 2*pi*radii[numRing]
-                speed = thisTrial['speed'] * perimeter/circum #Have to go this much faster to get all the way around in same amount of time as for circle
-            angleMove = angleChangeThisFrame(speed,initialDirectionEachRing, numRing, n, n-1)
-            currAngle[numRing] = currAngle[numRing]+angleMove*(isReversed[numRing])
-            angleObject0 = angleIniEachRing[numRing] + currAngle[numRing]
-            for nobject in range(numObjects):
-                if nobject==0:
-                        if reversalNumEachRing[numRing] <= len(reversalTimesEachRing[numRing]): #haven't exceeded  reversals assigned
-                            reversalNum = int(reversalNumEachRing[numRing])
-                            if len( reversalTimesEachRing[numRing] ) <= reversalNum:
-                                msg = 'You failed to allocate enough reversal times, reached ' +str(reversalNum)+ ' reversals at '+ str(reversalTimesEachRing[numRing][reversalNum-1]) + \
-                                          'and still going, current time ='+str(n/refreshRate)+' asking for time of next one, will assume no more reversals'
-                                logging.error(msg)
-                                print(msg)
-                                nextReversalTime = 9999 #didn't allocate enough, will just not reverse any more
-                            else: #allocated enough reversals
-                                nextReversalTime = reversalTimesEachRing[numRing][ reversalNum ]
-                            if n > refreshRate * nextReversalTime: #have now exceeded time for this next reversal
-                                isReversed[numRing] = -1*isReversed[numRing]
-                                reversalNumEachRing[numRing] +=1
-                angleThisObject = angleObject0 + (2*pi)/numObjects*nobject
-                x,y = xyThisFrameThisAngle(thisTrial['basicShape'],radii, numRing,angleThisObject,n,speed)
-                x += offsetXYeachRing[numRing][0]
-                y += offsetXYeachRing[numRing][1]
-                if n< ShowTrackCueFrames and nobject==blobToCueEachRing[numRing]: #cue in white  
-                    weightToTrueColor = n*1.0/ShowTrackCueFrames #compute weighted average to ramp from white to correct color
-                    blobColor = (1.0-weightToTrueColor)*cueColor +  weightToTrueColor*colors_all[nobject]
-                    blobColor *= contrast #also might want to change contrast, if everybody's contrast changing in contrast ramp
-                    #print('weightToTrueColor=',weightToTrueColor,' n=',n, '  blobColor=',blobColor)
-                else: blobColor = colors_all[0]*contrast
-                #referenceCircle.setPos(offsetXYeachRing[numRing]);  referenceCircle.draw() #debug
-                gaussian.setColor( blobColor, log=autoLogging )
-                gaussian.setPos([x,y])
-                gaussian.draw()
-          if blindspotFill:
-              blindspotStim.draw()
-          return angleIniEachRing,currAngle,isReversed,reversalNumEachRing   
+      global cueRing,ringRadial,ringRadialR, currentlyCuedBlob #makes python treat it as a local variable
+      global angleIniEachRing, correctAnswers
+      
+      if useClock: #Don't count on not missing frames. Use actual time.
+        t = clock.getTime()
+        n = round(t*refreshRate)
+      else:
+        n = currFrame
+      
+      if n<rampUpFrames:
+            contrast = cos( -pi+ pi* n/rampUpFrames  ) /2. +.5 #starting from -pi trough of cos, and scale into 0->1 range
+      elif rampDownFrames>0 and n > rampDownStart:
+            contrast = cos(pi* (n-rampDownStart)/rampDownFrames ) /2.+.5 #starting from peak of cos, and scale into 0->1 range
+      else: contrast = 1
+      if n%2:
+        fixation.draw()#flicker fixation on and off at framerate to see when skip frame
+      else:
+        fixationBlank.draw()
+      fixationPoint.draw()
+      for numRing in range(numRings):
+        speed = thisTrial['speed']
+        if basicShape == 'diamond':  #scale up speed so that it achieves that speed in rps even though it has farther to travel
+            perimeter = radii[numRing]*4.0
+            circum = 2*pi*radii[numRing]
+            speed = thisTrial['speed'] * perimeter/circum #Have to go this much faster to get all the way around in same amount of time as for circle
+        angleMove = angleChangeThisFrame(speed,initialDirectionEachRing, numRing, n, n-1)
+        currAngle[numRing] = currAngle[numRing]+angleMove*(isReversed[numRing])
+        angleObject0 = angleIniEachRing[numRing] + currAngle[numRing]
+        for nobject in range(numObjects):
+            if nobject==0:
+                    if reversalNumEachRing[numRing] <= len(reversalTimesEachRing[numRing]): #haven't exceeded  reversals assigned
+                        reversalNum = int(reversalNumEachRing[numRing])
+                        if len( reversalTimesEachRing[numRing] ) <= reversalNum:
+                            msg = 'You failed to allocate enough reversal times, reached ' +str(reversalNum)+ ' reversals at '+ str(reversalTimesEachRing[numRing][reversalNum-1]) + \
+                                      'and still going, current time ='+str(n/refreshRate)+' asking for time of next one, will assume no more reversals'
+                            logging.error(msg)
+                            print(msg)
+                            nextReversalTime = 9999 #didn't allocate enough, will just not reverse any more
+                        else: #allocated enough reversals
+                            nextReversalTime = reversalTimesEachRing[numRing][ reversalNum ]
+                        if n > refreshRate * nextReversalTime: #have now exceeded time for this next reversal
+                            isReversed[numRing] = -1*isReversed[numRing]
+                            reversalNumEachRing[numRing] +=1
+            angleThisObject = angleObject0 + (2*pi)/numObjects*nobject
+            x,y = xyThisFrameThisAngle(thisTrial['basicShape'],radii, numRing,angleThisObject,n,speed)
+            x += offsetXYeachRing[numRing][0]
+            y += offsetXYeachRing[numRing][1]
+            if n< ShowTrackCueFrames and nobject==blobToCueEachRing[numRing]: #cue in white  
+                weightToTrueColor = n*1.0/ShowTrackCueFrames #compute weighted average to ramp from white to correct color
+                blobColor = (1.0-weightToTrueColor)*cueColor +  weightToTrueColor*colors_all[nobject]
+                blobColor *= contrast #also might want to change contrast, if everybody's contrast changing in contrast ramp
+                #print('weightToTrueColor=',weightToTrueColor,' n=',n, '  blobColor=',blobColor)
+            else: blobColor = colors_all[0]*contrast
+            #referenceCircle.setPos(offsetXYeachRing[numRing]);  referenceCircle.draw() #debug
+            gaussian.setColor( blobColor, log=autoLogging )
+            gaussian.setPos([x,y])
+            gaussian.draw()
+      if blindspotFill:
+          blindspotStim.draw()
+      return angleIniEachRing,currAngle,isReversed,reversalNumEachRing   
 # #######End of function definition that displays the stimuli!!!! #####################################
 
-showClickableRegions = True
+showclickableRegions = True
+showClickedRegion = True
 def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,respRadius,currAngle,expStop ):
     optionSets=numRings
    #Draw response cues
@@ -469,7 +479,7 @@ def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,
         if numRings > 1:
             respSound.play()
         numTimesRespSoundPlayed +=1
-   #respText.draw()
+    respText.draw()
 
     respondedEachToken = np.zeros([numRings,numObjects])  #potentially two sets of responses, one for each ring
     optionIdexs=list();baseSeq=list();numOptionsEachSet=list();numRespsNeeded=list()
@@ -493,94 +503,98 @@ def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,
     passThisTrial = False; 
     numTimesRespSoundPlayed=0
     while respcount < sum(numRespsNeeded): #collecting response
-               #Draw visual response cue
-               if visuallyPostCue:
-                        circlePostCue.setPos( offsetXYeachRing[ thisTrial['ringToQuery'] ] )
-                        circlePostCue.setRadius( radii[ thisTrial['ringToQuery'] ] )
-                        circlePostCue.draw()
-                        
-               for optionSet in range(optionSets):  #draw this group (ring) of options
-                  for ncheck in range( numOptionsEachSet[optionSet] ):  #draw each available to click on in this ring
-                        angle =  (angleIniEachRing[optionSet]+currAngle[optionSet]) + ncheck*1.0/numOptionsEachSet[optionSet] *2.*pi
-                        stretchOutwardRingsFactor = 1
-                        x,y = xyThisFrameThisAngle(thisTrial['basicShape'],radii,optionSet,angle,n,thisTrial['speed'])
-                        x = x+ offsetXYeachRing[optionSet][0]
-                        y = y+ offsetXYeachRing[optionSet][1]
-                        #draw colors, and circles around selected items. Colors are drawn in order they're in in optionsIdxs
-                        opts=optionIdexs;
-                        if respondedEachToken[optionSet][ncheck]:  #draw circle around this one to indicate this option has been chosen
-                               optionChosenCircle.setColor(array([1,-1,1]), log=autoLogging)
-                               optionChosenCircle.setPos([x,y])
-                               optionChosenCircle.draw()                
-                        gaussian.setColor(  colors_all[0], log=autoLogging )  #draw blob
-                        gaussian.setPos([x,y]);  
-                        gaussian.draw()
-                         
-               mouse1, mouse2, mouse3 = myMouse.getPressed()
-               if mouse1 and lastClickState==0:  #only count this event if is a new click. Problem is that mouse clicks continue to be pressed for along time
-                    mouseX,mouseY = myMouse.getPos()
-                    #print 'assumes window spans entire screen of ',monitorwidth,' cm; mouse position apparently in cm when units is set to deg = (',mouseX,',',mouseY,')'  
-                    #because mouse apparently giving coordinates in cm, I need to convert it to degrees of visual angle because that's what drawing is done in terms of
-                    cmperpixel = monitorwidth*1.0/widthPix
-                    degpercm = 1.0/cmperpixel/pixelperdegree;  
-                    mouseX = mouseX # * degpercm #mouse x location relative to center, converted to degrees
-                    mouseY = mouseY #* degpercm #mouse x location relative to center, converted to degrees
-                    for optionSet in range(optionSets):
-                      for ncheck in range( numOptionsEachSet[optionSet] ): 
-                            angle =  (angleIniEachRing[optionSet]+currAngle[optionSet]) + ncheck*1.0/numOptionsEachSet[optionSet] *2.*pi #radians
-                            x,y = xyThisFrameThisAngle(thisTrial['basicShape'],radii,optionSet,angle,n,thisTrial['speed'])
-                            x = x+ offsetXYeachRing[optionSet][0]
-                            y = y+ offsetXYeachRing[optionSet][1]
-                            #check whether mouse click was close to any of the colors
-                            #Colors were drawn in order they're in in optionsIdxs
-                            distance = sqrt(pow((x-mouseX),2)+pow((y-mouseY),2))
-                            mouseToler = mouseChoiceArea + optionSet*mouseChoiceArea/6.#deg visual angle?  origin=2
-                            if showClickableRegions: #revealed in green every time you click
-                                clickableRegion.setPos([x,y])
-                                clickableRegion.setRadius(mouseToler)
-                                clickableRegion.draw()
-                                print('mouseXY=',round(mouseX,2),',',round(mouseY,2),'xy=',x,',',y, ' distance=',distance, ' mouseToler=',mouseToler)
-                            if distance<mouseToler:
-                                c = opts[optionSet][ncheck] #idx of color that this option num corresponds to
-                                if respondedEachToken[optionSet][ncheck]:  #clicked one that already clicked on
-                                    if lastClickState ==0: #only count this event if is a distinct click from the one that selected the blob!
-                                        respondedEachToken[optionSet][ncheck] =0
-                                        responses[optionSet].remove(c) #this redundant list also of course encodes the order
-                                        respcount -= 1
-                                        print('removed number ',ncheck, ' from clicked list')
-                                else:         #clicked on new one, need to add to response    
-                                    numRespsAlready = len(  np.where(respondedEachToken[optionSet])[0]  )
-                                    #print('numRespsAlready=',numRespsAlready,' numRespsNeeded= ',numRespsNeeded,'  responses=',responses)   #debugOFF
-                                    if numRespsAlready >= numRespsNeeded[optionSet]:
-                                        pass #not allowed to select this one until de-select other
-                                    else:
-                                        respondedEachToken[optionSet][ncheck] = 1 #register this one has been clicked
-                                        responses[optionSet].append(c) #this redundant list also of course encodes the order
-                                        respcount += 1  
-                                        print('added  ',ncheck,'th response to clicked list')
-                        #print 'response=', response, '  respcount=',respcount, ' lastClickState=',lastClickState, '  after affected by click'
-                   #end if mouse clicked
-                   
-               for key in psychopy.event.getKeys():       #check if pressed abort-type key
-                      if key in ['escape','q']:
-                          expStop = True
-                          respcount = 1
-                      
-               lastClickState = mouse1
-               if autopilot: 
-                    respcount = 1
-                    for i in range(numRings):
-                        for j in range(numObjects):
-                            respondedEachToken[i][j] = 1 #must set to True for tracking task with click responses, because it uses to determine which one was clicked on
-               if blindspotFill:
-                    blindspotStim.draw()
+       #Draw visual response cue
+       if visuallyPostCue:
+            circlePostCue.setPos( offsetXYeachRing[ thisTrial['ringToQuery'] ] )
+            circlePostCue.setRadius( radii[ thisTrial['ringToQuery'] ] )
+            circlePostCue.draw()
+                
+       for optionSet in range(optionSets):  #draw this group (ring) of options
+          for ncheck in range( numOptionsEachSet[optionSet] ):  #draw each available to click on in this ring
+                angle =  (angleIniEachRing[optionSet]+currAngle[optionSet]) + ncheck*1.0/numOptionsEachSet[optionSet] *2.*pi
+                stretchOutwardRingsFactor = 1
+                x,y = xyThisFrameThisAngle(thisTrial['basicShape'],radii,optionSet,angle,n,thisTrial['speed'])
+                x = x+ offsetXYeachRing[optionSet][0]
+                y = y+ offsetXYeachRing[optionSet][1]
+                #draw colors, and circles around selected items. Colors are drawn in order they're in in optionsIdxs
+                opts=optionIdexs;
+                if respondedEachToken[optionSet][ncheck]:  #draw circle around this one to indicate this option has been chosen
+                       optionChosenCircle.setColor(array([1,-1,1]), log=autoLogging)
+                       optionChosenCircle.setPos([x,y])
+                       optionChosenCircle.draw()                
+                gaussian.setColor(  colors_all[0], log=autoLogging )  #draw blob
+                gaussian.setPos([x,y]);  
+                gaussian.draw()
+                 
+       mouse1, mouse2, mouse3 = myMouse.getPressed()
+       if mouse1 and lastClickState==0:  #only count this event if is a new click. Problem is that mouse clicks continue to be pressed for along time
+            mouseX,mouseY = myMouse.getPos()
+            #print 'assumes window spans entire screen of ',monitorwidth,' cm; mouse position apparently in cm when units is set to deg = (',mouseX,',',mouseY,')'  
+            #because mouse apparently giving coordinates in cm, I need to convert it to degrees of visual angle because that's what drawing is done in terms of
+            cmperpixel = monitorwidth*1.0/widthPix
+            degpercm = 1.0/cmperpixel/pixelperdegree;  
+            mouseX = mouseX # * degpercm #mouse x location relative to center, converted to degrees
+            mouseY = mouseY #* degpercm #mouse x location relative to center, converted to degrees
+            for optionSet in range(optionSets):
+              for ncheck in range( numOptionsEachSet[optionSet] ): 
+                    angle =  (angleIniEachRing[optionSet]+currAngle[optionSet]) + ncheck*1.0/numOptionsEachSet[optionSet] *2.*pi #radians
+                    x,y = xyThisFrameThisAngle(thisTrial['basicShape'],radii,optionSet,angle,n,thisTrial['speed'])
+                    x = x+ offsetXYeachRing[optionSet][0]
+                    y = y+ offsetXYeachRing[optionSet][1]
+                    #check whether mouse click was close to any of the colors
+                    #Colors were drawn in order they're in in optionsIdxs
+                    distance = sqrt(pow((x-mouseX),2)+pow((y-mouseY),2))
+                    mouseToler = mouseChoiceArea + optionSet*mouseChoiceArea/6.#deg visual angle?  origin=2
+                    if showClickedRegion:
+                        clickedRegion.setPos([mouseX,mouseY])
+                        clickedRegion.setRadius(mouseToler) 
+                        clickedRegion.draw()
+                    if showclickableRegions: #revealed in green every time you click
+                        clickableRegion.setPos([x,y]) 
+                        clickableRegion.setRadius(mouseToler) 
+                        clickableRegion.draw()
+                        print('mouseXY=',round(mouseX,2),',',round(mouseY,2),'xy=',x,',',y, ' distance=',distance, ' mouseToler=',mouseToler)
+                    if distance<mouseToler:
+                        c = opts[optionSet][ncheck] #idx of color that this option num corresponds to
+                        if respondedEachToken[optionSet][ncheck]:  #clicked one that already clicked on
+                            if lastClickState ==0: #only count this event if is a distinct click from the one that selected the blob!
+                                respondedEachToken[optionSet][ncheck] =0
+                                responses[optionSet].remove(c) #this redundant list also of course encodes the order
+                                respcount -= 1
+                                print('removed number ',ncheck, ' from clicked list')
+                        else:         #clicked on new one, need to add to response    
+                            numRespsAlready = len(  np.where(respondedEachToken[optionSet])[0]  )
+                            #print('numRespsAlready=',numRespsAlready,' numRespsNeeded= ',numRespsNeeded,'  responses=',responses)   #debugOFF
+                            if numRespsAlready >= numRespsNeeded[optionSet]:
+                                pass #not allowed to select this one until de-select other
+                            else:
+                                respondedEachToken[optionSet][ncheck] = 1 #register this one has been clicked
+                                responses[optionSet].append(c) #this redundant list also of course encodes the order
+                                respcount += 1  
+                                print('added  ',ncheck,'th response to clicked list')
+                #print 'response=', response, '  respcount=',respcount, ' lastClickState=',lastClickState, '  after affected by click'
+           #end if mouse clicked
+           
+       for key in psychopy.event.getKeys():       #check if pressed abort-type key
+              if key in ['escape','q']:
+                  expStop = True
+                  respcount = 1
+              
+       lastClickState = mouse1
+       if autopilot: 
+            respcount = 1
+            for i in range(numRings):
+                for j in range(numObjects):
+                    respondedEachToken[i][j] = 1 #must set to True for tracking task with click responses, because it uses to determine which one was clicked on
+       if blindspotFill:
+            blindspotStim.draw()
 
-               myWin.flip#  (clearBuffer=True)  
-               if screenshot and ~screenshotDone:
-                   myWin.getMovieFrame()       
-                   screenshotDone = True
-                   myWin.saveMovieFrames('respScreen.jpg')
-               #end response collection loop for non-'track' task
+       myWin.flip(clearBuffer=True)  
+       if screenshot and ~screenshotDone:
+           myWin.getMovieFrame()       
+           screenshotDone = True
+           myWin.saveMovieFrames('respScreen.jpg')
+       #end response collection loop for non-'track' task
     #if [] in responses: responses.remove([]) #this is for case of tracking with click response, when only want one response but draw both rings. One of responses to optionset will then be blank. Need to get rid of it
     return responses,responsesAutopilot,respondedEachToken, expStop
     ####### #End of function definition that collects responses!!!! #################################################
@@ -794,7 +808,7 @@ while trialNum < trials.nTotal and expStop==False:
             highA.setVolume(0.3) #low volume because piercing, loud relative to inner, outer files
             highA.play()
         else: #incorrect
-            lowD = sound.Sound('E',octave=3, sampleRate=6000, secs=.8, bits=8)
+            lowD = sound.Sound('E',octave=3, sampleRate=6000, secs=.8)
             lowD.setVolume(0.9)
             lowD.play()
     trialNum+=1
