@@ -209,6 +209,12 @@ if msgWrongResolution != '':
     logging.error(msgWrongResolution)
 
 myWin = openMyStimWindow(mon,widthPix,heightPix,bgColor,allowGUI,units,fullscr,scrn,waitBlank)
+
+if (myWin.size != [widthPix,heightPix]).any(): #Screen is not set to desired resolutoin of widthPix x heightPix
+    #Just roll with whatever wrong resolution the screen is set to
+    widthPix = myWin.size[0]
+    heightPix = myWin.size[1]
+
 myMouse = psychopy.event.Mouse(visible = 'true',win=myWin)
 runInfo = psychopy.info.RunTimeInfo(
         win=myWin,    ## a psychopy.visual.Window() instance; None = default temp window used; False = no win, no win.flips()
@@ -254,8 +260,7 @@ else:
     fixationBlank= visual.PatchStim(myWin,tex='none',colorSpace='rgb',color=(-1,-1,-1),mask='circle',units='pix',size=fixSizePix,autoLog=autoLogging)
 fixationPoint = visual.PatchStim(myWin,colorSpace='rgb',color=(1,1,1),mask='circle',units='pix',size=2,autoLog=autoLogging) #put a point in the center
 
-respText = visual.TextStim(myWin,pos=(0, -.5),colorSpace='rgb',color = (1,1,1),anchorHoriz='center', anchorVert='center', units='norm',autoLog=autoLogging)
-respText.setText('Hello, world')
+#respText = visual.TextStim(myWin,pos=(0, -.5),colorSpace='rgb',color = (1,1,1),anchorHoriz='center', anchorVert='center', units='norm',autoLog=autoLogging)
 NextText = visual.TextStim(myWin,pos=(0, 0),colorSpace='rgb',color = (1,1,1),anchorHoriz='center', anchorVert='center', units='norm',autoLog=autoLogging)
 NextRemindPctDoneText = visual.TextStim(myWin,pos=(-.1, -.4),colorSpace='rgb',color= (1,1,1),anchorHoriz='center', anchorVert='center', units='norm',autoLog=autoLogging)
 NextRemindCountText = visual.TextStim(myWin,pos=(.1, -.5),colorSpace='rgb',color = (1,1,1),anchorHoriz='center', anchorVert='center', units='norm',autoLog=autoLogging)
@@ -479,7 +484,7 @@ def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,
         if numRings > 1:
             respSound.play()
         numTimesRespSoundPlayed +=1
-    respText.draw()
+    #respText.draw()
 
     respondedEachToken = np.zeros([numRings,numObjects])  #potentially two sets of responses, one for each ring
     optionIdexs=list();baseSeq=list();numOptionsEachSet=list();numRespsNeeded=list()
@@ -528,7 +533,7 @@ def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,
                  
        mouse1, mouse2, mouse3 = myMouse.getPressed()
        if mouse1 and lastClickState==0:  #only count this event if is a new click. Problem is that mouse clicks continue to be pressed for along time
-            mouseX,mouseY = myMouse.getPos()
+            mouseX,mouseY = myMouse.getPos() #supposedly in units of myWin, which is degrees
             #print 'assumes window spans entire screen of ',monitorwidth,' cm; mouse position apparently in cm when units is set to deg = (',mouseX,',',mouseY,')'  
             #because mouse apparently giving coordinates in cm, I need to convert it to degrees of visual angle because that's what drawing is done in terms of
             cmperpixel = monitorwidth*1.0/widthPix
@@ -553,7 +558,7 @@ def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,
                         clickableRegion.setPos([x,y]) 
                         clickableRegion.setRadius(mouseToler) 
                         clickableRegion.draw()
-                        print('mouseXY=',round(mouseX,2),',',round(mouseY,2),'xy=',x,',',y, ' distance=',distance, ' mouseToler=',mouseToler)
+                        print('mouseXY=',round(mouseX,2),',',round(mouseY,2),'xy=',round(x,2),',',round(y,2), ' distance=',distance, ' mouseToler=',mouseToler)
                     if distance<mouseToler:
                         c = opts[optionSet][ncheck] #idx of color that this option num corresponds to
                         if respondedEachToken[optionSet][ncheck]:  #clicked one that already clicked on
