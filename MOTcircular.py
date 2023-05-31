@@ -34,14 +34,13 @@ timeAndDateStr = time.strftime("%d%b%Y_%H-%M", time.localtime())
 respTypes=['order']; respType=respTypes[0]
 bindRadiallyRingToIdentify=1 #0 is inner, 1 is outer
 
-numRings=2
-radii=[2.5,9.5]   #Need to encode as array for those experiments wherein more than one ring presented 
-offsets = np.array([[0,0],[-5,0],[-10,0]])
+numRings=3
+radii=[2.5,9.5,15]   #Need to encode as array for those experiments wherein more than one ring presented 
 
 respRadius=radii[0] #deg
-refreshRate= 60 *1.0;  #160 #set to the framerate of the monitor
+refreshRate= 138 *1.0;  #160 #set to the framerate of the monitor
 useClock = True #as opposed to using frame count, which assumes no frames are ever missed
-fullscr=0; scrn=1
+fullscr=1; scrn=0
 #Find out if screen may be Retina because of bug in psychopy for mouse coordinates (https://discourse.psychopy.org/t/mouse-coordinates-doubled-when-using-deg-units/11188/5)
 has_retina_scrn = False
 import subprocess
@@ -96,7 +95,7 @@ mouseChoiceArea = ballStdDev*0.8 # origin =1.3
 units='deg' #'cm'
 timeTillReversalMin = 0.5 #0.5; 
 timeTillReversalMax = 1.5# 1.3 #2.9
-colors_all = np.array([[1,-1,-1],[1,-1,-1]])
+colors_all = np.array([[1,-1,-1]] * 20)  #colors of the blobs (all identical) in a ring. Need as many as max num objects in a ring
 cueColor = np.array([1,1,1])
 #monitor parameters
 widthPixRequested = 800 #1440  #monitor width in pixels
@@ -274,12 +273,12 @@ NextRemindCountText = visual.TextStim(myWin,pos=(.1, -.5),colorSpace='rgb',color
 
 stimList = []
 # temporalfrequency limit test
-numObjsInRing = [2]
-speedsEachNumObjs =  [ [1.1,1.2,1.4,1.7] ]     #dont want to go faster than 2 because of blur problem
-numTargets = np.array([2])  # np.array([1,2,3])
-leastCommonMultipleSubsets = calcCondsPerNumTargets(numRings,numTargets)
-leastCommonMultipleTargetNums = LCM( numTargets )  #have to use this to choose whichToQuery. For explanation see newTrajectoryEventuallyForIdentityTracking.oo3
-#print('leastCommonMultipleSubsets=',leastCommonMultipleSubsets)
+numObjsInRing =         [  2,                    8        ]
+speedsEachNumObjs =  [ [1.1,1.2,1.4,1.7], [1.1,1.2,1.4,1.7] ]     #dont want to go faster than 2 because of blur problem
+numTargets = np.array([2,3])  # np.array([1,2,3])
+leastCommonMultipleSubsets = int( calcCondsPerNumTargets(numRings,numTargets) )
+leastCommonMultipleTargetNums = int( LCM( numTargets ) )  #have to use this to choose whichToQuery. For explanation see newTrajectoryEventuallyForIdentityTracking.oo3
+#print('leastCommonMultipleSubsets=',leastCommonMultipleSubsets, ' leastCommonMultipleTargetNums= ', leastCommonMultipleTargetNums)
                 
 for numObjs in numObjsInRing: #set up experiment design
     idx = numObjsInRing.index(numObjs)
@@ -291,20 +290,20 @@ for numObjs in numObjsInRing: #set up experiment design
           numSubsetsThis = len( subsetsThis );   #print('numSubsetsThis=',numSubsetsThis)
           repsNeeded = leastCommonMultipleSubsets / numSubsetsThis #that's the number of repetitions needed to make up for number of subsets of rings
           for r in range( int(repsNeeded) ):  #for nt with largest number of subsets, need no repetitions
-                  for s in subsetsThis:
-                      whichIsTarget = np.ones(numRings)*-999 #-999 is  value meaning no target in that ring. 1 will mean target in ring
-                      for ring in s:
-                         whichIsTarget[ring] = np.random.randint(0,numObjs-1,size=1) #deprecated np.random.random_integers(0, numObjs-1, size=1) #1
-                      #print('numTargets=',nt,' whichIsTarget=',whichIsTarget,' and that is one of ',numSubsetsThis,' possibilities and we are doing ',repsNeeded,'repetitions')
-                      for whichToQuery in range( leastCommonMultipleTargetNums ):  #for each subset, have to query one. This is dealed out to  the current subset by using modulus. It's assumed that this will result in equal total number of queried rings
-                          whichSubsetEntry = whichToQuery % nt  #e.g. if nt=2 and whichToQuery can be 0,1,or2 then modulus result is 0,1,0. This implies that whichToQuery won't be totally counterbalanced with which subset, which is bad because
-                                          #might give more resources to one that's queried more often. Therefore for whichToQuery need to use least common multiple.
-                          ringToQuery = s[whichSubsetEntry];  #print('ringToQuery=',ringToQuery,'subset=',s)
-                          for basicShape in ['circle']: #'diamond'
-                            for initialDirRing0 in [-1,1]:
-                                    stimList.append( {'basicShape':basicShape, 'numObjectsInRing':numObjs,'speed':speed,'initialDirRing0':initialDirRing0,
-                                            'numTargets':nt,'whichIsTarget':whichIsTarget,'ringToQuery':ringToQuery} )
-#set up record of proportion correct in various conditions
+              for s in subsetsThis:
+                  whichIsTarget = np.ones(numRings)*-999 #-999 is  value meaning no target in that ring. 1 will mean target in ring
+                  for ring in s:
+                     whichIsTarget[ring] = np.random.randint(0,numObjs-1,size=1) #deprecated np.random.random_integers(0, numObjs-1, size=1) #1
+                  #print('numTargets=',nt,' whichIsTarget=',whichIsTarget,' and that is one of ',numSubsetsThis,' possibilities and we are doing ',repsNeeded,'repetitions')
+                  for whichToQuery in range( leastCommonMultipleTargetNums ):  #for each subset, have to query one. This is dealed out to  the current subset by using modulus. It's assumed that this will result in equal total number of queried rings
+                      whichSubsetEntry = whichToQuery % nt  #e.g. if nt=2 and whichToQuery can be 0,1,or2 then modulus result is 0,1,0. This implies that whichToQuery won't be totally counterbalanced with which subset, which is bad because
+                                      #might give more resources to one that's queried more often. Therefore for whichToQuery need to use least common multiple.
+                      ringToQuery = s[whichSubsetEntry];  #print('ringToQuery=',ringToQuery,'subset=',s)
+                      for basicShape in ['circle']: #'diamond'
+                        for initialDirRing0 in [-1,1]:
+                                stimList.append( {'basicShape':basicShape, 'numObjectsInRing':numObjs,'speed':speed,'initialDirRing0':initialDirRing0,
+                                        'numTargets':nt,'whichIsTarget':whichIsTarget,'ringToQuery':ringToQuery} )
+    #set up record of proportion correct in various conditions
 trialSpeeds = list() #purely to allow report at end of how many trials got right at each speed
 for s in stimList: trialSpeeds.append( s['speed'] )
 uniqSpeeds = set(trialSpeeds) #reduce speedsUsed list to unique members, unordered set
@@ -557,7 +556,7 @@ def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,
                     #Colors were drawn in order they're in in optionsIdxs
                     distance = sqrt(pow((x-mouseX),2)+pow((y-mouseY),2))
                     mouseToler = mouseChoiceArea + optionSet*mouseChoiceArea/6.#deg visual angle?  origin=2
-                    landmarkDebug.setPos([8,6]); landmarkDebug.draw()
+                    #landmarkDebug.setPos([8,6]); landmarkDebug.draw()
                     if showClickedRegion:
                         clickedRegion.setPos([mouseX,mouseY])
                         clickedRegion.setRadius(mouseToler) 
@@ -566,8 +565,7 @@ def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,
                         clickableRegion.setPos([x,y]) 
                         clickableRegion.setRadius(mouseToler) 
                         clickableRegion.draw()
-                        print('monitorwidth=',round(monitorwidth,2), ' viewdist=', round(viewdist,2), ' pixelperdegree= ', round(pixelperdegree,2), ' cmperpix= ',round(cmperpixel,2),' , degpercm= ',round(degpercm,2))
-                        print('mouseXY=',round(mouseX,2),',',round(mouseY,2),'xy=',round(x,2),',',round(y,2), ' distance=',distance, ' mouseToler=',mouseToler)
+                        #print('mouseXY=',round(mouseX,2),',',round(mouseY,2),'xy=',round(x,2),',',round(y,2), ' distance=',distance, ' mouseToler=',mouseToler)
                     if distance<mouseToler:
                         c = opts[optionSet][ncheck] #idx of color that this option num corresponds to
                         if respondedEachToken[optionSet][ncheck]:  #clicked one that already clicked on
@@ -684,10 +682,11 @@ while trialNum < trials.nTotal and expStop==False:
         myWin.flip() #clearBuffer=True)  
     trialClock.reset()
     t0=trialClock.getTime(); t=trialClock.getTime()-t0     
-    for L in range(len(ts)):ts.remove(ts[0]) # clear all ts array
+    for L in range(len(ts)):
+        ts.remove(ts[0]) # clear ts array, to try to avoid memory problems?
     stimClock.reset()
     for n in range(trialDurFrames): #this is the loop for this trial's stimulus!
-            offsetXYeachRing=[[0,0],[0,0]]
+            offsetXYeachRing=[ [0,0],[0,0],[0,0] ]
             (angleIni,currAngle,isReversed,reversalNumEachRing) = \
                             oneFrameOfStim(thisTrial,n,stimClock,useClock,offsetXYeachRing,initialDirectionEachRing,currAngle,blobsToPreCue,isReversed,reversalNumEachRing,ShowTrackCueFrames) #da big function
             if exportImages:
@@ -818,7 +817,7 @@ while trialNum < trials.nTotal and expStop==False:
         if orderCorrect==3  :correct=1
         else:correct=0
         if correct:
-            highA = sound.Sound('G',octave=5, sampleRate=6000, secs=.8)
+            highA = sound.Sound('G',octave=4, sampleRate=6000, secs=.8)
             highA.setVolume(0.3) #low volume because piercing, loud relative to inner, outer files
             highA.play()
         else: #incorrect
