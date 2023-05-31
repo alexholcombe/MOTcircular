@@ -237,8 +237,7 @@ gaussian2 = visual.PatchStim(myWin, tex='none',mask='gauss',colorSpace='rgb',siz
 optionChosenCircle = visual.Circle(myWin, radius=mouseChoiceArea, edges=32, colorSpace='rgb',fillColor = (1,0,1),autoLog=autoLogging) #to outline chosen options
 
 #Optionally show zones around objects that will count as a click for that object
-clickableRegion = visual.Circle(myWin, radius=2.2, edges=32, colorSpace='rgb',lineColor=(-1,1,-1),fillColor=(-1,1,-1),autoLog=autoLogging) #to show clickable zones
-clickableRegion.setColor((-1,1,-1)) #show in green
+clickableRegion = visual.Circle(myWin, radius=2.2, edges=32, colorSpace='rgb',fillColor=(-1,.5,-1),autoLog=autoLogging) #to show clickable zones
 #Optionally show location of most recent click
 clickedRegion = visual.Circle(myWin, radius=2.2, edges=32, colorSpace='rgb',lineColor=(-1,1,-1),fillColor=(-1,1,-1),autoLog=autoLogging) #to show clickable zones
 clickedRegion.setColor((0,1,-1)) #show in yellow
@@ -480,7 +479,7 @@ def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,initialD
 # #######End of function definition that displays the stimuli!!!! #####################################
 
 showclickableRegions = True
-showClickedRegion = True
+showClickedRegion = False
 def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,respRadius,currAngle,expStop ):
     optionSets=numRings
    #Draw response cues

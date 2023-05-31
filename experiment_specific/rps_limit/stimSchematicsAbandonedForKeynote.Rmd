@@ -1,0 +1,38 @@
+---
+title: "stimSchematics"
+author: "Alex Holcombe"
+date: "June 19, 2015"
+output: html_document
+---
+
+This is an R Markdown document.
+
+```{r}
+library(ggplot2)
+```
+
+Unfortunately there's no way to centre the axes inside the data region, whether with ggplot or R base
+http://stackoverflow.com/questions/17753101/center-x-and-y-axis-with-ggplot2
+```{r}
+r = 3
+thetas =seq(0,2*pi,by=0.01)    
+x=r*cos(thetas)
+y=r*sin(thetas)
+df=data.frame(thetas=thetas,x=x,y=y)
+g<-ggplot(df,aes(x,y)) + geom_point() + theme_bw() 
+show(g)
+#to see actually what will be plotted and compare 
+#    qplot(clarity, data=diamonds, fill=cut, geom="bar")
+#save the plot in a variable image to be able to export to svg
+#    image=qplot(clarity, data=diamonds, fill=cut, geom="bar")
+#This actually save the plot in a image
+#    ggsave(file="test.svg", plot=image, width=10, height=8)
+```
+
+You can also embed plots, for example:
+
+```{r, echo=FALSE}
+plot(cars)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
