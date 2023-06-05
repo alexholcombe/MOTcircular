@@ -3,7 +3,7 @@
 #
 # Copyright (C) 2011 Wing (Wei-Ying Chen)  modified from pylink ATI and open source code
 # Modified by Chris Fajou, pre-April 2015.
-# Provides a standard set of functions for using an eye tracker that allows experiment code to be simple and tracker agnostic.( For EyeLink1000)
+# Provides a standard set of functions for using an eye tracker that allows experiment code to be simple ( For EyeLink1000)
 
 import pylink
 import sys, os, gc

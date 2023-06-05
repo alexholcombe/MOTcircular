@@ -1,4 +1,11 @@
 __author__ = """Alex "O." Holcombe, Wei-Ying Chen""" ## double-quotes will be silently removed, single quotes will be left, eg, O'Connor
+############################################################
+###For set-up on a new machine, some variables to consider
+###
+### useClock
+### For set-up of a new experimnet variant, variables to consider: 
+### trialDurMin, trackVariableIntervMax
+##############
 import psychopy.info
 from psychopy import sound, monitors, logging, visual, data, core
 import psychopy.gui, psychopy.event
@@ -38,7 +45,7 @@ numRings=3
 radii=[2.5,9.5,15]   #Need to encode as array for those experiments wherein more than one ring presented 
 
 respRadius=radii[0] #deg
-refreshRate= 138 *1.0;  #160 #set to the framerate of the monitor
+refreshRate= 110 *1.0;  #160 #set to the framerate of the monitor
 useClock = True #as opposed to using frame count, which assumes no frames are ever missed
 fullscr=1; scrn=0
 #Find out if screen may be Retina because of bug in psychopy for mouse coordinates (https://discourse.psychopy.org/t/mouse-coordinates-doubled-when-using-deg-units/11188/5)
@@ -64,15 +71,17 @@ print('scrn = ',scrn, ' from dialog box')
 fullscr = infoFirst['Fullscreen (timing errors if not)']
 refreshRate = infoFirst['Screen refresh rate']
 
-#trialDur does not include trackingExtraTime, during which the cue is on. Not really part of the trial.
-trialDur = 3.3
-if demo:trialDur = 5;refreshRate = 60.; 
+#trialDurMin does not include trackVariableIntervMax or trackingExtraTime, during which the cue is on. Not really part of the trial.
+trialDurMin = 1
+trackingExtraTime=1.0; #giving the person time to attend to the cue (secs). This gets added to trialDurMin
+trackVariableIntervMax = 0.8 #Random interval that gets added to trackingExtraTime and trialDurMin
+if demo:trialDurMin = 5;refreshRate = 60.; 
 tokenChosenEachRing= [-999]*numRings
-rampUpDur=0; rampDownDur=0
-trackingExtraTime=1.0; #giving the person time to attend to the cue (secs). This gets added to trialDur
-trackVariableIntervMax = 0.8
+rampUpDur=0; #duration of speed ramp from stationary, during cue
+rampDownDur=0 #duration of speedramp down up to the end of the trial
+
 def maxTrialDur():
-    return( trialDur+trackingExtraTime+trackVariableIntervMax)
+    return( trialDurMin+trackingExtraTime+trackVariableIntervMax)
 badTimingCushion = 0.1 #Creating 100ms more of reversals than should need. Because if miss frames and using clock time instead of frames, might go longer
 def maxPossibleReversals():  #need answer to know how many blank fields to print to file
     return int( ceil(      (maxTrialDur() - trackingExtraTime)  / timeTillReversalMin          ) )
@@ -86,7 +95,7 @@ def getReversalTimes():
     return reversalTimesEachRing
     
 toTrackCueDur = rampUpDur+rampDownDur+trackingExtraTime  #giving the person time to attend to the cue (secs)
-trialDurFrames=int(trialDur*refreshRate)+int( trackingExtraTime*refreshRate )
+trialDurFrames=int(trialDurMin*refreshRate)+int( trackingExtraTime*refreshRate )
 rampUpFrames = refreshRate*rampUpDur;   rampDownFrames = refreshRate*rampDownDur;
 ShowTrackCueFrames = int( refreshRate*toTrackCueDur )
 rampDownStart = trialDurFrames-rampDownFrames
@@ -191,9 +200,13 @@ else:
 expname = ''
 fileName = dataDir+'/'+subject+ '_' + expname+timeAndDateStr
 if not demo and not exportImages:
-    dataFile = open(fileName+'.txt', 'w')  # sys.stdout 
-    saveCodeCmd = 'cp \'' + sys.argv[0] + '\' '+ fileName + '.py'
-    os.system(saveCodeCmd)  #save a copy of the code as it was when that subject was run
+    dataFile = open(fileName+'.txt', 'w')  # sys.stdout
+    import shutil
+    #save a copy of the code as it was when that subject was run
+    shutil.copy2(sys.argv[0], fileName+'.py') # complete target filename given
+    #saveCodeCmd = 'cp \'' + sys.argv[0] + '\' '+ fileName + '.py'
+    #os.system(saveCodeCmd)
+    
     logF = logging.LogFile(fileName+'.log', 
         filemode='w',#if you set this to 'a' it will append instead of overwriting
         level=logging.INFO)#errors, data and warnings will be sent to this logfile
@@ -206,8 +219,9 @@ if refreshRateWrong:
 else: logging.info(refreshMsg1+refreshMsg2)
 longerThanRefreshTolerance = 0.27
 longFrameLimit = round(1000./refreshRate*(1.0+longerThanRefreshTolerance),3) # round(1000/refreshRate*1.5,2)
-print('longFrameLimit=',longFrameLimit,' Recording trials where one or more interframe interval exceeded this figure ', file=logF)
-print('longFrameLimit=',longFrameLimit,' Recording trials where one or more interframe interval exceeded this figure ')
+msg = 'longFrameLimit=' + str(longFrameLimit) + ' Recording trials where one or more interframe interval exceeded this figure '
+print(msg, file=logF)
+print(msg)
 if msgWrongResolution != '':
     logging.error(msgWrongResolution)
 
@@ -227,7 +241,6 @@ runInfo = psychopy.info.RunTimeInfo(
         userProcsDetailed=True  ## if verbose and userProcsDetailed, return (command, process-ID) of the user's processes
         )
 print('second window opening runInfo mean ms=',runInfo["windowRefreshTimeAvg_ms"],file=logF)
-print('second window opening runInfo mean ms=',runInfo["windowRefreshTimeAvg_ms"])
 logging.info(runInfo)
 logging.info('gammaGrid='+str(mon.getGammaGrid()))
 logging.info('linearizeMethod='+str(mon.getLinearizeMethod()))
@@ -317,12 +330,14 @@ trials = data.TrialHandler(stimList,trialsPerCondition) #constant stimuli method
 timeAndDateStr = time.strftime("%d%b%Y_%H-%M", time.localtime()) 
 logging.info(  str('starting exp with name: "'+'TemporalFrequencyLimit'+'" at '+timeAndDateStr)   )
 logF = io.StringIO()  #kludge so I dont have to change all the print >>logF statements
-logging.info(    'numtrials='+ str(trials.nTotal)+' and each trialDur='+str(trialDur)+' refreshRate='+str(refreshRate)      )
-
-print(' numtrials=', trials.nTotal)
-print('rampUpDur=',rampUpDur, ' rampDownDur=', rampDownDur, ' secs', file=logF);  logging.info( logF.getvalue() )
+msg = 'numtrials='+ str(trials.nTotal)+', trialDurMin= '+str(trialDurMin)+ ' trackVariableIntervMax= '+ str(trackVariableIntervMax) + 'refreshRate=' +str(refreshRate)     
+logging.info( msg )
+print(msg)
+msg = 'rampUpDur=' + str(rampUpDur) + ' rampDownDur= ' + str(rampDownDur) + ' secs'
+print(msg, file=logF);
+logging.info( logF.getvalue() )
 logging.info('task='+'track'+'   respType='+respType)
-logging.info(   'radii=' + str(radii)   )
+logging.info( 'ring radii=' + str(radii)   )
 logging.flush()
 
 RFcontourAmp= 0.0
@@ -419,6 +434,7 @@ def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,initialD
       global cueRing,ringRadial,ringRadialR, currentlyCuedBlob #makes python treat it as a local variable
       global angleIniEachRing, correctAnswers
       
+      #Determine what frame we are on
       if useClock: #Don't count on not missing frames. Use actual time.
         t = clock.getTime()
         n = round(t*refreshRate)
@@ -446,19 +462,20 @@ def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,initialD
         angleObject0 = angleIniEachRing[numRing] + currAngle[numRing]
         for nobject in range(numObjects):
             if nobject==0:
-                    if reversalNumEachRing[numRing] <= len(reversalTimesEachRing[numRing]): #haven't exceeded  reversals assigned
-                        reversalNum = int(reversalNumEachRing[numRing])
-                        if len( reversalTimesEachRing[numRing] ) <= reversalNum:
-                            msg = 'You failed to allocate enough reversal times, reached ' +str(reversalNum)+ ' reversals at '+ str(reversalTimesEachRing[numRing][reversalNum-1]) + \
-                                      'and still going, current time ='+str(n/refreshRate)+' asking for time of next one, will assume no more reversals'
-                            logging.error(msg)
-                            print(msg)
-                            nextReversalTime = 9999 #didn't allocate enough, will just not reverse any more
-                        else: #allocated enough reversals
-                            nextReversalTime = reversalTimesEachRing[numRing][ reversalNum ]
-                        if n > refreshRate * nextReversalTime: #have now exceeded time for this next reversal
-                            isReversed[numRing] = -1*isReversed[numRing]
-                            reversalNumEachRing[numRing] +=1
+                if reversalNumEachRing[numRing] <= len(reversalTimesEachRing[numRing]): #haven't exceeded reversals assigned
+                    reversalNum = int(reversalNumEachRing[numRing])
+                    if len( reversalTimesEachRing[numRing] ) <= reversalNum:
+                        msg = 'Not enough reversal times allocated, reached ' +str(reversalNum)+ ' reversals at '+ str( round(reversalTimesEachRing[numRing][reversalNum-1],1) )
+                        msg=msg+ 'and still going (only allocated the following:' + str( np.around(reversalTimesEachRing[numRing],1) )+ ' n= ' + str(round(n,1))
+                        msg=msg+ ' current time ='+str( round(n/refreshRate,2) )+' asking for time of next one, will assume no more reversals'
+                        logging.error(msg)
+                        print(msg)
+                        nextReversalTime = 9999 #didn't allocate enough, will just not reverse any more
+                    else: #allocated enough reversals
+                        nextReversalTime = reversalTimesEachRing[numRing][ reversalNum ]
+                    if n > refreshRate * nextReversalTime: #have now exceeded time for this next reversal
+                        isReversed[numRing] = -1*isReversed[numRing]
+                        reversalNumEachRing[numRing] +=1
             angleThisObject = angleObject0 + (2*pi)/numObjects*nobject
             x,y = xyThisFrameThisAngle(thisTrial['basicShape'],radii, numRing,angleThisObject,n,speed)
             x += offsetXYeachRing[numRing][0]
@@ -476,7 +493,8 @@ def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,initialD
       if blindspotFill:
           blindspotStim.draw()
       return angleIniEachRing,currAngle,isReversed,reversalNumEachRing   
-# #######End of function definition that displays the stimuli!!!! #####################################
+# #######End of function that displays the stimuli #####################################
+########################################################################################
 
 showclickableRegions = True
 showClickedRegion = False
@@ -636,7 +654,7 @@ if eyetracking:
     tracker=Tracker_EyeLink(myWin,trialClock,subject,1, 'HV5',(255,255,255),(0,0,0),False,(widthPix,heightPix))
 
 randomStartAngleEachRing = True
-randomInitiialDirExceptRing0 = True
+randomInitialDirExceptRing0 = True
 oppositeInitialDirFirstTwoRings = True
 
 while trialNum < trials.nTotal and expStop==False:
@@ -649,7 +667,7 @@ while trialNum < trials.nTotal and expStop==False:
     else: 
         angleIniEachRing = [0]*numRings
     currAngle = list([0]) * numRings
-    if randomInitiialDirExceptRing0:
+    if randomInitialDirExceptRing0:
         initialDirectionEachRing = list( np.random.randint(0,1,size=[numRings]) *2 -1 ) #randomise initial direction of each ring
         initialDirectionEachRing[0] = thisTrial['initialDirRing0']
         if oppositeInitialDirFirstTwoRings and numRings>1:
@@ -659,12 +677,12 @@ while trialNum < trials.nTotal and expStop==False:
     trackVariableIntervDur=np.random.uniform(0,trackVariableIntervMax) #random interval tacked onto tracking to make total duration variable so cant predict final position
     trialDurTotal = maxTrialDur() - trackVariableIntervDur
     trialDurFrames= int( trialDurTotal*refreshRate )
+    print('trialDurTotal=',np.around(trialDurTotal,2),' trialDurFrames=',np.around(trialDurFrames,2), 'refreshRate=',np.around(refreshRate) ) 
     xyTargets = np.zeros( [thisTrial['numTargets'], 2] ) #need this for eventual case where targets can change what ring they are in
     numDistracters = numRings*thisTrial['numObjectsInRing'] - thisTrial['numTargets']
     xyDistracters = np.zeros( [numDistracters, 2] )
 
     reversalTimesEachRing = getReversalTimes()
-    #print('reversalTimesEachRing=',np.around(np.array(reversalTimesEachRing),2),' maxPossibleReversals=',maxPossibleReversals()) #debugOFF
     numObjects = thisTrial['numObjectsInRing']
     centerInMiddleOfSegment =360./numObjects/2.0
     blobsToPreCue=thisTrial['whichIsTarget']
@@ -684,24 +702,39 @@ while trialNum < trials.nTotal and expStop==False:
     for L in range(len(ts)):
         ts.remove(ts[0]) # clear ts array, to try to avoid memory problems?
     stimClock.reset()
-    for n in range(trialDurFrames): #this is the loop for this trial's stimulus!
-            offsetXYeachRing=[ [0,0],[0,0],[0,0] ]
-            (angleIni,currAngle,isReversed,reversalNumEachRing) = \
-                            oneFrameOfStim(thisTrial,n,stimClock,useClock,offsetXYeachRing,initialDirectionEachRing,currAngle,blobsToPreCue,isReversed,reversalNumEachRing,ShowTrackCueFrames) #da big function
-            if exportImages:
-                myWin.getMovieFrame(buffer='back') #for later saving
-                framesSaved +=1
-            myWin.flip(clearBuffer=True)
-            t=trialClock.getTime()-t0; ts.append(t);
-            if n==trialDurFrames-1: psychopy.event.clearEvents(eventType='mouse');
+    print('About to start trial and trialDurFrames =',round(trialDurFrames,1))
+    
+    #the loop for this trial's stimulus!
+    for n in range(trialDurFrames): 
+        offsetXYeachRing=[ [0,0],[0,0],[0,0] ]
+        (angleIni,currAngle,isReversed,reversalNumEachRing) = \
+                oneFrameOfStim(thisTrial,n,stimClock,useClock,offsetXYeachRing,initialDirectionEachRing,currAngle,blobsToPreCue,isReversed,reversalNumEachRing,ShowTrackCueFrames) #da big function
+
+        if exportImages:
+            myWin.getMovieFrame(buffer='back') #for later saving
+            framesSaved +=1
+        myWin.flip(clearBuffer=True)
+        
+        #time management
+        t=trialClock.getTime()-t0;
+        ts.append(t);
+        if useClock: #Rather than necessarily showing every frame, allowing for skipped frames by showing frame that is correct for this time.
+            #But that means that n may not reach trialDurFrames until after have reached end of trial, so need to quit rather than 
+            #let the stimuli keep going around and around
+            if t > trialDurTotal:
+                msg="Must not have kept up with some frames, breaking out of loop"; print(msg)
+                break
+    #End of trial stimulus loop!
+    
     if eyetracking:
-            tracker.stopEyeTracking() #This seems to work immediately and cause the Eyelink machine to save the EDF file to its own drive
+        tracker.stopEyeTracking() #This seems to work immediately and cause the Eyelink machine to save the EDF file to its own drive
+    #clear mouse buffer in preparation for response, which may involve clicks
+    psychopy.event.clearEvents(eventType='mouse')
 
     #end of big stimulus loop
     accelerateComputer(0,process_priority, disable_gc) #turn off stuff that sped everything up
     #check for timing problems
     interframeIntervs = np.diff(ts)*1000 #difference in time between successive frames, in ms
-    #print >>logF, 'trialnum=',trialNum, '   interframe intervs were ',around(interframeIntervs,1)
     idxsInterframeLong = np.where( interframeIntervs > longFrameLimit ) [0] #frames that exceeded longerThanRefreshTolerance of expected duration
     numCasesInterframeLong = len( idxsInterframeLong )
     if numCasesInterframeLong >0:
@@ -712,8 +745,9 @@ while trialNum < trials.nTotal and expStop==False:
            longFramesStr += ' apparently screen refreshes skipped, interframe durs were:'+\
                     str( np.around(  interframeIntervs[idxsInterframeLong] ,1  ) )+ ' and was these frames: '+ str(idxsInterframeLong)
        if longFramesStr != None:
-                print('trialnum=',trialNum,'  ',longFramesStr)
-                print('trialnum=',trialNum,'  ',longFramesStr, file=logF)
+                msg= 'trialnum=' + str(trialNum) + ' ' + longFramesStr
+                print(msg, file=logF)
+                print(msg)
                 if not demo:
                     flankingAlso=list()
                     for idx in idxsInterframeLong: #also print timing of one before and one after long frame
@@ -744,8 +778,12 @@ while trialNum < trials.nTotal and expStop==False:
     else: #eg if numRings==2:
         soundFileNum = thisTrial['ringToQuery']*2 #outer, not middle for ring==1
         
-    soundPathAndFile= os.path.join(soundDir, ringQuerySoundFileNames[ soundFileNum ])
-    respSound = sound.Sound(soundPathAndFile, secs=.2)
+    respSoundPathAndFile= os.path.join(soundDir, ringQuerySoundFileNames[ soundFileNum ])
+    respSound = sound.Sound(respSoundPathAndFile, secs=.2)
+    
+    #corrSoundPathAndFile= os.path.join(soundDir, 'Ding.wav')
+    #corrSound = sound.Sound(corrSoundPathAndFile, secs=.2)
+
     postCueNumBlobsAway=-999 #doesn't apply to click tracking and non-tracking task
      # ####### response set up answer
     responses = list();  responsesAutopilot = list()
@@ -816,9 +854,10 @@ while trialNum < trials.nTotal and expStop==False:
         if orderCorrect==3  :correct=1
         else:correct=0
         if correct:
-            highA = sound.Sound('G',octave=4, sampleRate=6000, secs=.8)
-            highA.setVolume(0.3) #low volume because piercing, loud relative to inner, outer files
-            highA.play()
+            #corrSound.play()
+            hiA = sound.Sound('A',octave=4, sampleRate=6000, secs=.8)
+            hiA.setVolume(0.9)
+            hiA.play()
         else: #incorrect
             lowD = sound.Sound('E',octave=3, sampleRate=6000, secs=.8)
             lowD.setVolume(0.9)
