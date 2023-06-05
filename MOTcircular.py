@@ -3,7 +3,7 @@ __author__ = """Alex "O." Holcombe, Wei-Ying Chen""" ## double-quotes will be si
 ###For set-up on a new machine, some variables to consider
 ###
 ### useClock
-### For set-up of a new experimnet variant, variables to consider: 
+### For set-up of a new experiment variant, variables to consider: 
 ### trialDurMin, trackVariableIntervMax
 ##############
 import psychopy.info
@@ -129,7 +129,7 @@ mon.setSizePix( (widthPixRequested,heightPixRequested) )
 myWin = openMyStimWindow(mon,widthPixRequested,heightPixRequested,bgColor,allowGUI,units,fullscr,scrn,waitBlank)
 myWin.setRecordFrameIntervals(False)
 
-trialsPerCondition = 2 #default value
+trialsPerCondition = 1 #default value
 
 refreshMsg2 = ''
 if not checkRefreshEtc:
@@ -176,7 +176,7 @@ if checkRefreshEtc and (not demo) and (myWinRes != [widthPixRequested,heightPixR
     msgWrongResolution = 'Instead of desired resolution of '+ str(widthPixRequested)+'x'+str(heightPixRequested)+ ' pixels, screen apparently '+ str(myWinRes[0])+ 'x'+ str(myWinRes[1])
     myDlg.addText(msgWrongResolution, color='Red')
     print(msgWrongResolution)
-myDlg.addText('Note: to abort press ESC at a trials response screen') # color='DimGrey') color names stopped working along the way, for unknown reason
+myDlg.addText('Note: to abort, press ESC at a trials response screen', color='DimGrey') #color names stopped working along the way, for unknown reason
 myDlg.show()
 if myDlg.OK: #unpack information from dialogue box
    thisInfo = myDlg.data #this will be a list of data returned from each field added in order
@@ -203,7 +203,9 @@ if not demo and not exportImages:
     dataFile = open(fileName+'.txt', 'w')  # sys.stdout
     import shutil
     #save a copy of the code as it was when that subject was run
-    shutil.copy2(sys.argv[0], fileName+'.py') # complete target filename given
+    print('sys.argv[0]= ',sys.argv[0])
+    ok = shutil.copy2(sys.argv[0], fileName+'.py') # complete target filename given
+    print("Result of attempt to copy = ", ok)
     #saveCodeCmd = 'cp \'' + sys.argv[0] + '\' '+ fileName + '.py'
     #os.system(saveCodeCmd)
     
@@ -250,14 +252,14 @@ gaussian2 = visual.PatchStim(myWin, tex='none',mask='gauss',colorSpace='rgb',siz
 optionChosenCircle = visual.Circle(myWin, radius=mouseChoiceArea, edges=32, colorSpace='rgb',fillColor = (1,0,1),autoLog=autoLogging) #to outline chosen options
 
 #Optionally show zones around objects that will count as a click for that object
-clickableRegion = visual.Circle(myWin, radius=2.2, edges=32, colorSpace='rgb',fillColor=(-1,.5,-1),autoLog=autoLogging) #to show clickable zones
+clickableRegion = visual.Circle(myWin, radius=2.2, edges=32, colorSpace='rgb',fillColor=(-1,-.7,-1),autoLog=autoLogging) #to show clickable zones
 #Optionally show location of most recent click
 clickedRegion = visual.Circle(myWin, radius=2.2, edges=32, colorSpace='rgb',lineColor=(-1,1,-1),fillColor=(-1,1,-1),autoLog=autoLogging) #to show clickable zones
 clickedRegion.setColor((0,1,-1)) #show in yellow
 
 landmarkDebug = visual.Circle(myWin, radius=2.2, edges=32, colorSpace='rgb',fillColor=(1,-1,1),autoLog=autoLogging) #to show clickable zones
 
-circlePostCue = visual.Circle(myWin, radius=2*radii[0], edges=32, colorSpace='rgb',fillColor = (-.85,-.85,-.85),lineColor=(-1,-1,-1),autoLog=autoLogging) #visual postcue
+circlePostCue = visual.Circle(myWin, radius=2*radii[0], edges=32, colorSpace='rgb',fillColor=(-1,-1,-1),lineColor=(-.6,-.6,-.6),autoLog=autoLogging) #visual postcue
 #referenceCircle allows visualisation of trajectory, mostly for debugging
 referenceCircle = visual.Circle(myWin, radius=radii[0], edges=32, colorSpace='rgb',lineColor=(-1,-1,1),autoLog=autoLogging) #visual postcue
 
@@ -286,27 +288,34 @@ NextRemindCountText = visual.TextStim(myWin,pos=(.1, -.5),colorSpace='rgb',color
 stimList = []
 # temporalfrequency limit test
 numObjsInRing =         [  2,                    8        ]
-speedsEachNumObjs =  [ [1.1,1.2,1.4,1.7], [1.1,1.2,1.4,1.7] ]     #dont want to go faster than 2 because of blur problem
-numTargets = np.array([2,3])  # np.array([1,2,3])
+speedsEachNumObjs =  [ [0.5,1.0,1.4,1.7], [0.5,1.0,1.4,1.7] ]     #dont want to go faster than 2 because of blur problem
+numTargets = np.array([3])  # np.array([1,2,3])
 leastCommonMultipleSubsets = int( calcCondsPerNumTargets(numRings,numTargets) )
-leastCommonMultipleTargetNums = int( LCM( numTargets ) )  #have to use this to choose whichToQuery. For explanation see newTrajectoryEventuallyForIdentityTracking.oo3
-#print('leastCommonMultipleSubsets=',leastCommonMultipleSubsets, ' leastCommonMultipleTargetNums= ', leastCommonMultipleTargetNums)
+leastCommonMultipleTargetNums = int( LCM( numTargets ) )  #have to use this to choose whichToQuery.
+#for each subset, need to counterbalance which target is queried. Because each element occurs equally often, which one queried can be an independent factor. But need as many repetitions as largest number of target numbers.
+# 3 targets . 3 subsets maximum. Least common multiple is 3. 3 rings that could be post-cued. That means counterbalancing requires 3 x 3 x 3 = 27 trials. NO! doesn't work
+# But what do you do when 2 targets, which one do you pick in the 3 different situations? Can't counterbalance it evenly, because when draw 3rd situation, half of time should pick one and half the time the other. Therefore have to use least common multiple of all the possible set sizes. Unless you just want to throw away that possibility. But then have different number of trials in 2 targets than in 3 targets.
+#		-  Is that last sentence true? Because always seem to be running leastCommonMultipleSubsets/numSubsetsThis for each numTargets
+#	 Check counterbalancing of numObjectsInRing*speed*numTargets*ringToQuery.  Leaving out whichIsTarget which is a list of which of those numTargets is the target.
+print('leastCommonMultipleSubsets=',leastCommonMultipleSubsets, ' leastCommonMultipleTargetNums= ', leastCommonMultipleTargetNums)
                 
 for numObjs in numObjsInRing: #set up experiment design
     idx = numObjsInRing.index(numObjs)
     speeds= speedsEachNumObjs[  idx   ]
     for speed in speeds:
         ringNums = np.arange(numRings)
-        for nt in numTargets: #  If 3 concentric rings involved, have to consider 3 choose 2, 3 choose 1, have to have as many conditions as the maximum
+        for nt in numTargets: #for each num targets condition,
+          #Need to query each ring equally often. In case of 3 rings and 2 targets, 3 choose 2 = 3 possible ring combinations
+          #If 3 concentric rings involved, have to consider 3 choose 2 targets, 3 choose 1 targets, have to have as many conditions as the maximum
           subsetsThis = list(itertools.combinations(ringNums,nt)) #all subsets of length nt from the universe of ringNums
-          numSubsetsThis = len( subsetsThis );   #print('numSubsetsThis=',numSubsetsThis)
+          numSubsetsThis = len( subsetsThis );   print('numSubsetsThis=',numSubsetsThis)
           repsNeeded = leastCommonMultipleSubsets / numSubsetsThis #that's the number of repetitions needed to make up for number of subsets of rings
           for r in range( int(repsNeeded) ):  #for nt with largest number of subsets, need no repetitions
               for s in subsetsThis:
                   whichIsTarget = np.ones(numRings)*-999 #-999 is  value meaning no target in that ring. 1 will mean target in ring
                   for ring in s:
                      whichIsTarget[ring] = np.random.randint(0,numObjs-1,size=1) #deprecated np.random.random_integers(0, numObjs-1, size=1) #1
-                  #print('numTargets=',nt,' whichIsTarget=',whichIsTarget,' and that is one of ',numSubsetsThis,' possibilities and we are doing ',repsNeeded,'repetitions')
+                  print('numTargets=',nt,' whichIsTarget=',whichIsTarget,' and that is one of ',numSubsetsThis,' possibilities and we are doing ',repsNeeded,'repetitions')
                   for whichToQuery in range( leastCommonMultipleTargetNums ):  #for each subset, have to query one. This is dealed out to  the current subset by using modulus. It's assumed that this will result in equal total number of queried rings
                       whichSubsetEntry = whichToQuery % nt  #e.g. if nt=2 and whichToQuery can be 0,1,or2 then modulus result is 0,1,0. This implies that whichToQuery won't be totally counterbalanced with which subset, which is bad because
                                       #might give more resources to one that's queried more often. Therefore for whichToQuery need to use least common multiple.
@@ -498,15 +507,14 @@ def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,initialD
 
 showclickableRegions = True
 showClickedRegion = False
-def  collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,respRadius,currAngle,expStop ):
+def collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,respRadius,currAngle,expStop ):
     optionSets=numRings
-   #Draw response cues
-    numTimesRespSoundPlayed=0
-    if numTimesRespSoundPlayed<1: #2
-        respSound.setVolume(1)
+    #Draw/play response cues
+    timesRespPromptSoundPlayed=0
+    if timesRespPromptSoundPlayed<1: #2
         if numRings > 1:
-            respSound.play()
-        numTimesRespSoundPlayed +=1
+            respPromptSound.play()
+        timesRespPromptSoundPlayed +=1
     #respText.draw()
 
     respondedEachToken = np.zeros([numRings,numObjects])  #potentially two sets of responses, one for each ring
@@ -769,7 +777,8 @@ while trialNum < trials.nTotal and expStop==False:
     #     np.random.shuffle(shuffledAns[:,0]) #unfortunately for bindRadially task, previous shuffling shuffled pairs, not individuals
     #print 'answer after shuffling=',shuffledAns 
     passThisTrial=False
-    #Create postcues
+    
+    #Create response prompt / postcue
     visuallyPostCue = True
     ringQuerySoundFileNames = [ 'innerring.wav', 'middlering.wav', 'outerring.wav' ]
     soundDir = 'sounds'
@@ -778,13 +787,13 @@ while trialNum < trials.nTotal and expStop==False:
     else: #eg if numRings==2:
         soundFileNum = thisTrial['ringToQuery']*2 #outer, not middle for ring==1
         
-    respSoundPathAndFile= os.path.join(soundDir, ringQuerySoundFileNames[ soundFileNum ])
-    respSound = sound.Sound(respSoundPathAndFile, secs=.2)
+    respPromptSoundPathAndFile= os.path.join(soundDir, ringQuerySoundFileNames[ soundFileNum ])
+    respPromptSound = sound.Sound(respPromptSoundPathAndFile, secs=.2)
     corrSoundPathAndFile= os.path.join(soundDir, 'Ding.wav')
     corrSound = sound.Sound(corrSoundPathAndFile)
 
     postCueNumBlobsAway=-999 #doesn't apply to click tracking and non-tracking task
-     # ####### response set up answer
+
     responses = list();  responsesAutopilot = list()
     responses,responsesAutopilot,respondedEachToken,expStop = \
             collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,respRadius,currAngle,expStop)  #collect responses!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#####
@@ -854,8 +863,7 @@ while trialNum < trials.nTotal and expStop==False:
         else:correct=0
         if correct:
             corrSound.play()
-            #hiA = sound.Sound('A',octave=4, volume=0.9,  secs=.8)
-            #hiA.play()
+            #hiA = sound.Sound('A',octave=4, volume=0.9,  secs=.8); hiA.play()
         else: #incorrect
             lowD = sound.Sound('E',octave=3, sampleRate=6000, secs=.8, volume=0.9)
             lowD.play()
