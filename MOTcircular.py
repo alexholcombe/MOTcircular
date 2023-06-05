@@ -780,9 +780,8 @@ while trialNum < trials.nTotal and expStop==False:
         
     respSoundPathAndFile= os.path.join(soundDir, ringQuerySoundFileNames[ soundFileNum ])
     respSound = sound.Sound(respSoundPathAndFile, secs=.2)
-    
-    #corrSoundPathAndFile= os.path.join(soundDir, 'Ding.wav')
-    #corrSound = sound.Sound(corrSoundPathAndFile, secs=.2)
+    corrSoundPathAndFile= os.path.join(soundDir, 'Ding.wav')
+    corrSound = sound.Sound(corrSoundPathAndFile)
 
     postCueNumBlobsAway=-999 #doesn't apply to click tracking and non-tracking task
      # ####### response set up answer
@@ -854,13 +853,11 @@ while trialNum < trials.nTotal and expStop==False:
         if orderCorrect==3  :correct=1
         else:correct=0
         if correct:
-            #corrSound.play()
-            hiA = sound.Sound('A',octave=4, sampleRate=6000, secs=.8)
-            hiA.setVolume(0.9)
-            hiA.play()
+            corrSound.play()
+            #hiA = sound.Sound('A',octave=4, volume=0.9,  secs=.8)
+            #hiA.play()
         else: #incorrect
-            lowD = sound.Sound('E',octave=3, sampleRate=6000, secs=.8)
-            lowD.setVolume(0.9)
+            lowD = sound.Sound('E',octave=3, sampleRate=6000, secs=.8, volume=0.9)
             lowD.play()
     trialNum+=1
     waitForKeyPressBetweenTrials = False
