@@ -30,7 +30,7 @@ disable_gc = True
 subject='test'#'test'
 autoLogging = False
 demo = False
-autopilot=False
+autopilot=True
 if autopilot:  subject='auto'
 feedback=True
 exportImages= False #quits after one trial / output image
@@ -288,8 +288,10 @@ NextRemindCountText = visual.TextStim(myWin,pos=(.1, -.5),colorSpace='rgb',color
 stimList = []
 # temporalfrequency limit test
 numObjsInRing =         [  2,                    8        ]
-speedsEachNumObjs =  [ [0.5,1.0,1.4,1.7], [0.5,1.0,1.4,1.7] ]     #dont want to go faster than 2 because of blur problem
-numTargets = np.array([3])  # np.array([1,2,3])
+speedsEachNumObjs =  [ [0.1, 0.5], [0.1, 0.5 ] ]   #[ [0.5,1.0,1.4,1.7], [0.5,1.0,1.4,1.7] ]     #dont want to go faster than 2 because of blur problem
+numTargets = np.array([2,3])  # np.array([1,2,3])
+
+#To query each ring equally often, the combinatorics are complicated because have different numbers of target conditions.
 leastCommonMultipleSubsets = int( calcCondsPerNumTargets(numRings,numTargets) )
 leastCommonMultipleTargetNums = int( LCM( numTargets ) )  #have to use this to choose whichToQuery.
 #for each subset, need to counterbalance which target is queried. Because each element occurs equally often, which one queried can be an independent factor. But need as many repetitions as largest number of target numbers.
@@ -305,7 +307,7 @@ for numObjs in numObjsInRing: #set up experiment design
     for speed in speeds:
         ringNums = np.arange(numRings)
         for nt in numTargets: #for each num targets condition,
-          #Need to query each ring equally often. In case of 3 rings and 2 targets, 3 choose 2 = 3 possible ring combinations
+          #In case of 3 rings and 2 targets, 3 choose 2 = 3 possible ring combinations
           #If 3 concentric rings involved, have to consider 3 choose 2 targets, 3 choose 1 targets, have to have as many conditions as the maximum
           subsetsThis = list(itertools.combinations(ringNums,nt)) #all subsets of length nt from the universe of ringNums
           numSubsetsThis = len( subsetsThis );   print('numSubsetsThis=',numSubsetsThis)
@@ -324,7 +326,8 @@ for numObjs in numObjsInRing: #set up experiment design
                         for initialDirRing0 in [-1,1]:
                                 stimList.append( {'basicShape':basicShape, 'numObjectsInRing':numObjs,'speed':speed,'initialDirRing0':initialDirRing0,
                                         'numTargets':nt,'whichIsTarget':whichIsTarget,'ringToQuery':ringToQuery} )
-    #set up record of proportion correct in various conditions
+
+#set up record of proportion correct in various conditions
 trialSpeeds = list() #purely to allow report at end of how many trials got right at each speed
 for s in stimList: trialSpeeds.append( s['speed'] )
 uniqSpeeds = set(trialSpeeds) #reduce speedsUsed list to unique members, unordered set
