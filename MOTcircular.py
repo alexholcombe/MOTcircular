@@ -3,7 +3,7 @@ __author__ = """Alex "O." Holcombe, Wei-Ying Chen""" ## double-quotes will be si
 ###For set-up on a new machine, some variables to consider
 ###
 ### useClock
-### For set-up of a new experiment variant, variables to consider: 
+### For set-up of new experiment variant, variables to consider: 
 ### trialDurMin, trackVariableIntervMax
 ##############
 import psychopy.info
@@ -13,13 +13,13 @@ import numpy as np
 import itertools #to calculate all subsets
 from copy import deepcopy
 from math import atan, pi, cos, sin, sqrt, ceil
-import time, sys, platform, os, gc, io #io is successor to StringIO
+import time, random, sys, platform, os, gc, io #io is successor to StringIO
 #from EyelinkEyetrackerForPsychopySUPA3 import EyeLinkCoreGraphicsPsychopy, Tracker_EyeLink #Chris Fajou integration but try ioHub
 from helpersAOH import accelerateComputer, openMyStimWindow, calcCondsPerNumTargets, LCM, gcd
 eyetracking = False; eyetrackFileGetFromEyelinkMachine = False #very timeconsuming to get the file from the Windows machine over the ethernet cable, 
 #usually better to get the EDF file from the Eyelink machine by hand by rebooting into Windows and going to 
 
-quitFinder = False
+quitFinder = False #Not sure this works
 if quitFinder:
     applescript="\'tell application \"Finder\" to quit\'" #quit Finder.
     shellCmd = 'osascript -e '+applescript
@@ -291,33 +291,36 @@ numObjsInRing =         [  2,                    8        ]
 speedsEachNumObjs =  [ [0.1, 0.5], [0.1, 0.5 ] ]   #[ [0.5,1.0,1.4,1.7], [0.5,1.0,1.4,1.7] ]     #dont want to go faster than 2 because of blur problem
 numTargets = np.array([2,3])  # np.array([1,2,3])
 
+queryEachRingEquallyOften = False
 #To query each ring equally often, the combinatorics are complicated because have different numbers of target conditions.
-leastCommonMultipleSubsets = int( calcCondsPerNumTargets(numRings,numTargets) )
-leastCommonMultipleTargetNums = int( LCM( numTargets ) )  #have to use this to choose whichToQuery.
-#for each subset, need to counterbalance which target is queried. Because each element occurs equally often, which one queried can be an independent factor. But need as many repetitions as largest number of target numbers.
-# 3 targets . 3 subsets maximum. Least common multiple is 3. 3 rings that could be post-cued. That means counterbalancing requires 3 x 3 x 3 = 27 trials. NO! doesn't work
-# But what do you do when 2 targets, which one do you pick in the 3 different situations? Can't counterbalance it evenly, because when draw 3rd situation, half of time should pick one and half the time the other. Therefore have to use least common multiple of all the possible set sizes. Unless you just want to throw away that possibility. But then have different number of trials in 2 targets than in 3 targets.
-#		-  Is that last sentence true? Because always seem to be running leastCommonMultipleSubsets/numSubsetsThis for each numTargets
-#	 Check counterbalancing of numObjectsInRing*speed*numTargets*ringToQuery.  Leaving out whichIsTarget which is a list of which of those numTargets is the target.
-print('leastCommonMultipleSubsets=',leastCommonMultipleSubsets, ' leastCommonMultipleTargetNums= ', leastCommonMultipleTargetNums)
-                
+if queryEachRingEquallyOften:
+    leastCommonMultipleSubsets = int( calcCondsPerNumTargets(numRings,numTargets) )
+    leastCommonMultipleTargetNums = int( LCM( numTargets ) )  #have to use this to choose whichToQuery.
+    #for each subset, need to counterbalance which target is queried. Because each element occurs equally often, which one queried can be an independent factor. But need as many repetitions as largest number of target numbers.
+    # 3 targets . 3 subsets maximum. Least common multiple is 3. 3 rings that could be post-cued. That means counterbalancing requires 3 x 3 x 3 = 27 trials. NO! doesn't work
+    # But what do you do when 2 targets, which one do you pick in the 3 different situations? Can't counterbalance it evenly, because when draw 3rd situation, half of time should pick one and half the time the other. Therefore have to use least common multiple of all the possible set sizes. Unless you just want to throw away that possibility. But then have different number of trials in 2 targets than in 3 targets.
+    #		-  Is that last sentence true? Because always seem to be running leastCommonMultipleSubsets/numSubsetsThis for each numTargets
+    #	 Check counterbalancing of numObjectsInRing*speed*numTargets*ringToQuery.  Leaving out whichIsTargetEachRing which is a list of which of those numTargets is the target.
+    print('leastCommonMultipleSubsets=',leastCommonMultipleSubsets, ' leastCommonMultipleTargetNums= ', leastCommonMultipleTargetNums)
+                    
 for numObjs in numObjsInRing: #set up experiment design
     idx = numObjsInRing.index(numObjs)
     speeds= speedsEachNumObjs[  idx   ]
     for speed in speeds:
         ringNums = np.arange(numRings)
         for nt in numTargets: #for each num targets condition,
-          #In case of 3 rings and 2 targets, 3 choose 2 = 3 possible ring combinations
-          #If 3 concentric rings involved, have to consider 3 choose 2 targets, 3 choose 1 targets, have to have as many conditions as the maximum
-          subsetsThis = list(itertools.combinations(ringNums,nt)) #all subsets of length nt from the universe of ringNums
-          numSubsetsThis = len( subsetsThis );   print('numSubsetsThis=',numSubsetsThis)
-          repsNeeded = leastCommonMultipleSubsets / numSubsetsThis #that's the number of repetitions needed to make up for number of subsets of rings
-          for r in range( int(repsNeeded) ):  #for nt with largest number of subsets, need no repetitions
-              for s in subsetsThis:
-                  whichIsTarget = np.ones(numRings)*-999 #-999 is  value meaning no target in that ring. 1 will mean target in ring
+          if queryEachRingEquallyOften:
+            #In case of 3 rings and 2 targets, 3 choose 2 = 3 possible ring combinations
+            #If 3 concentric rings involved, have to consider 3 choose 2 targets, 3 choose 1 targets, have to have as many conditions as the maximum
+            subsetsThis = list(itertools.combinations(ringNums,nt)) #all subsets of length nt from the rings. E.g. if 3 rings and nt=2 targets
+            numSubsetsThis = len( subsetsThis );   print('numSubsetsThis=',numSubsetsThis, ' subsetsThis = ',subsetsThis)
+            repsNeeded = leastCommonMultipleSubsets / numSubsetsThis #that's the number of repetitions needed to make up for number of subsets of rings
+            for r in range( int(repsNeeded) ): #Balance different nt conditions. For nt with largest number of subsets, need no repetitions
+              for s in subsetsThis: #to equate ring usage, balance by going through all subsets. E.g. 3 rings with 2 targets is 1,2; 1,3; 2,3
+                  whichIsTargetEachRing = np.ones(numRings)*-999 #initialize to -999, meaning not a target in that ring.
                   for ring in s:
-                     whichIsTarget[ring] = np.random.randint(0,numObjs-1,size=1) #deprecated np.random.random_integers(0, numObjs-1, size=1) #1
-                  print('numTargets=',nt,' whichIsTarget=',whichIsTarget,' and that is one of ',numSubsetsThis,' possibilities and we are doing ',repsNeeded,'repetitions')
+                      whichIsTargetEachRing[ring] = np.random.randint(0,numObjs-1,size=1)
+                  print('numTargets=',nt,' whichIsTargetEachRing=',whichIsTargetEachRing,' and that is one of ',numSubsetsThis,' possibilities and we are doing ',repsNeeded,'repetitions')
                   for whichToQuery in range( leastCommonMultipleTargetNums ):  #for each subset, have to query one. This is dealed out to  the current subset by using modulus. It's assumed that this will result in equal total number of queried rings
                       whichSubsetEntry = whichToQuery % nt  #e.g. if nt=2 and whichToQuery can be 0,1,or2 then modulus result is 0,1,0. This implies that whichToQuery won't be totally counterbalanced with which subset, which is bad because
                                       #might give more resources to one that's queried more often. Therefore for whichToQuery need to use least common multiple.
@@ -325,7 +328,17 @@ for numObjs in numObjsInRing: #set up experiment design
                       for basicShape in ['circle']: #'diamond'
                         for initialDirRing0 in [-1,1]:
                                 stimList.append( {'basicShape':basicShape, 'numObjectsInRing':numObjs,'speed':speed,'initialDirRing0':initialDirRing0,
-                                        'numTargets':nt,'whichIsTarget':whichIsTarget,'ringToQuery':ringToQuery} )
+                                        'numTargets':nt,'whichIsTargetEachRing':whichIsTargetEachRing,'ringToQuery':ringToQuery} )
+          else: # not queryEachRingEquallyOften, because that requires too many trials for a quick session. Instead
+            #, will randomly at time of trial choose which rings have targets and which one querying.
+            whichIsTargetEachRing = np.ones(numRings)*-999 #initialize to -999, meaning not a target in that ring. '1' will indicate which is the target
+            for t in range( int(nt) ):  #FIX!
+                whichIsTargetEachRing[t] = 0 #dummy value for now. Will set to random value when run trial.
+            ringToQuery = 0
+            for basicShape in ['circle']: #'diamond'
+                for initialDirRing0 in [-1,1]:
+                    stimList.append( {'basicShape':basicShape, 'numObjectsInRing':numObjs,'speed':speed,'initialDirRing0':initialDirRing0,
+                                'numTargets':nt,'whichIsTargetEachRing':whichIsTargetEachRing,'ringToQuery':ringToQuery} )            
 
 #set up record of proportion correct in various conditions
 trialSpeeds = list() #purely to allow report at end of how many trials got right at each speed
@@ -441,7 +454,7 @@ def angleChangeThisFrame(speed,initialDirectionEachRing, numRing, thisFrameN, la
     angleMove = initialDirectionEachRing[numRing] * speed*2*pi*(thisFrameN-lastFrameN) / refreshRate
     return angleMove
 
-def  oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,initialDirectionEachRing,currAngle,blobToCueEachRing,isReversed,reversalNumEachRing,ShowTrackCueFrames): 
+def oneFrameOfStim(thisTrial,currFrame,clock,useClock,offsetXYeachRing,initialDirectionEachRing,currAngle,blobToCueEachRing,isReversed,reversalNumEachRing,ShowTrackCueFrames): 
 #defining a function to draw each frame of stim. So can call second time for tracking task response phase
       global cueRing,ringRadial,ringRadialR, currentlyCuedBlob #makes python treat it as a local variable
       global angleIniEachRing, correctAnswers
@@ -644,7 +657,7 @@ print('Starting experiment of',trials.nTotal,'trials. Current trial is trial 0.'
 print('trialnum\tsubject\tbasicShape\tnumObjects\tspeed\tinitialDirRing0', end='\t', file=dataFile)
 print('orderCorrect\ttrialDurTotal\tnumTargets', end= '\t', file=dataFile) 
 for i in range(numRings):
-    print('whichIsTarget',i,  sep='', end='\t', file=dataFile)
+    print('whichIsTargetEachRing',i,  sep='', end='\t', file=dataFile)
 print('ringToQuery',end='\t',file=dataFile)
 for i in range(numRings):dataFile.write('Direction'+str(i)+'\t')
 for i in range(numRings):dataFile.write('respAdj'+str(i)+'\t')
@@ -669,7 +682,22 @@ randomInitialDirExceptRing0 = True
 oppositeInitialDirFirstTwoRings = True
 
 while trialNum < trials.nTotal and expStop==False:
-    accelerateComputer(1,process_priority, disable_gc) #speed up
+    accelerateComputer(1,process_priority, disable_gc) 
+
+    if not queryEachRingEquallyOften: #then need to randomly set whichToQuery and whichIsTargetEachRing
+        #To determine whichRingsHaveTargets, sample from 0,1,...,numRings by permuting that list
+        rings = list( range(numRings) )
+        random.shuffle(rings)
+        whichRingsHaveTargets = rings[ 0:thisTrial['numTargets'] ]
+        print("should be -999 at this point: thisTrial['whichIsTargetEachRing'] = ", thisTrial['whichIsTargetEachRing'])
+        #Randomly assign a target object for each ring that is meant to have a target
+        for r in whichRingsHaveTargets:
+            thisTrial['whichIsTargetEachRing'][r] = np.random.randint(0,numObjs)
+        #Randomly pick ring to query. 
+        random.shuffle(whichRingsHaveTargets)
+        thisTrial['whichToQuery'] = whichRingsHaveTargets[0]
+        print("thisTrial['numTargets']=",thisTrial['numTargets'], " thisTrial['whichIsTargetEachRing'] = ", thisTrial['whichIsTargetEachRing'], " thisTrial['whichToQuery']",thisTrial['whichToQuery'])
+        
     colorRings=list();preDrawStimToGreasePipeline = list()
     isReversed= list([1]) * numRings #always takes values of -1 or 1
     reversalNumEachRing = list([0]) * numRings
@@ -696,7 +724,7 @@ while trialNum < trials.nTotal and expStop==False:
     reversalTimesEachRing = getReversalTimes()
     numObjects = thisTrial['numObjectsInRing']
     centerInMiddleOfSegment =360./numObjects/2.0
-    blobsToPreCue=thisTrial['whichIsTarget']
+    blobsToPreCue=thisTrial['whichIsTargetEachRing']
     core.wait(.1)
     myMouse.setVisible(False)      
     if eyetracking: 
@@ -719,7 +747,7 @@ while trialNum < trials.nTotal and expStop==False:
     for n in range(trialDurFrames): 
         offsetXYeachRing=[ [0,0],[0,0],[0,0] ]
         (angleIni,currAngle,isReversed,reversalNumEachRing) = \
-                oneFrameOfStim(thisTrial,n,stimClock,useClock,offsetXYeachRing,initialDirectionEachRing,currAngle,blobsToPreCue,isReversed,reversalNumEachRing,ShowTrackCueFrames) #da big function
+            oneFrameOfStim(thisTrial,n,stimClock,useClock,offsetXYeachRing,initialDirectionEachRing,currAngle,blobsToPreCue,isReversed,reversalNumEachRing,ShowTrackCueFrames) #da big function
 
         if exportImages:
             myWin.getMovieFrame(buffer='back') #for later saving
@@ -812,11 +840,11 @@ while trialNum < trials.nTotal and expStop==False:
         for l in range(numRings):
                     if responses[l] !=[]: 
                        tokenChosenEachRing[l]=np.where(respondedEachToken[l])  [0][0] 
-                       respAdjs= initialDirectionEachRing[l]*isReversed[l]*(tokenChosenEachRing[l]-thisTrial['whichIsTarget'][l])
+                       respAdjs= initialDirectionEachRing[l]*isReversed[l]*(tokenChosenEachRing[l]-thisTrial['whichIsTargetEachRing'][l])
                        if respAdjs> numObjects/2. : respAdjs-= numObjects  #code in terms of closest way around. So if 9 objects and 8 ahead, code as -1
                        if respAdjs < -numObjects/2. : respAdjs += numObjects
                        respAdj.append(respAdjs)
-                       if tokenChosenEachRing[l]==thisTrial['whichIsTarget'][l]: 
+                       if tokenChosenEachRing[l]==thisTrial['whichIsTargetEachRing'][l]: 
                           sCorrects=1
                           sCorrect.append(sCorrects);
                           targetCorrect+=sCorrects
@@ -843,7 +871,7 @@ while trialNum < trials.nTotal and expStop==False:
     #header print('trialnum\tsubject\tbasicShape\tnumObjects\tspeed\tinitialDirRing0\tangleIni
     print(trialNum,subject,thisTrial['basicShape'],thisTrial['numObjectsInRing'],thisTrial['speed'],thisTrial['initialDirRing0'],sep='\t', end='\t', file=dataFile)
     print(orderCorrect,'\t',trialDurTotal,'\t',thisTrial['numTargets'],'\t', end=' ', file=dataFile) #override newline end
-    for i in range(numRings):  print( thisTrial['whichIsTarget'][i], end='\t', file=dataFile  )
+    for i in range(numRings):  print( thisTrial['whichIsTargetEachRing'][i], end='\t', file=dataFile  )
     print( thisTrial['ringToQuery'],end='\t',file=dataFile )
     for i in range(numRings):dataFile.write(str(round(initialDirectionEachRing[i],4))+'\t') 
     for i in range(numRings):dataFile.write(str(round(respAdj[i],4))+'\t') 
@@ -906,8 +934,8 @@ while trialNum < trials.nTotal and expStop==False:
     core.wait(.1); time.sleep(.1)
     #end trials loop  ###########################################################
 if expStop == True:
-    print('user aborted experiment on keypress with trials trialNum=', trialNum, file=logF)
-    print('user aborted experiment on keypress with trials trialNum=', trialNum)
+    print('User aborted experiment by keypress with trialNum=', trialNum, file=logF)
+    print('User aborted experiment by keypress with trialNum=', trialNum)
     
 print('finishing at ',timeAndDateStr, file=logF)
 print('%corr order report= ', round( numTrialsOrderCorrect*1.0/trialNum*100., 2)  , '% of ',trialNum,' trials', end=' ')
