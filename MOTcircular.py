@@ -798,6 +798,7 @@ while trialNum < trials.nTotal and expStop==False:
                     #print >>logF, 'flankers also='+str( np.around( interframeIntervs[flankingAlso], 1) )
             #end timing check
     myMouse.setVisible(True)
+    
     #ansIter=(answer).reshape(1,-1)[0]; ln=len(ansIter) #in case it's two dimensions like in bindRadially
     #print 'answer=',answer,' or ', [colorNames[ int(ansIter[i]) ] for i in range( ln )], ' it is type ',type(answer), ' and shape ', np.shape(answer)  
     #shuffledAns = deepcopy(answer);  #just to use for options, to ensure they are in a different order
