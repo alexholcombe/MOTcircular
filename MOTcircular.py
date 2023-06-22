@@ -8,6 +8,7 @@ __author__ = """Alex "O." Holcombe, Wei-Ying Chen""" ## double-quotes will be si
 ##############
 import psychopy.info
 from psychopy import sound, monitors, logging, visual, data, core
+useSound=False
 import psychopy.gui, psychopy.event
 import numpy as np
 import itertools #to calculate all subsets
@@ -529,7 +530,7 @@ def collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,r
     timesRespPromptSoundPlayed=0
     if timesRespPromptSoundPlayed<1: #2
         if numRings > 1:
-            respPromptSound.play()
+            if useSound: respPromptSound.play()
         timesRespPromptSoundPlayed +=1
     #respText.draw()
 
@@ -818,11 +819,12 @@ while trialNum < trials.nTotal and expStop==False:
         soundFileNum = thisTrial['ringToQuery']
     else: #eg if numRings==2:
         soundFileNum = thisTrial['ringToQuery']*2 #outer, not middle for ring==1
-        
-    respPromptSoundPathAndFile= os.path.join(soundDir, ringQuerySoundFileNames[ soundFileNum ])
-    respPromptSound = sound.Sound(respPromptSoundPathAndFile, secs=.2)
-    corrSoundPathAndFile= os.path.join(soundDir, 'Ding.wav')
-    corrSound = sound.Sound(corrSoundPathAndFile)
+    
+    if useSound:
+        respPromptSoundPathAndFile= os.path.join(soundDir, ringQuerySoundFileNames[ soundFileNum ])
+        respPromptSound = sound.Sound(respPromptSoundPathAndFile, secs=.2)
+        corrSoundPathAndFile= os.path.join(soundDir, 'Ding.wav')
+        corrSound = sound.Sound(corrSoundPathAndFile)
 
     postCueNumBlobsAway=-999 #doesn't apply to click tracking and non-tracking task
 
@@ -894,11 +896,13 @@ while trialNum < trials.nTotal and expStop==False:
         if orderCorrect==3  :correct=1
         else:correct=0
         if correct:
-            corrSound.play()
+            if useSound:
+                corrSound.play()
             #hiA = sound.Sound('A',octave=4, volume=0.9,  secs=.8); hiA.play()
         else: #incorrect
-            lowD = sound.Sound('E',octave=3, sampleRate=6000, secs=.8, volume=0.9)
-            lowD.play()
+            if useSound:
+                lowD = sound.Sound('E',octave=3, sampleRate=6000, secs=.8, volume=0.9)
+                lowD.play()
     trialNum+=1
     waitForKeyPressBetweenTrials = False
     if trialNum< trials.nTotal:
