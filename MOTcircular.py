@@ -8,7 +8,7 @@ __author__ = """Alex "O." Holcombe, Wei-Ying Chen""" ## double-quotes will be si
 ##############
 import psychopy.info
 from psychopy import sound, monitors, logging, visual, data, core
-useSound=False
+useSound=True
 import psychopy.gui, psychopy.event
 import numpy as np
 import itertools #to calculate all subsets
@@ -31,7 +31,7 @@ disable_gc = True
 subject='test'#'test'
 autoLogging = False
 demo = False
-autopilot=True
+autopilot=False
 if autopilot:  subject='auto'
 feedback=True
 exportImages= False #quits after one trial / output image
@@ -260,7 +260,7 @@ clickedRegion.setColor((0,1,-1)) #show in yellow
 
 landmarkDebug = visual.Circle(myWin, radius=2.2, edges=32, colorSpace='rgb',fillColor=(1,-1,1),autoLog=autoLogging) #to show clickable zones
 
-circlePostCue = visual.Circle(myWin, radius=2*radii[0], edges=32, colorSpace='rgb',fillColor=(-1,-1,-1),lineColor=(-.6,-.6,-.6),autoLog=autoLogging) #visual postcue
+circlePostCue = visual.Circle(myWin, radius=2*radii[0], edges=96, colorSpace='rgb',lineColor=(.8,.8,-.6),lineWidth=2,fillColor=None,autoLog=autoLogging) #visual postcue
 #referenceCircle allows visualisation of trajectory, mostly for debugging
 referenceCircle = visual.Circle(myWin, radius=radii[0], edges=32, colorSpace='rgb',lineColor=(-1,-1,1),autoLog=autoLogging) #visual postcue
 
@@ -296,7 +296,7 @@ queryEachRingEquallyOften = False
 #To query each ring equally often, the combinatorics are complicated because have different numbers of target conditions.
 if queryEachRingEquallyOften:
     leastCommonMultipleSubsets = int( calcCondsPerNumTargets(numRings,numTargets) )
-    leastCommonMultipleTargetNums = int( LCM( numTargets ) )  #have to use this to choose whichToQuery.
+    leastCommonMultipleTargetNums = int( LCM( numTargets ) )  #have to use this to choose ringToQuery.
     #for each subset, need to counterbalance which target is queried. Because each element occurs equally often, which one queried can be an independent factor. But need as many repetitions as largest number of target numbers.
     # 3 targets . 3 subsets maximum. Least common multiple is 3. 3 rings that could be post-cued. That means counterbalancing requires 3 x 3 x 3 = 27 trials. NO! doesn't work
     # But what do you do when 2 targets, which one do you pick in the 3 different situations? Can't counterbalance it evenly, because when draw 3rd situation, half of time should pick one and half the time the other. Therefore have to use least common multiple of all the possible set sizes. Unless you just want to throw away that possibility. But then have different number of trials in 2 targets than in 3 targets.
@@ -335,7 +335,7 @@ for numObjs in numObjsInRing: #set up experiment design
             whichIsTargetEachRing = np.ones(numRings)*-999 #initialize to -999, meaning not a target in that ring. '1' will indicate which is the target
             for t in range( int(nt) ):  #FIX!
                 whichIsTargetEachRing[t] = 0 #dummy value for now. Will set to random value when run trial.
-            ringToQuery = 0
+            ringToQuery = 999 #this is the signal to choose the ring randomly
             for basicShape in ['circle']: #'diamond'
                 for initialDirRing0 in [-1,1]:
                     stimList.append( {'basicShape':basicShape, 'numObjectsInRing':numObjs,'speed':speed,'initialDirRing0':initialDirRing0,
@@ -561,7 +561,7 @@ def collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,r
             circlePostCue.setPos( offsetXYeachRing[ thisTrial['ringToQuery'] ] )
             circlePostCue.setRadius( radii[ thisTrial['ringToQuery'] ] )
             circlePostCue.draw()
-                
+            
        for optionSet in range(optionSets):  #draw this group (ring) of options
           for ncheck in range( numOptionsEachSet[optionSet] ):  #draw each available to click on in this ring
                 angle =  (angleIniEachRing[optionSet]+currAngle[optionSet]) + ncheck*1.0/numOptionsEachSet[optionSet] *2.*pi
@@ -578,7 +578,7 @@ def collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,r
                 gaussian.setColor(  colors_all[0], log=autoLogging )  #draw blob
                 gaussian.setPos([x,y]);  
                 gaussian.draw()
-                 
+            
        mouse1, mouse2, mouse3 = myMouse.getPressed()
        if mouse1 and lastClickState==0:  #only count this event if is a new click. Problem is that mouse clicks continue to be pressed for along time
             mouseX,mouseY = myMouse.getPos() 
@@ -685,7 +685,7 @@ oppositeInitialDirFirstTwoRings = True
 while trialNum < trials.nTotal and expStop==False:
     accelerateComputer(1,process_priority, disable_gc) 
 
-    if not queryEachRingEquallyOften: #then need to randomly set whichToQuery and whichIsTargetEachRing
+    if not queryEachRingEquallyOften: #then need to randomly set ringToQuery and whichIsTargetEachRing
         #To determine whichRingsHaveTargets, sample from 0,1,...,numRings by permuting that list
         rings = list( range(numRings) )
         random.shuffle(rings)
@@ -696,8 +696,8 @@ while trialNum < trials.nTotal and expStop==False:
             thisTrial['whichIsTargetEachRing'][r] = np.random.randint(0,numObjs)
         #Randomly pick ring to query. 
         random.shuffle(whichRingsHaveTargets)
-        thisTrial['whichToQuery'] = whichRingsHaveTargets[0]
-        print("thisTrial['numTargets']=",thisTrial['numTargets'], " thisTrial['whichIsTargetEachRing'] = ", thisTrial['whichIsTargetEachRing'], " thisTrial['whichToQuery']",thisTrial['whichToQuery'])
+        thisTrial['ringToQuery'] = whichRingsHaveTargets[0]
+        print("thisTrial['numTargets']=",thisTrial['numTargets'], " thisTrial['whichIsTargetEachRing'] = ", thisTrial['whichIsTargetEachRing'], " thisTrial['ringToQuery']",thisTrial['ringToQuery'])
         
     colorRings=list();preDrawStimToGreasePipeline = list()
     isReversed= list([1]) * numRings #always takes values of -1 or 1
@@ -831,7 +831,7 @@ while trialNum < trials.nTotal and expStop==False:
     responses = list();  responsesAutopilot = list()
     responses,responsesAutopilot,respondedEachToken,expStop = \
             collectResponses(thisTrial,n,responses,responsesAutopilot,offsetXYeachRing,respRadius,currAngle,expStop)  #collect responses!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#####
-    #print("responses=",responses,";respondedEachToken=",respondedEachToken,"expStop=",expStop) #debugOFF
+    #print("responses=",responses,";respondedEachToken=",respondedEachToken,"expStop=",expStop) 
     core.wait(.1)
     if exportImages:  #maybe catch one frame of response
         myWin.saveMovieFrames('exported/frame.png')    
