@@ -15,7 +15,7 @@ import itertools #to calculate all subsets
 from copy import deepcopy
 from math import atan, pi, cos, sin, sqrt, ceil
 import time, random, sys, platform, os, gc, io #io is successor to StringIO
-#from EyelinkEyetrackerForPsychopySUPA3 import EyeLinkCoreGraphicsPsychopy, Tracker_EyeLink #Chris Fajou integration but try ioHub
+#from EyelinkEyetrackerForPsychopySUPA3 import EyeLinkCoreGraphicsPsychopy, Tracker_EyeLink #Chris Fajou integration
 from helpersAOH import accelerateComputer, openMyStimWindow, calcCondsPerNumTargets, LCM, gcd
 eyetracking = False; eyetrackFileGetFromEyelinkMachine = False #very timeconsuming to get the file from the Windows machine over the ethernet cable, 
 #usually better to get the EDF file from the Eyelink machine by hand by rebooting into Windows and going to 
@@ -79,7 +79,7 @@ trackVariableIntervMax = 0.8 #Random interval that gets added to trackingExtraTi
 if demo:trialDurMin = 5;refreshRate = 60.; 
 tokenChosenEachRing= [-999]*numRings
 rampUpDur=0; #duration of speed ramp from stationary, during cue
-rampDownDur=0 #duration of speedramp down up to the end of the trial
+rampDownDur=0 #duration of speedramp down to the end of the trial
 
 def maxTrialDur():
     return( trialDurMin+trackingExtraTime+trackVariableIntervMax)
@@ -729,7 +729,7 @@ while trialNum < trials.nTotal and expStop==False:
     core.wait(.1)
     myMouse.setVisible(False)      
     if eyetracking: 
-        tracker.startEyeTracking(trialNum,calibTrial=True,widthPix=widthPix,heightPix=heightPix) # tell eyetracker to start recording. Does this also somehow allow it to draw on the screen for the calibration?
+        tracker.startEyeTracking(trialNum,calibTrial=True,widthPix=widthPix,heightPix=heightPix) # tell eyetracker to start recording and calibrate. Does this allow it to draw on the screen for the calibration?
 
     fixatnPeriodFrames = int(   (np.random.rand(1)/2.+0.8)   *refreshRate)  #random interval between x and x+800ms
     for i in range(fixatnPeriodFrames):
