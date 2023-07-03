@@ -54,7 +54,6 @@ has_retina_scrn = False
 import subprocess
 if subprocess.call("system_profiler SPDisplaysDataType | grep -i 'retina'", shell=True) == 0:
     has_retina_scrn = True #https://stackoverflow.com/questions/58349657/how-to-check-is-it-a-retina-display-in-python-or-terminal
-        
 # create a dialog from dictionary 
 infoFirst = { 'Autopilot':autopilot, 'Check refresh etc':True, 'Screen to use':scrn, 'Fullscreen (timing errors if not)': fullscr, 'Screen refresh rate': refreshRate }
 OK = psychopy.gui.DlgFromDict(dictionary=infoFirst, 
@@ -187,7 +186,6 @@ if myDlg.OK: #unpack information from dialogue box
          subject = name #change subject default name to what user entered
        trialsPerCondition = int( thisInfo[ dlgLabelsOrdered.index('trialsPerCondition') ] ) #convert string to integer
        print('trialsPerCondition=',trialsPerCondition)
-       logging.info('trialsPerCondition =',trialsPerCondition)
 else: 
    print('User cancelled from dialog box.')
    logging.flush()
@@ -203,8 +201,6 @@ fileName = dataDir+'/'+subject+ '_' + expname+timeAndDateStr
 if not demo and not exportImages:
     dataFile = open(fileName+'.txt', 'w')  # sys.stdout
     import shutil
-    #save a copy of the code as it was when that subject was run
-    print('sys.argv[0]= ',sys.argv[0])
     ok = shutil.copy2(sys.argv[0], fileName+'.py') # complete target filename given
     print("Result of attempt to copy = ", ok)
     #saveCodeCmd = 'cp \'' + sys.argv[0] + '\' '+ fileName + '.py'
@@ -227,6 +223,12 @@ print(msg, file=logF)
 print(msg)
 if msgWrongResolution != '':
     logging.error(msgWrongResolution)
+
+logging.info("computer platform="+sys.platform)
+#save a copy of the code as it was when that subject was run
+logging.info('File that generated this = sys.argv[0]= '+sys.argv[0])
+logging.info("has_retina_scrn="+str(has_retina_scrn))
+logging.info('trialsPerCondition =',trialsPerCondition)
 
 #Not a test - the final window opening
 myWin = openMyStimWindow(mon,widthPixRequested,heightPixRequested,bgColor,allowGUI,units,fullscr,scrn,waitBlank)
@@ -333,8 +335,8 @@ for numObjs in numObjsInRing: #set up experiment design
           else: # not queryEachRingEquallyOften, because that requires too many trials for a quick session. Instead
             #, will randomly at time of trial choose which rings have targets and which one querying.
             whichIsTargetEachRing = np.ones(numRings)*-999 #initialize to -999, meaning not a target in that ring. '1' will indicate which is the target
-            for t in range( int(nt) ):  #FIX!
-                whichIsTargetEachRing[t] = 0 #dummy value for now. Will set to random value when run trial.
+            #for t in range( int(nt) ):
+            #    whichIsTargetEachRing[t] = 0 #dummy value for now. Will set to random value when run trial.
             ringToQuery = 999 #this is the signal to choose the ring randomly
             for basicShape in ['circle']: #'diamond'
                 for initialDirRing0 in [-1,1]:
@@ -693,7 +695,7 @@ while trialNum < trials.nTotal and expStop==False:
         print("should be -999 at this point: thisTrial['whichIsTargetEachRing'] = ", thisTrial['whichIsTargetEachRing'])
         #Randomly assign a target object for each ring that is meant to have a target
         for r in whichRingsHaveTargets:
-            thisTrial['whichIsTargetEachRing'][r] = np.random.randint(0,numObjs)
+            thisTrial['whichIsTargetEachRing'][r] = np.random.randint(0,thisTrial['numObjectsInRing'])
         #Randomly pick ring to query. 
         random.shuffle(whichRingsHaveTargets)
         thisTrial['ringToQuery'] = whichRingsHaveTargets[0]
@@ -939,14 +941,20 @@ while trialNum < trials.nTotal and expStop==False:
     core.wait(.1); time.sleep(.1)
     #end trials loop  ###########################################################
 if expStop == True:
-    print('User aborted experiment by keypress with trialNum=', trialNum, file=logF)
+    logging.info('User aborted experiment by keypress with trialNum=' + str(trialNum))
     print('User aborted experiment by keypress with trialNum=', trialNum)
     
 print('finishing at ',timeAndDateStr, file=logF)
-print('%corr order report= ', round( numTrialsOrderCorrect*1.0/trialNum*100., 2)  , '% of ',trialNum,' trials', end=' ')
-print('%corr each speed: ', end=' ')
-print(np.around( numRightWrongEachSpeedOrder[:,1] / ( numRightWrongEachSpeedOrder[:,0] + numRightWrongEachSpeedOrder[:,1]), 2))
-print('\t\t\t\tnum trials each speed =', numRightWrongEachSpeedOrder[:,0] + numRightWrongEachSpeedOrder[:,1])
+#print('%correct order = ', round( numTrialsOrderCorrect*1.0/trialNum*100., 2)  , '% of ',trialNum,' trials', end=' ')
+numTrialsEachSpeed = numRightWrongEachSpeedOrder[:,0] + numRightWrongEachSpeedOrder[:,1]
+allNonZeros = np.all( numTrialsEachSpeed )
+if allNonZeros: #Has to be all nonzeros otherwise will get divide by zero error
+    print('%correct each speed: ', end=' ')
+    print( np.around( numRightWrongEachSpeedOrder[:,1] / numTrialsEachSpeed, 2) )
+else:
+    print('Num correct each speed: ',end=' ')
+    print( np.around( numRightWrongEachSpeedOrder[:,1] , 2) )
+print('\t\t\t\tNum trials each speed =', numTrialsEachSpeed)
 logging.flush(); dataFile.close(); logF.close()
 
 if eyetracking:
