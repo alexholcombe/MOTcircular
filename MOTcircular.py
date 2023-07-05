@@ -825,7 +825,7 @@ while trialNum < trials.nTotal and expStop==False:
     if useSound:
         respPromptSoundPathAndFile= os.path.join(soundDir, ringQuerySoundFileNames[ soundFileNum ])
         respPromptSound = sound.Sound(respPromptSoundPathAndFile, secs=.2)
-        corrSoundPathAndFile= os.path.join(soundDir, 'Ding.wav')
+        corrSoundPathAndFile= os.path.join(soundDir, 'Ding44100Mono.wav')
         corrSound = sound.Sound(corrSoundPathAndFile)
 
     postCueNumBlobsAway=-999 #doesn't apply to click tracking and non-tracking task
@@ -903,8 +903,8 @@ while trialNum < trials.nTotal and expStop==False:
             #hiA = sound.Sound('A',octave=4, volume=0.9,  secs=.8); hiA.play()
         else: #incorrect
             if useSound:
-                lowD = sound.Sound('E',octave=3, sampleRate=6000, secs=.8, volume=0.9)
-                lowD.play()
+                lowSound = sound.Sound('E',octave=3, secs=.8, volume=0.9)
+                lowSound.play()
     trialNum+=1
     waitForKeyPressBetweenTrials = False
     if trialNum< trials.nTotal:
