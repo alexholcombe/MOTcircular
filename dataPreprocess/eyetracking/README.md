@@ -15,7 +15,7 @@ but preferably you'd use ioHub built in Psychopy eye_tracker/run.py which is acc
 
 ## Preprocessing of the Eyelink (EDF) file
 
-At long last we found [code for direct import into R](http://visionscience.com/pipermail/visionlist/2013/006286.html). However, I have not tested it (and would require code to collapse events of each trial) and it comes too late- I've already perfected the following workflow with the extra step of generating a Fixation Report in Eyelink Dataviewer.
+Eyelink now recommends [this R package](https://cran.r-project.org/package=eyelinkReader) for reading EDF files. However, I have not tested it (and would require code to collapse events of each trial) and it came too late- I've already perfected the following workflow with the extra step of generating a Fixation Report in Eyelink Dataviewer.
 
 Get the EDF file off the eyetracking machine (reboot eyetracking machine, select Windows), it's located in Eyelink:elcl:data and has the name of the participant.
 
