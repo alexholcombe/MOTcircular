@@ -12,3 +12,7 @@ In the long term, want to set up exchange of objects among rings. Necessary to c
 - [Centered vs. peripheral](experiment_specific/rps_limit/centered_vs_peripheral.md)
 
 - [Square traj, modulations](experiment_specific/rps_limit/square.md)
+
+## Eyetracking
+
+For fixation report analysis from EDF files, see https://github.com/alexholcombe/MOTcircular/tree/master/dataPreprocess file
