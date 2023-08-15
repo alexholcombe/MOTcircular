@@ -13,9 +13,11 @@ http://www.psychopy.org/api/hardware/pylink.html
 A simple example of getting individual data from the eyetracker and a gaze-contingent experiment is [here](https://github.com/ryancotterell/WilsonLab/blob/master/WilsonLab/pylink/eyeTracker.py)
 but preferably you'd use ioHub built in Psychopy eye_tracker/run.py which is accessed via Demos->Select Tracker
 
+We had that working in 2023 in [TessHons](https://github.com/alexholcombe/TessHons), but then the student said it wasn't working so she went with getting the EDF file manually off the host PC.
+
 ## Preprocessing of the Eyelink (EDF) file
 
-Eyelink now recommends [this R package](https://cran.r-project.org/package=eyelinkReader) for reading EDF files. However, I have not tested it (and would require code to collapse events of each trial) and it came too late- I've already perfected the following workflow with the extra step of generating a Fixation Report in Eyelink Dataviewer.
+Eyelink now recommends [Pastukhov's R package](https://cran.r-project.org/package=eyelinkReader) for reading EDF files and also has a [longer list](https://www.sr-research.com/support/thread-7769.html). https://github.com/dahtah/eyelinker However, I have not tested it (and would require code to collapse events of each trial) and it came too late- I've already perfected the following workflow with the extra step of generating a Fixation Report in Eyelink Dataviewer.
 
 Get the EDF file off the eyetracking machine (reboot eyetracking machine, select Windows), it's located in Eyelink:elcl:data and has the name of the participant.
 
