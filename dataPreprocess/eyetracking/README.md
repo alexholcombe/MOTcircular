@@ -17,7 +17,10 @@ We had that working in 2023 in [TessHons](https://github.com/alexholcombe/TessHo
 
 ## Preprocessing of the Eyelink (EDF) file
 
-Eyelink now recommends [Pastukhov's R package](https://cran.r-project.org/package=eyelinkReader) for reading EDF files and also has a [longer list](https://www.sr-research.com/support/thread-7769.html). https://github.com/dahtah/eyelinker However, I have not tested it (and would require code to collapse events of each trial) and it came too late- I've already perfected the following workflow with the extra step of generating a Fixation Report in Eyelink Dataviewer.
+Eyelink now recommends [Pastukhov's R package](https://cran.r-project.org/package=eyelinkReader) for reading EDF files and also has a [longer list](https://www.sr-research.com/support/thread-7769.html). https://github.com/dahtah/eyelinker 
+I got that working now for TessHons and trying to get it working for MOT
+
+# OLD pre-eyelinkReader WORKFLOW
 
 Get the EDF file off the eyetracking machine (reboot eyetracking machine, select Windows), it's located in Eyelink:elcl:data and has the name of the participant.
 
