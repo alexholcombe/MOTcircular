@@ -786,7 +786,6 @@ def main():
         print('Running experiment on %s, version %d' % (vstr, eyelink_ver))
     
     # Calibrate the tracker. You can press C for calibrate, V for validate,
-    # skip this step if running the script in Dummy Mode
     if not dummy_mode:
         try:
             el_tracker.doTrackerSetup()
@@ -794,18 +793,86 @@ def main():
             print('ERROR:', err)
             el_tracker.exitCalibration()
 
-    alsoShowStimulus = True
-    if alsoShowStimulus:
-        msg = visual.TextStim(win, 'This is a stand-in for a stimulus. Press a key to continue.',
-                      color=genv.getForegroundColor(), wrapWidth=scn_w/2)
-        msg.draw()
-        win.flip()
-        wait_for_keypress = True # wait indefinitely, terminates upon any key press
-        if wait_for_keypress:
-            event.waitKeys()
-            win.flip()
-            
-        #doTrackerSetup again because for tessHons2target, Tess found that validation didn't work after the first one maybe
+    # Get ready to start a trial
+    trialnum= 1
+    # send a "TRIALID" message to mark the start of a trial, see Data Viewer User Manual, "Protocol for EyeLink Data to Viewer Integration"
+    el_tracker.sendMessage('TRIALID %d' % trialnum)
+
+    # record_status_message : show some info on the Host PC, namely how many trial has been tested
+    status_msg = 'TRIAL number %d' % trialnum
+    el_tracker.sendCommand("record_status_message '%s'" % status_msg)
+    
+    # drift check
+    # we recommend drift-check at the beginning of each trial
+    # the doDriftCorrect() function requires target position in integers
+    # the last two arguments:
+    # draw_target (1-default, 0-draw the target then call doDriftCorrect)
+    # allow_setup (1-press ESCAPE to recalibrate, 0-not allowed)
+    #
+    # Skip drift-check if running the script in Dummy Mode
+    while not dummy_mode:
+
+        # drift-check and re-do camera setup if ESCAPE is pressed, on eyetracker PC?
+        try:
+            error = el_tracker.doDriftCorrect(int(scn_width/2.0),
+                                              int(scn_height/2.0), 1, 1)
+            # break following a success drift-check
+            if error is not pylink.ESC_KEY:
+                break
+        except:
+            pass
+
+    # put tracker in idle/offline mode before recording
+    el_tracker.setOfflineMode()
+
+    # Start recording
+    # arguments: sample_to_file, events_to_file, sample_over_link, event_over_link (1-yes, 0-no)
+    try:
+        el_tracker.startRecording(1, 1, 1, 1)
+    except RuntimeError as error:
+        print("ERROR:", error)
+        return pylink.TRIAL_ERROR
+    
+    pylink.beginRealTimeMode(100)
+    # Allocate some time for the tracker to cache some samples
+    pylink.pumpDelay(100)
+
+    # show the stimulus, and log a message to mark the onset of the stimulus
+    msg = visual.TextStim(win, 'This is a stand-in for a stimulus. Press a key to continue.',
+                  color=genv.getForegroundColor(), wrapWidth=scn_w/2)
+    msg.draw()
+    win.flip()
+    event.clearEvents()  # clear cached PsychoPy events
+
+
+    el_tracker.sendMessage('image_onset')
+    img_onset_time = core.getTime()  # record the image onset time
+
+    event.waitKeys() # wait indefinitely, terminates upon any key press
+    win.flip()
+
+    error = el_tracker.isRecording()
+    if error is not pylink.TRIAL_OK:
+        el_tracker.sendMessage('tracker_disconnected')
+        return error
+
+    # stop recording; add 100 msec to catch final events before stopping
+    pylink.endRealTimeMode()
+    pylink.pumpDelay(100)
+    el_tracker.stopRecording()
+
+    # send a 'TRIAL_RESULT' message to mark the end of trial, see Data Viewer User Manual, "Protocol for EyeLink Data to Viewer Integration"
+    el_tracker.sendMessage('TRIAL_RESULT %d' % pylink.TRIAL_OK)
+    
+    msg = visual.TextStim(win, 'Trial 1 of 2 is finished. Eyetracker paused. Press a key to continue.',
+                  color=genv.getForegroundColor(), wrapWidth=scn_w/2)
+    msg.draw()
+    win.flip()
+    event.waitKeys() # wait indefinitely, terminates upon any key press
+    win.flip()
+        
+    #doTrackerSetup again because for tessHons2target, Tess found that validation didn't work after the first one maybe
+    #Try to do a second trial TRY TO DO A SECOND TRIAL
 
     # Close the data file on the eyetracker PC
     el_tracker.closeDataFile()
