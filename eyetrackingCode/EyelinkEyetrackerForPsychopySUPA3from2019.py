@@ -3,7 +3,7 @@
 #
 # Copyright (C) 2011 Wing (Wei-Ying Chen)  modified from pylink ATI and open source code
 # Modified by Chris Fajou, pre-April 2015.
-# Provides a standard set of functions for using an eye tracker that allows experiment code to be simple ( For EyeLink1000)
+# Provides a standard set of functions for using an eye tracker that allows experiment code to be simple and tracker agnostic.( For EyeLink1000)
 
 import pylink
 import sys, os, gc
@@ -224,6 +224,7 @@ class Tracker_EyeLink():
         self.tracker.sendMessage(msg)
         #The following does drift correction at the begin of each trial
         if calibTrial:# Does drift correction and handles the re-do camera setup situations
+            self.tracker.enableAutoCalibration()
             while True:
                 try:
                     error = self.tracker.doDriftCorrect(widthPix/2,heightPix/2,1,1) # 0: the fixation target must be drawn by the user
@@ -231,10 +232,11 @@ class Tracker_EyeLink():
                         #self.tracker.applyDriftCorrect
                         break
                     else:
-                        self.tracker.doTrackerSetup()
+                        self.tracker.doTrackerSetup() #this does the actual calibration?
                 except:
                     print("Exception")
                     break
+        self.tracker.disableAutoCalibration()
         #self.tracker.sendCommand('start_drift_correction DATA =1 1 1 1') #CF - start drift correct??
         #self.tracker.applyDriftCorrect() #CF - added to actually correct for drift
         self.tracker.setOfflineMode() #CF adds this to stop skipping trials due to not recording

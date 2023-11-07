@@ -1,4 +1,5 @@
 *.pyc
+.DS_Store
 old/
 dataPreprocess/anonymisationKey.txt
 dataRaw/

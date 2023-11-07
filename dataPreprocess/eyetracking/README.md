@@ -3,7 +3,9 @@ Eyetracking
 
 ## Communication from Psychopy to Eyelink
 
-Call functions in `EyelinkEyetrackerForPsychopySUPA3.py` to open communication with eyetracker, to generate the calibration display and calibrate, to close the eyetracker and retrieve the eyetracking file from the Eyelink machine
+Call functions in `EyelinkEyetrackerForPsychopySUPA3.py` to open communication with eyetracker, to generate the calibration display and calibrate, to close the eyetracker and retrieve the eyetracking file from the Eyelink machine. That SUPA3 file is not out of date and I'm updating it. 
+
+- See https://www.sr-research.com/support/thread-8713.html for explanation of location of Eyelink commands.
 
 ### Avoid going through EDF decoding
 

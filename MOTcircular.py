@@ -731,7 +731,8 @@ while trialNum < trials.nTotal and expStop==False:
     core.wait(.1)
     myMouse.setVisible(False)      
     if eyetracking: 
-        tracker.startEyeTracking(trialNum,calibTrial=True,widthPix=widthPix,heightPix=heightPix) # tell eyetracker to start recording and calibrate. Does this allow it to draw on the screen for the calibration?
+        tracker.startEyeTracking(trialNum,calibTrial=True,widthPix=widthPix,heightPix=heightPix) # tell eyetracker to start recording
+            #and calibrate. Does this allow it to draw on the screen for the calibration?
 
     fixatnPeriodFrames = int(   (np.random.rand(1)/2.+0.8)   *refreshRate)  #random interval between x and x+800ms
     for i in range(fixatnPeriodFrames):
@@ -769,7 +770,7 @@ while trialNum < trials.nTotal and expStop==False:
     #End of trial stimulus loop!
     
     if eyetracking:
-        tracker.stopEyeTracking() #This seems to work immediately and cause the Eyelink machine to save the EDF file to its own drive
+        tracker.stopEyeTracking() #This seems to work immediately and cause the eyetracking PC to save the EDF file to its own drive
     #clear mouse buffer in preparation for response, which may involve clicks
     psychopy.event.clearEvents(eventType='mouse')
 
