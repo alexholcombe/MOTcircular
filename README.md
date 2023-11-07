@@ -15,4 +15,6 @@ In the long term, want to set up exchange of objects among rings. Necessary to c
 
 ## Eyetracking
 
+To the self-test of eyetrackingCode/EyeLinkCoreGraphicsPsychoPyHolcombeLab.py, I've tried to add a trial.
+
 For fixation report analysis from EDF files, see https://github.com/alexholcombe/MOTcircular/tree/master/dataPreprocess file
