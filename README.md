@@ -15,6 +15,8 @@ In the long term, want to set up exchange of objects among rings. Necessary to c
 
 - [Square traj, modulations](experiment_specific/rps_limit/square.md)
 
+- [Transient attention (abandoned study with Ingrid and Arni](https://github.com/alexholcombe/MOTcircular/tree/master/experiment_specific/transient_attention)
+
 ## Eyetracking
 
 To the self-test of eyetrackingCode/EyeLinkCoreGraphicsPsychoPyHolcombeLab.py, I've tried to add a trial.
